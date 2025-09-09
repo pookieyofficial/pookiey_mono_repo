@@ -1,17 +1,23 @@
-console.log('Hello, TypeScript World!');
+import express from "express";
+import dotenv from "dotenv";
+import connectDB from "./config/database";
+import userRouter from "./routes/userRoutes";
 
-export function greet(name: string): string {
-  return `Hello, ${name}!`;
-}
+dotenv.config();
 
-export function add(a: number, b: number): number {
-  return a + b;
-}
+const app = express();
+const PORT = process.env.PORT || 6969;
 
-// Example usage
-const message = greet('Developer');
-console.log(message);
-console.log('Project intialized by PyCLI');
+app.use(express.json());
 
-const sum = add(5, 3);
-console.log(`5 + 3 = ${sum}`);
+connectDB();
+
+app.get("/", async (req, res) => {
+  res.send("Server Running... 🚀");
+});
+
+app.use('/api/v1/user', userRouter)
+
+app.listen(PORT, () => {
+  console.log(`⚡ Server running on http://localhost:${PORT}`);
+});
