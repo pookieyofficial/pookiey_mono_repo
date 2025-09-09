@@ -20,7 +20,7 @@ export default function ContactScreen() {
 
 
     const handleContinue = () => {
-        router.replace('/(home)');
+        router.push('/(onboarding)/location');
     };
 
     const handleAccessContacts = async () => {

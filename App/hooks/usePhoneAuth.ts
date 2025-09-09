@@ -1,10 +1,8 @@
 import { PhoneAuthProvider, signInWithCredential, signInWithPhoneNumber } from 'firebase/auth';
 import { useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import { auth } from '../firebaseConfig';
 
 export function usePhoneAuth() {
-    // Remove direct store access - let Firebase auth state handle it
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -15,11 +13,11 @@ export function usePhoneAuth() {
     const [focusedInput, setFocusedInput] = useState<'phone' | 'otp' | null>(null);
     const recaptchaVerifier = useRef(null);
 
-    const handleSendOtp = async () => {
-        if (!phoneNumber || phoneNumber.length < 10) {
-            Alert.alert('Invalid Phone Number', 'Please enter a valid phone number');
+    const handleSendOtp = async (onSuccess?: (message: string) => void, onError?: (message: string) => void) => {
+        if (!phoneNumber || phoneNumber.length < 9) {
             return;
         }
+        
         setIsLoading(true);
         try {
             const fullPhoneNumber = `+${callingCode}${phoneNumber}`;
@@ -30,24 +28,25 @@ export function usePhoneAuth() {
             );
             setVerificationId(confirmationResult.verificationId);
             setIsOtpSent(true);
-            Alert.alert('Success', `OTP sent to ${fullPhoneNumber}`);
+            onSuccess?.(`OTP sent to ${fullPhoneNumber}`);
         } catch (error: any) {
             console.error('Error sending OTP:', error);
-            Alert.alert('Error', error.message || 'Failed to send OTP. Please try again.');
+            onError?.(error.message || 'Failed to send OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleVerifyOtp = async (onSuccess?: () => void) => {
+    const handleVerifyOtp = async (onSuccess?: (message: string) => void, onError?: (message: string) => void) => {
         if (!otp || otp.length !== 6) {
-            Alert.alert('Invalid OTP', 'Please enter the 6-digit verification code');
+            onError?.('Please enter the 6-digit verification code');
             return;
         }
         if (!verificationId) {
-            Alert.alert('Error', 'No verification ID found. Please request OTP again.');
+            onError?.('No verification ID found. Please request OTP again.');
             return;
         }
+        
         setIsLoading(true);
         try {
             const credential = PhoneAuthProvider.credential(verificationId, otp);
@@ -56,21 +55,33 @@ export function usePhoneAuth() {
             console.log('OTP verification successful - Firebase will handle auth state');
             console.log('User phone:', userCredential.user.phoneNumber);
             
-            Alert.alert('Success', 'Phone number verified successfully!');
-            if (onSuccess) onSuccess();
+            onSuccess?.('Phone number verified successfully!');
         } catch (error: any) {
             console.error('Error verifying OTP:', error);
-            Alert.alert('Error', error.message || 'Invalid OTP. Please try again.');
+            onError?.(error.message || 'Invalid OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleResendOtp = () => {
+    const handleResendOtp = (onSuccess?: (message: string) => void, onError?: (message: string) => void) => {
         setOtp('');
         setIsOtpSent(false);
         setVerificationId('');
-        handleSendOtp();
+        handleSendOtp(onSuccess, onError);
+    };
+
+    const resetForm = () => {
+        setOtp('');
+        setIsOtpSent(false);
+        setVerificationId('');
+        setPhoneNumber('');
+    };
+
+    const resetToPhoneInput = () => {
+        setOtp('');
+        setIsOtpSent(false);
+        setVerificationId('');
     };
 
     return {
@@ -80,9 +91,6 @@ export function usePhoneAuth() {
         setOtp,
         isLoading,
         isOtpSent,
-        setIsOtpSent,
-        verificationId,
-        setVerificationId,
         countryCode,
         setCountryCode,
         callingCode,
@@ -93,5 +101,7 @@ export function usePhoneAuth() {
         handleSendOtp,
         handleVerifyOtp,
         handleResendOtp,
+        resetForm,
+        resetToPhoneInput,
     };
 }

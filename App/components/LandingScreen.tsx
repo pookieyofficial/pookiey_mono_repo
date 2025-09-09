@@ -45,7 +45,7 @@ interface OnboardingProps {
     onComplete: () => void;
 }
 
-export default function Onboarding({ onComplete }: OnboardingProps) {
+export default function LandingScreen({ onComplete }: OnboardingProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const slideAnim = useRef(new Animated.Value(0)).current;
     const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);

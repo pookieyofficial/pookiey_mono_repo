@@ -87,11 +87,3 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
   };
 }
 
-export interface AuthenticatedRequest extends Express.Request {
-  headers: any;
-  user?: {
-    uid: string;
-    email: string;
-    emailVerified: boolean;
-  };
-}

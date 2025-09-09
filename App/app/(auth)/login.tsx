@@ -1,13 +1,10 @@
 import MainButton from '@/components/MainButton';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import { Colors } from '@/constants/Colors';
 import { auth } from '@/firebaseConfig';
+import { usePhoneAuth } from '@/hooks/usePhoneAuth';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
-import {
-    PhoneAuthProvider,
-    signInWithCredential,
-    signInWithPhoneNumber
-} from 'firebase/auth';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Dimensions,
     KeyboardAvoidingView,
@@ -22,28 +19,37 @@ import {
     View
 } from 'react-native';
 import CountryPicker from "react-native-country-picker-modal";
-import { Button, Dialog, PaperProvider, Portal } from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [otp, setOtp] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [focusedInput, setFocusedInput] = useState<'phone' | 'otp' | null>(null);
-    const [countryCode, setCountryCode] = useState("US");
-    const [callingCode, setCallingCode] = useState("1");
-    const [isOtpSent, setIsOtpSent] = useState(false);
-    const [verificationId, setVerificationId] = useState('');
-    
+    const {
+        phoneNumber,
+        setPhoneNumber,
+        otp,
+        setOtp,
+        isLoading,
+        isOtpSent,
+        countryCode,
+        setCountryCode,
+        callingCode,
+        setCallingCode,
+        focusedInput,
+        setFocusedInput,
+        recaptchaVerifier,
+        handleSendOtp,
+        handleVerifyOtp,
+        handleResendOtp,
+        resetToPhoneInput,
+    } = usePhoneAuth();
+
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogTitle, setDialogTitle] = useState('');
     const [dialogMessage, setDialogMessage] = useState('');
-    const [dialogType, setDialogType] = useState<'success' | 'error'>('success');
+    const [dialogType, setDialogType] = useState<DialogType>('success');
 
-    const recaptchaVerifier = useRef(null);
-
-    const showDialog = (title: string, message: string, type: 'success' | 'error' = 'success') => {
+    const showDialog = (title: string, message: string, type: DialogType = 'success') => {
         setDialogTitle(title);
         setDialogMessage(message);
         setDialogType(type);
@@ -54,66 +60,30 @@ export default function LoginScreen() {
         setDialogVisible(false);
     };
 
-    const handleSendOtp = async () => {
-        if (!phoneNumber || phoneNumber.length < 10) {
-            showDialog('Invalid Phone Number', 'Please enter a valid phone number', 'error');
-            return;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const fullPhoneNumber = `+${callingCode}${phoneNumber}`;
-            const confirmationResult = await signInWithPhoneNumber(
-                auth,
-                fullPhoneNumber,
-                recaptchaVerifier.current as any
-            );
-            setVerificationId(confirmationResult.verificationId);
-            setIsOtpSent(true);
-            showDialog('Success', `OTP sent to ${fullPhoneNumber}`, 'success');
-        } catch (error: any) {
-            console.error('Error sending OTP:', error);
-            showDialog('Error', error.message || 'Failed to send OTP. Please try again.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
+    const handleSendOtpWithDialog = () => {
+        handleSendOtp(
+            (message) => showDialog('Success!', message, 'success'),
+            (message) => showDialog('Invalid Phone Number', message, 'error')
+        );
     };
 
-    const handleVerifyOtp = async () => {
-        if (!otp || otp.length !== 6) {
-            showDialog('Invalid OTP', 'Please enter the 6-digit verification code', 'error');
-            return;
-        }
-
-        if (!verificationId) {
-            showDialog('Error', 'No verification ID found. Please request OTP again.', 'error');
-            return;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const credential = PhoneAuthProvider.credential(verificationId, otp);
-            await signInWithCredential(auth, credential);
-            showDialog('Success', 'Phone number verified successfully!', 'success');
-        } catch (error: any) {
-            console.error('Error verifying OTP:', error);
-            showDialog('Error', error.message || 'Invalid OTP. Please try again.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
+    const handleVerifyOtpWithDialog = () => {
+        handleVerifyOtp(
+            (message) => showDialog('Verified!', message, 'success'),
+            (message) => showDialog('Verification Failed', message, 'error')
+        );
     };
 
-    const handleResendOtp = () => {
-        setOtp('');
-        setIsOtpSent(false);
-        setVerificationId('');
-        handleSendOtp();
+    const handleResendOtpWithDialog = () => {
+        handleResendOtp(
+            (message) => showDialog('Code Resent!', message, 'success'),
+            (message) => showDialog('Resend Failed', message, 'error')
+        );
     };
 
-    const isValidPhone = phoneNumber.length >= 10;
-    const isValidOtp = otp.length === 6;
+    const handleChangeNumber = () => {
+        resetToPhoneInput();
+    };
 
     return (
         <PaperProvider>
@@ -126,136 +96,121 @@ export default function LoginScreen() {
                     attemptInvisibleVerification
                 />
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.keyboardView}
-            >
-                <ScrollView style={styles.content} keyboardShouldPersistTaps='handled'>
-                    <View style={styles.mainContent}>
-                        <Text style={styles.title}>
-                            {isOtpSent ? 'Verify Code' : 'My Mobile'}
-                        </Text>
-                        <Text style={styles.description}>
-                            {isOtpSent
-                                ? `Please enter the 6-digit code sent to +${callingCode} ${phoneNumber}`
-                                : 'Please enter your valid phone number. We will send you a 6-digit code to verify your account.'
-                            }
-                        </Text>
-                        {!isOtpSent ? (
-                            <View style={styles.inputSection}>
-                                <View style={[
-                                    styles.phoneInputContainer,
-                                    focusedInput === 'phone' && styles.inputFocused
-                                ]}>
-                                    <View style={styles.countryCodeContainer}>
-                                        <CountryPicker
-                                            countryCode={countryCode as any}
-                                            withFilter
-                                            withFlag
-                                            withCallingCode
-                                            withEmoji
-                                            onSelect={(country) => {
-                                                setCountryCode(country.cca2);
-                                                setCallingCode(country.callingCode[0]);
-                                            }}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardView}
+                >
+                    <ScrollView style={styles.content}
+                        keyboardShouldPersistTaps='handled'
+                    >
+                        <View style={styles.mainContent}>
+                            <Text style={styles.title}>
+                                {isOtpSent ? 'Verify Code' : 'My Mobile'}
+                            </Text>
+                            <Text style={styles.description}>
+                                {isOtpSent
+                                    ? `Please enter the 6-digit code sent to +${callingCode} ${phoneNumber}`
+                                    : 'Please enter your valid phone number. We will send you a 6-digit code to verify your account.'
+                                }
+                            </Text>
+                            {!isOtpSent ? (
+                                <View style={styles.inputSection}>
+                                    <View style={[
+                                        styles.phoneInputContainer,
+                                        focusedInput === 'phone' && styles.inputFocused
+                                    ]}>
+                                        <View style={styles.countryCodeContainer}>
+                                            <CountryPicker
+                                                countryCode={countryCode as any}
+                                                withFilter
+                                                withFlag
+                                                withCallingCode
+                                                withEmoji
+                                                onSelect={(country) => {
+                                                    setCountryCode(country.cca2);
+                                                    setCallingCode(country.callingCode[0]);
+                                                }}
+                                            />
+                                            <Text style={styles.callingCode}>+{callingCode}</Text>
+                                        </View>
+                                        <TextInput
+                                            style={styles.phoneInput}
+                                            placeholder="Phone Number"
+                                            placeholderTextColor={Colors.text.tertiary}
+                                            value={phoneNumber}
+                                            onChangeText={setPhoneNumber}
+                                            keyboardType="phone-pad"
+                                            maxLength={15}
+                                            onFocus={() => setFocusedInput('phone')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            autoFocus
                                         />
-                                        <Text style={styles.callingCode}>+{callingCode}</Text>
                                     </View>
-                                    <TextInput
-                                        style={styles.phoneInput}
-                                        placeholder="Phone Number"
-                                        placeholderTextColor={Colors.text.tertiary}
-                                        value={phoneNumber}
-                                        onChangeText={setPhoneNumber}
-                                        keyboardType="phone-pad"
-                                        maxLength={15}
-                                        onFocus={() => setFocusedInput('phone')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        autoFocus
-                                    />
                                 </View>
-                            </View>
-                        ) : (
-                            <View style={styles.inputSection}>
-                                <View style={[
-                                    styles.otpInputContainer,
-                                    focusedInput === 'otp' && styles.inputFocused
-                                ]}>
-                                    <TextInput
-                                        style={styles.otpInput}
-                                        placeholder="000000"
-                                        placeholderTextColor={Colors.text.light}
-                                        value={otp}
-                                        onChangeText={setOtp}
-                                        keyboardType="number-pad"
-                                        maxLength={6}
-                                        onFocus={() => setFocusedInput('otp')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        autoFocus
-                                        textAlign="center"
-                                    />
+                            ) : (
+                                <View style={styles.inputSection}>
+                                    <View style={[
+                                        styles.otpInputContainer,
+                                        focusedInput === 'otp' && styles.inputFocused
+                                    ]}>
+                                        <TextInput
+                                            style={styles.otpInput}
+                                            placeholder="000000"
+                                            placeholderTextColor={Colors.text.light}
+                                            value={otp}
+                                            onChangeText={setOtp}
+                                            keyboardType="number-pad"
+                                            maxLength={6}
+                                            onFocus={() => setFocusedInput('otp')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            autoFocus
+                                            textAlign="center"
+                                        />
+                                    </View>
                                 </View>
-                            </View>
-                        )}
+                            )}
 
-                        <MainButton
-                            disabled={isLoading}
-                            title={isOtpSent ? 'Verify Code' : 'Continue'}
-                            onPress={isOtpSent ? handleVerifyOtp : handleSendOtp} />
+                            <MainButton
+                                disabled={isLoading}
+                                title={isOtpSent ? 'Verify Code' : 'Continue'}
+                                onPress={isOtpSent ? handleVerifyOtpWithDialog : handleSendOtpWithDialog} />
 
-                        {isOtpSent && (
-                            <View style={styles.secondaryActions}>
-                                <TouchableOpacity
-                                    onPress={handleResendOtp}
-                                    disabled={isLoading}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={styles.linkText}>
-                                        Resend Code
-                                    </Text>
-                                </TouchableOpacity>
-                                <Text style={styles.separatorText}>•</Text>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setIsOtpSent(false);
-                                        setOtp('');
-                                        setVerificationId('');
-                                    }}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={styles.linkText}>
-                                        Change Number
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+                            {isOtpSent && (
+                                <View style={styles.secondaryActions}>
+                                    <TouchableOpacity
+                                        onPress={handleResendOtpWithDialog}
+                                        disabled={isLoading}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.linkText}>
+                                            Resend Code
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.separatorText}>•</Text>
+                                    <TouchableOpacity
+                                        onPress={handleChangeNumber}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.linkText}>
+                                            Change Number
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
 
-            <Portal>
-                <Dialog visible={dialogVisible} onDismiss={hideDialog}>
-                    <Dialog.Title style={[
-                        styles.dialogTitle,
-                        { color: dialogType === 'error' ? Colors.primary.red : '#4CAF50' }
-                    ]}>
-                        {dialogTitle}
-                    </Dialog.Title>
-                    <Dialog.Content>
-                        <Text style={styles.dialogMessage}>{dialogMessage}</Text>
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button 
-                            onPress={hideDialog}
-                            textColor={dialogType === 'error' ? Colors.primary.red : '#4CAF50'}
-                            labelStyle={styles.dialogButton}
-                        >
-                            OK
-                        </Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-        </SafeAreaView>
+                <CustomDialog
+                    visible={dialogVisible}
+                    type={dialogType}
+                    title={dialogTitle}
+                    message={dialogMessage}
+                    onDismiss={hideDialog}
+                    primaryButton={{ text: 'OK', onPress: hideDialog }}
+                    autoHide={dialogType === 'success' ? 3000 : undefined}
+                />
+            </SafeAreaView>
         </PaperProvider>
     );
 }
@@ -402,20 +357,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: Colors.text.tertiary,
         fontWeight: '400',
-    },
-    dialogTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    dialogMessage: {
-        fontSize: 16,
-        color: Colors.text.secondary,
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-    dialogButton: {
-        fontSize: 16,
-        fontWeight: '600',
     },
 });

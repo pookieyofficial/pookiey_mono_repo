@@ -4,14 +4,13 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useRef } from 'react';
 import { auth } from '../firebaseConfig';
 import { useAuthStore } from '../store/authStore';
-
 export function useAuthStateManager() {
     const { login, logout, initialize, setIdToken } = useAuthStore();
     const isInitializedRef = useRef(false);
     const lastAuthStateRef = useRef<boolean | null>(null);
 
     useEffect(() => {
-
+        SplashScreen.preventAutoHideAsync();
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             const isAuthenticated = !!firebaseUser;
             if (lastAuthStateRef.current === isAuthenticated) {
@@ -27,7 +26,7 @@ export function useAuthStateManager() {
                     login(firebaseUser);
                     setIdToken(idToken);
 
-                    
+
                     router.replace('/(onboarding)/profile');
                 } catch (error) {
                     login(firebaseUser);
@@ -35,7 +34,7 @@ export function useAuthStateManager() {
                 }
             } else {
                 logout();
-                
+
                 if (isInitializedRef.current) {
                     router.replace('/(auth)');
                 }
@@ -44,10 +43,9 @@ export function useAuthStateManager() {
             if (!isInitializedRef.current) {
                 isInitializedRef.current = true;
                 initialize();
-                SplashScreen.hideAsync();
             }
         });
-
+        SplashScreen.hideAsync()
         return unsubscribe;
     }, [login, logout, initialize, setIdToken]);
 }

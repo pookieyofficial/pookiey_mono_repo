@@ -1,4 +1,4 @@
-import Onboarding from '@/components/Onboarding';
+import LandingScreen from '@/components/LandingScreen';
 import { Colors } from '@/constants/Colors';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
@@ -34,5 +34,5 @@ export default function IndexScreen() {
     );
   }
 
-  return <Onboarding onComplete={handleOnboardingComplete} />;
+  return <LandingScreen onComplete={handleOnboardingComplete} />;
 }
