@@ -20,8 +20,5 @@ app.get("/", async (req, res) => {
 app.use('/api/v1/user', userRouter)
 
 app.listen(PORT as number, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Local: http://localhost:${PORT}`);
-  console.log(`Network: http://192.168.1.7:${PORT}`);
-  console.log(`Access from phone: http://192.168.1.7:${PORT}`);
+  console.log(`Server running on port ${PORT}`)
 });
