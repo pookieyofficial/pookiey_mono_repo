@@ -3,6 +3,9 @@ import CustomDialog from '@/components/CustomDialog';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
 import { useLocation } from '@/hooks/useLocation';
+import { useUser } from '@/hooks/useUser';
+import { useAuthStore } from '@/store/authStore';
+import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -27,9 +30,55 @@ export default function LocationScreen() {
     } = useLocation();
 
     const [showErrorDialog, setShowErrorDialog] = useState(false);
+    const { idToken } = useAuthStore();
+    const { updateUser } = useUser();
+    const { setLocation } = useOnboardingStore();
+    const [updatingUser, setUpdatingUser] = useState(false);
 
-    const handleContinue = () => {
-        router.replace('/(home)');
+    const handleContinue = async () => {
+        try {
+            setUpdatingUser(true);
+            const store = useOnboardingStore.getState();
+
+            const nameParts = store.fullName?.split(' ') || [];
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const profileData = {
+                profile: {
+                    firstName,
+                    lastName,
+                    dateOfBirth: store.birthday ? new Date(store.birthday) : undefined,
+                    gender: store.gender as "male" | "female" | "other",
+                    bio: store.bio,
+                    location: {
+                        type: "Point" as const,
+                        coordinates: location ? [location.coords.longitude, location.coords.latitude] : undefined,
+                        city: address,
+                    },
+                    photos: store.profilePicture ? [{
+                        url: store.profilePicture,
+                        isPrimary: true,
+                        uploadedAt: new Date()
+                    }] : [],
+                    interests: store.interests || [],
+                    occupation: store.occupation,
+                    isOnboarded: true
+                }
+            };
+
+            console.log('Saving onboarding data:', profileData);
+
+            await updateUser(idToken as string, profileData);
+
+            setLocation(address);
+
+            router.replace('/(home)');
+        } catch (error) {
+            console.error('Error saving user data:', error);
+        } finally {
+            setUpdatingUser(false);
+        }
     };
 
     const handleAccessLocation = async () => {
@@ -91,7 +140,7 @@ export default function LocationScreen() {
                     <MainButton
                         title="Continue"
                         onPress={handleContinue}
-                        disabled={false}
+                        disabled={updatingUser}
                     />
                 </View>
             </SafeAreaView>

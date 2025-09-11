@@ -17,7 +17,7 @@ export function usePhoneAuth() {
         if (!phoneNumber || phoneNumber.length < 9) {
             return;
         }
-        
+
         setIsLoading(true);
         try {
             const fullPhoneNumber = `+${callingCode}${phoneNumber}`;
@@ -46,16 +46,14 @@ export function usePhoneAuth() {
             onError?.('No verification ID found. Please request OTP again.');
             return;
         }
-        
+
         setIsLoading(true);
         try {
             const credential = PhoneAuthProvider.credential(verificationId, otp);
             const userCredential = await signInWithCredential(auth, credential);
-            
+
             console.log('OTP verification successful - Firebase will handle auth state');
             console.log('User phone:', userCredential.user.phoneNumber);
-            
-            onSuccess?.('Phone number verified successfully!');
         } catch (error: any) {
             console.error('Error verifying OTP:', error);
             onError?.(error.message || 'Invalid OTP. Please try again.');

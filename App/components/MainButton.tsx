@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function MainButton(props: { title: string, onPress: () => void, disabled?: boolean }) {
     return (
@@ -8,10 +8,14 @@ export default function MainButton(props: { title: string, onPress: () => void, 
                 style={styles.confirmButton}
                 onPress={props.onPress}
                 disabled={props.disabled}>
-                <Text
-                    style={styles.confirmButtonText}>
-                    {props.title}
-                </Text>
+                {props.disabled
+                    ?
+                    <ActivityIndicator size="small" color="#ffffff" />
+                    :
+                    <Text
+                        style={styles.confirmButtonText}>
+                        {props.title}
+                    </Text>}
             </TouchableOpacity>
         </View>
     )

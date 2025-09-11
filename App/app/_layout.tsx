@@ -1,5 +1,6 @@
 import { useAuthStateManager } from '@/hooks/useAuthStateManager';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -14,17 +15,17 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-
+  const isLoading = useAuthStore((s) => s.isLoading);
   useAuthStateManager();
 
-  if (!loaded) {
+  if (!loaded || isLoading) {
     return null;
   }
 
   return (
     <PaperProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack initialRouteName="(auth)" screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(home)" />
           <Stack.Screen name="+not-found" />

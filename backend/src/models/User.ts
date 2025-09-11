@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
     uid: string;
-    email: string;
+    email?: string;
     phoneNumber?: string;
     displayName?: string;
     photoURL?: string;
@@ -46,21 +46,21 @@ export interface IUserPreferences {
 
 const UserSchema = new Schema<IUser>(
     {
-        uid: { type: String, required: true, unique: true },
-        email: { type: String, required: true, unique: true },
-        phoneNumber: String,
+        uid: { type: String, required: true, unique: true, index: true },
+        email: { type: String, unique: true, sparse: true, index: true },
+        phoneNumber: { type: String, required: true, unique: true, sparse: true, index: true },
         displayName: String,
         photoURL: String,
         isEmailVerified: { type: Boolean, default: false },
-        isPhoneVerified: { type: Boolean, default: false },
+        isPhoneVerified: { type: Boolean, default: true },
         status: {
             type: String,
             enum: ["active", "banned", "deleted", "suspended"],
             default: "active",
         },
         profile: {
-            firstName: String,
-            lastName: String,
+            firstName: { type: String, index: true },
+            lastName: { type: String, index: true },
             dateOfBirth: Date,
             gender: { type: String, enum: ["male", "female", "other"] },
             bio: String,
