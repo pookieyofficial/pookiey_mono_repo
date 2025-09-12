@@ -39,7 +39,6 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
             user: user
         } as any;
         
-        console.log({ reqUser: req.user, userExists: !!user });
         next();
     }
     catch (error) {
