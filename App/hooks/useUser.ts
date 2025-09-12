@@ -8,21 +8,20 @@ export const useUser = () => {
             return Error('No ID token');
         }
         try {
-            console.log({ getUserAPI });
-            console.log(12345)
+            console.log('getUserAPI URL:', getUserAPI);
+            console.log('Calling getUser with token:', idToken.substring(0, 20) + '...');
             const response = await axios.get(getUserAPI, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
-                    'Content-Type': 'application/json',
                 },
             });
-            console.log(67890)
-
-            console.log({ response });
+            console.log('getUser success:', response.data);
             return response.data;
         }
-        catch (error) {
+        catch (error: any) {
             console.error('Error getting user:', error);
+            console.error('Error status:', error?.response?.status);
+            console.error('Error data:', error?.response?.data);
             throw error;
         }
     }
@@ -30,7 +29,12 @@ export const useUser = () => {
     const createUser = async (idToken: string, uid: string, phoneNumber: string) => {
         try {
             console.log({ createUserAPI });
-            console.log({ uid });
+            console.log({ uid, phoneNumber });
+
+            if (!phoneNumber || phoneNumber.trim() === '') {
+                throw new Error('Phone number is required');
+            }
+
             const response = await axios.post(createUserAPI, { uid, phoneNumber }, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
@@ -39,8 +43,12 @@ export const useUser = () => {
             });
             return response.data;
         }
-        catch (error) {
+        catch (error: any) {
             console.error('Error creating user:', error);
+            if (error.response) {
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+            }
             throw error;
         }
     }
@@ -51,7 +59,9 @@ export const useUser = () => {
         }
         catch (error: any) {
             const status = error?.response?.status;
-            if (status === 401 || status === 404) {
+            console.log('getUser failed with status:', status);
+            if (status === 404) {
+                console.log('User not found, creating user...');
                 await createUser(idToken, uid, phoneNumber);
                 return await getUser(idToken);
             }

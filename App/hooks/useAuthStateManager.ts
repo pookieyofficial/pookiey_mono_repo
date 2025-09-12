@@ -25,12 +25,12 @@ export function useAuthStateManager() {
             if (firebaseUser) {
                 try {
                     const idToken = await firebaseUser.getIdToken();
-                    if (!firebaseUser?.phoneNumber || !firebaseUser?.uid) {
+                    if (!firebaseUser?.uid) {
                         router.replace('/(auth)');
                         logout();
                         return;
                     }
-                    console.log({ idToken });
+                    console.log({ idToken, phoneNumber: firebaseUser.phoneNumber });
                     const user = await getOrCreateUser(idToken, firebaseUser.uid, firebaseUser.phoneNumber || '');
                     console.log({ user });
                     console.log({ isOnboarded: user?.data?.profile?.isOnboarded });
