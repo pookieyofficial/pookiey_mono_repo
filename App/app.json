@@ -39,7 +39,10 @@
         {
           "contactsPermission": "Allow The Dating App to access your contacts."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
