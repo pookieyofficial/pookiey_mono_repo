@@ -30,10 +30,7 @@ export function useAuthStateManager() {
                         logout();
                         return;
                     }
-                    console.log({ idToken, phoneNumber: firebaseUser.phoneNumber });
                     const user = await getOrCreateUser(idToken, firebaseUser.uid, firebaseUser.phoneNumber || '');
-                    console.log({ user });
-                    console.log({ isOnboarded: user?.data?.profile?.isOnboarded });
                     if (user?.data?.profile?.isOnboarded) {
                         router.replace('/(home)');
                     } else {
@@ -43,7 +40,7 @@ export function useAuthStateManager() {
                     setIdToken(idToken);
 
                 } catch (error: any) {
-                    console.log(error.message);
+                    console.error(error.message);
                     router.replace('/(auth)');
                     logout();
                 }
