@@ -5,12 +5,10 @@ import { useSupabaseAuth } from './useSupabaseAuth';
 import { useAuthStore } from '../store/authStore';
 
 export function useSupabaseAuthStateManager() {
-    const { initialize, setIdToken, isLoading } = useAuthStore();
+    const { initialize } = useAuthStore();
     const isInitializedRef = useRef(false);
     const lastAuthStateRef = useRef<boolean | null>(null);
     const { user, session, loading } = useSupabaseAuth();
-    
-    SplashScreen.preventAutoHideAsync();
 
     useEffect(() => {
         const isAuthenticated = !!user && !!session;
@@ -26,11 +24,7 @@ export function useSupabaseAuthStateManager() {
         }
 
         useAuthStore.getState().setLoading(loading);
-        
-        if (!loading) {
-            SplashScreen.hideAsync();
-        }
-    }, [user, session, loading, initialize]);
+    }, [loading, initialize]);
 
     return {
         user,

@@ -36,15 +36,31 @@ export const createUser = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Email is required" });
         }
 
+        // First check if user already exists with this supabase_id
         const existingUser = await User.findOne({ supabase_id });
         if (existingUser) {
-            res.json({ success: false, message: "User already exists", data: existingUser });
+            res.json({ success: true, message: "User already exists", data: existingUser });
             return;
         }
 
+        // Check if user exists with this email but different supabase_id
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
-            res.status(400).json({ success: false, message: "Email already registered" });
+            // Update the existing user with the new supabase_id (account linking)
+            console.log('Linking existing email account with new Supabase ID');
+            const updatedUser = await User.findOneAndUpdate(
+                { email },
+                { 
+                    supabase_id,
+                    provider,
+                    photoURL: photoURL || existingEmail.photoURL,
+                    displayName: displayName || existingEmail.displayName,
+                    isEmailVerified: true,
+                    lastLoginAt: new Date()
+                },
+                { new: true }
+            );
+            res.json({ success: true, message: "Account linked successfully", data: updatedUser });
             return;
         }
 
@@ -56,7 +72,7 @@ export const createUser = async (req: Request, res: Response) => {
             }
         }
 
-        // Create user with Supabase data
+        // Create new user with Supabase data
         const userData: any = {
             supabase_id,
             email,

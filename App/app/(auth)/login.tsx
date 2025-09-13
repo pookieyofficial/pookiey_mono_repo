@@ -43,7 +43,7 @@ export default function SupabaseLoginScreen() {
         resetToPhoneInput,
     } = useSupabasePhoneAuth();
 
-    const { signInWithGoogle, signInWithGoogleMobile, loading: googleLoading } = useGoogleAuth();
+    const { signInWithGoogleMobile, loading: googleLoading } = useGoogleAuth();
 
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogTitle, setDialogTitle] = useState('');

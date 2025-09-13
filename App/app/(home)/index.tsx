@@ -5,19 +5,19 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { auth } from '@/firebaseConfig';
 import { useAuthStore } from '@/store/authStore';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useRouter } from 'expo-router';
-import { signOut } from 'firebase/auth';
 
 export default function HomeScreen() {
   const { user, idToken } = useAuthStore();
+  const { signOut } = useSupabaseAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
     try { 
-      await signOut(auth);
-      console.log('Logout: Firebase signOut called - auth state manager will handle the rest');
+      await signOut();
+      console.log('Logout: Supabase signOut called - auth state manager will handle the rest');
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -38,7 +38,7 @@ export default function HomeScreen() {
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Logged in as:</ThemedText>
-        <ThemedText>{user?.phoneNumber || 'Unknown'}</ThemedText>
+        <ThemedText>{user?.phone || user?.email || 'Unknown'}</ThemedText>
         <ThemedText type="subtitle">JWT Token:</ThemedText>
         <ThemedText>{idToken ? 'Available ✅' : 'Not available ❌'}</ThemedText>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>

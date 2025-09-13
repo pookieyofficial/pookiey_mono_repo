@@ -4,16 +4,15 @@ import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 import * as Linking from 'expo-linking'
+import * as SplashScreen from 'expo-splash-screen';
 
-
+SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {
-  SplashScreen.preventAutoHideAsync();
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -22,14 +21,8 @@ export default function RootLayout() {
   useSupabaseAuthStateManager();
 
   useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync();
-      console.log('isLoading', isLoading);
-    }
-
     const handleDeepLink = (event: { url: string }) => {
       const { queryParams, path } = Linking.parse(event.url);
-      console.log("Deep link opened:", { path, queryParams });
       if (queryParams?.ref) {
         console.log("Referred by:", queryParams.ref);
       }
@@ -43,7 +36,7 @@ export default function RootLayout() {
 
     return () => sub.remove();
 
-  }, [isLoading]);
+  }, []);
 
   if (!loaded || isLoading) {
     return null;
@@ -52,12 +45,12 @@ export default function RootLayout() {
   return (
     <PaperProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack initialRouteName="(auth)" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(home)" />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar style="auto" backgroundColor='red' />
       </ThemeProvider>
     </PaperProvider>
   );

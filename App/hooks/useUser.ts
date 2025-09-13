@@ -8,28 +8,20 @@ export const useUser = () => {
             return Error('No ID token');
         }
         try {
-            console.log('getUserAPI URL:', getUserAPI);
-            console.log('Calling getUser with token:', idToken.substring(0, 20) + '...');
             const response = await axios.get(getUserAPI, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                 },
             });
-            console.log('getUser success:', response.data);
             return response.data;
         }
         catch (error: any) {
-            console.error('Error getting user:', error);
-            console.error('Error status:', error?.response?.status);
-            console.error('Error data:', error?.response?.data);
             throw error;
         }
     }
 
     const createUser = async (idToken: string, supabaseUser: any) => {
         try {
-            console.log({ createUserAPI });
-            console.log({ supabaseUser });
 
             if (!supabaseUser?.id) {
                 throw new Error('Supabase user ID is required');
@@ -48,7 +40,6 @@ export const useUser = () => {
                 provider: supabaseUser.app_metadata?.provider || 'email',
             };
 
-            console.log('Creating user with data:', userData);
 
             const response = await axios.post(createUserAPI, userData, {
                 headers: {
@@ -59,11 +50,6 @@ export const useUser = () => {
             return response.data;
         }
         catch (error: any) {
-            console.error('Error creating user:', error);
-            if (error.response) {
-                console.error('Response data:', error.response.data);
-                console.error('Response status:', error.response.status);
-            }
             throw error;
         }
     }
@@ -74,11 +60,23 @@ export const useUser = () => {
         }
         catch (error: any) {
             const status = error?.response?.status;
-            console.log('getUser failed with status:', status);
             if (status === 404) {
-                console.log('User not found, creating user...');
-                await createUser(idToken, supabaseUser);
-                return await getUser(idToken);
+                try {
+                    const createResult = await createUser(idToken, supabaseUser);
+                    if (createResult?.success) {
+                        return await getUser(idToken);
+                    }
+                    return createResult;
+                } catch (createError: any) {
+                    if (createError?.response?.status === 400) {
+                        try {
+                            return await getUser(idToken);
+                        } catch (getError) {
+                            throw createError;
+                        }
+                    }
+                    throw createError;
+                }
             }
             throw error;
         }
@@ -86,8 +84,6 @@ export const useUser = () => {
 
     const updateUser = async (idToken: string, userData: any) => {
         try {
-            console.log({ updateUserAPI });
-            console.log({ userData });
             const response = await axios.patch(updateUserAPI, userData, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -97,7 +93,6 @@ export const useUser = () => {
             return response.data;
         }
         catch (error) {
-            console.error('Error updating user:', error);
             throw error;
         }
     }
