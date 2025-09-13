@@ -19,7 +19,9 @@ export function useGoogleAuth() {
     try {
       setLoading(true);
 
-      const redirectUri = AuthSession.makeRedirectUri({});
+      const redirectUri = AuthSession.makeRedirectUri({
+        native: 'thedatingapp://auth/callback',
+      });
 
 
       const { data, error } = await supabase.auth.signInWithOAuth({

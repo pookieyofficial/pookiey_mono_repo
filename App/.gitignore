@@ -10,7 +10,7 @@ web-build/
 expo-env.d.ts
 services.json
 .env
-
+android
 
 # Native
 .kotlin/
