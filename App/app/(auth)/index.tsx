@@ -18,7 +18,7 @@ export default function IndexScreen() {
   }, [isInitialized, isAuthenticated]);
 
   const handleOnboardingComplete = () => {
-    router.replace('/login');
+    router.replace('/(auth)/supabase-login');
   };
 
   if (isCheckingAuth) {

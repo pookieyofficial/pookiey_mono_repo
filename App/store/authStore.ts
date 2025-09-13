@@ -1,10 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from 'firebase/auth';
+import { User } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+export interface SupabaseUser {
+  id: string;
+  email?: string;
+  phone?: string;
+  user_metadata?: {
+    phone?: string;
+    email?: string;
+    full_name?: string;
+    avatar_url?: string;
+  };
+  app_metadata?: {
+    provider?: string;
+  };
+}
+
 interface AuthState {
-  user: User | null;
+  user: SupabaseUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
@@ -12,12 +27,12 @@ interface AuthState {
 }
 
 interface AuthActions {
-  setUser: (user: User | null) => void;
-  login: (user: User) => void;
+  setUser: (user: SupabaseUser | null) => void;
+  login: (user: SupabaseUser) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   initialize: () => void;
-  getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
+  getIdToken: () => string | null;
   setIdToken: (token: string | null) => void;
 }
 
@@ -36,14 +51,14 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       ...initialState,
 
-      setUser: (user: User | null) => {
+      setUser: (user: SupabaseUser | null) => {
         set({
           user,
           isAuthenticated: !!user,
         });
       },
 
-      login: (user: User) => {
+      login: (user: SupabaseUser) => {
         set({
           user,
           isAuthenticated: true,
@@ -68,19 +83,9 @@ export const useAuthStore = create<AuthStore>()(
         set({ isInitialized: true, isLoading: false });
       },
 
-      getIdToken: async (forceRefresh = false) => {
-        const { user } = get();
-        if (user) {
-          try {
-            const token = await user.getIdToken(forceRefresh);
-            set({ idToken: token });
-            return token;
-          } catch (error) {
-            console.error('Error getting ID token:', error);
-            return null;
-          }
-        }
-        return null;
+      getIdToken: () => {
+        const { idToken } = get();
+        return idToken;
       },
 
       setIdToken: (token: string | null) => {
@@ -101,7 +106,7 @@ export const useAuthStore = create<AuthStore>()(
         if (state) {
           state.isLoading = false;
           state.isInitialized = true;
-          console.log('Store: Rehydration complete - Phone:', state.user?.phoneNumber);
+          console.log('Store: Rehydration complete - Phone:', state.user?.phone);
         }
       },
     }

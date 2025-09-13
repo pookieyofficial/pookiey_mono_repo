@@ -1,9 +1,8 @@
 import MainButton from '@/components/MainButton';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import { Colors } from '@/constants/Colors';
-import { auth } from '@/firebaseConfig';
-import { usePhoneAuth } from '@/hooks/usePhoneAuth';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { useSupabasePhoneAuth } from '@/hooks/useSupabasePhoneAuth';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import React, { useState } from 'react';
 import {
     Dimensions,
@@ -20,10 +19,11 @@ import {
 } from 'react-native';
 import CountryPicker from "react-native-country-picker-modal";
 import { PaperProvider } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen() {
+export default function SupabaseLoginScreen() {
     const {
         phoneNumber,
         setPhoneNumber,
@@ -37,12 +37,13 @@ export default function LoginScreen() {
         setCallingCode,
         focusedInput,
         setFocusedInput,
-        recaptchaVerifier,
         handleSendOtp,
         handleVerifyOtp,
         handleResendOtp,
         resetToPhoneInput,
-    } = usePhoneAuth();
+    } = useSupabasePhoneAuth();
+
+    const { signInWithGoogle, signInWithGoogleMobile, loading: googleLoading } = useGoogleAuth();
 
     const [dialogVisible, setDialogVisible] = useState(false);
     const [dialogTitle, setDialogTitle] = useState('');
@@ -85,16 +86,21 @@ export default function LoginScreen() {
         resetToPhoneInput();
     };
 
+    const handleGoogleSignIn = async () => {
+        try {
+            const { error } = await signInWithGoogleMobile();
+            if (error) {
+                showDialog('Google Sign In Failed', error.message, 'error');
+            }
+        } catch (error: any) {
+            showDialog('Google Sign In Failed', error.message || 'An unexpected error occurred', 'error');
+        }
+    };
+
     return (
         <PaperProvider>
             <SafeAreaView style={styles.container}>
                 <StatusBar barStyle="dark-content" backgroundColor={Colors.primary.white} />
-
-                <FirebaseRecaptchaVerifierModal
-                    ref={recaptchaVerifier}
-                    firebaseConfig={auth.app.options}
-                    attemptInvisibleVerification
-                />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -105,48 +111,71 @@ export default function LoginScreen() {
                     >
                         <View style={styles.mainContent}>
                             <Text style={styles.title}>
-                                {isOtpSent ? 'Verify Code' : 'My Mobile'}
+                                {isOtpSent ? 'Verify Code' : 'Welcome Back'}
                             </Text>
                             <Text style={styles.description}>
                                 {isOtpSent
                                     ? `Please enter the 6-digit code sent to +${callingCode} ${phoneNumber}`
-                                    : 'Please enter your valid phone number. We will send you a 6-digit code to verify your account.'
+                                    : 'Sign in with your phone number or Google account to continue.'
                                 }
                             </Text>
+
                             {!isOtpSent ? (
-                                <View style={styles.inputSection}>
-                                    <View style={[
-                                        styles.phoneInputContainer,
-                                        focusedInput === 'phone' && styles.inputFocused
-                                    ]}>
-                                        <View style={styles.countryCodeContainer}>
-                                            <CountryPicker
-                                                countryCode={countryCode as any}
-                                                withFilter
-                                                withFlag
-                                                withCallingCode
-                                                withEmoji
-                                                onSelect={(country) => {
-                                                    setCountryCode(country.cca2);
-                                                    setCallingCode(country.callingCode[0]);
-                                                }}
-                                            />
-                                            <Text style={styles.callingCode}>+{callingCode}</Text>
-                                        </View>
-                                        <TextInput
-                                            style={styles.phoneInput}
-                                            placeholder="Phone Number"
-                                            placeholderTextColor={Colors.text.tertiary}
-                                            value={phoneNumber}
-                                            onChangeText={setPhoneNumber}
-                                            keyboardType="phone-pad"
-                                            maxLength={15}
-                                            onFocus={() => setFocusedInput('phone')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            autoFocus
-                                        />
+                                <>
+                                    {/* Google Sign In Button */}
+                                    <TouchableOpacity
+                                        style={styles.googleButton}
+                                        onPress={handleGoogleSignIn}
+                                        disabled={googleLoading || isLoading}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="logo-google" size={20} color="#4285F4" />
+                                        <Text style={styles.googleButtonText}>
+                                            {googleLoading ? 'Signing in...' : 'Continue with Google'}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <View style={styles.divider}>
+                                        <View style={styles.dividerLine} />
+                                        <Text style={styles.dividerText}>OR</Text>
+                                        <View style={styles.dividerLine} />
                                     </View>
-                                </View>
+
+                                    {/* Phone Input */}
+                                    <View style={styles.inputSection}>
+                                        <View style={[
+                                            styles.phoneInputContainer,
+                                            focusedInput === 'phone' && styles.inputFocused
+                                        ]}>
+                                            <View style={styles.countryCodeContainer}>
+                                                <CountryPicker
+                                                    countryCode={countryCode as any}
+                                                    withFilter
+                                                    withFlag
+                                                    withCallingCode
+                                                    withEmoji
+                                                    onSelect={(country) => {
+                                                        setCountryCode(country.cca2);
+                                                        setCallingCode(country.callingCode[0]);
+                                                    }}
+                                                />
+                                                <Text style={styles.callingCode}>+{callingCode}</Text>
+                                            </View>
+                                            <TextInput
+                                                style={styles.phoneInput}
+                                                placeholder="Phone Number"
+                                                placeholderTextColor={Colors.text.tertiary}
+                                                value={phoneNumber}
+                                                onChangeText={setPhoneNumber}
+                                                keyboardType="phone-pad"
+                                                maxLength={15}
+                                                onFocus={() => setFocusedInput('phone')}
+                                                onBlur={() => setFocusedInput(null)}
+                                                autoFocus
+                                            />
+                                        </View>
+                                    </View>
+                                </>
                             ) : (
                                 <View style={styles.inputSection}>
                                     <View style={[
@@ -171,8 +200,8 @@ export default function LoginScreen() {
                             )}
 
                             <MainButton
-                                disabled={isLoading}
-                                title={isOtpSent ? 'Verify Code' : 'Continue'}
+                                disabled={isLoading || googleLoading}
+                                title={isOtpSent ? 'Verify Code' : 'Continue with Phone'}
                                 onPress={isOtpSent ? handleVerifyOtpWithDialog : handleSendOtpWithDialog} />
 
                             {isOtpSent && (
@@ -250,6 +279,48 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 16,
     },
+    googleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.primary.white,
+        borderWidth: 1,
+        borderColor: Colors.text.light,
+        borderRadius: 12,
+        height: Math.max(56, height * 0.07),
+        maxHeight: 64,
+        marginBottom: Math.max(20, height * 0.03),
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    googleButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: Colors.text.primary,
+        marginLeft: 12,
+    },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: Math.max(20, height * 0.03),
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: Colors.text.light,
+    },
+    dividerText: {
+        fontSize: 14,
+        color: Colors.text.tertiary,
+        fontWeight: '500',
+        marginHorizontal: 16,
+    },
     inputSection: {
         marginBottom: Math.max(40, height * 0.05),
         alignItems: 'center',
@@ -312,33 +383,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 8,
         padding: 0,
-    },
-    continueButton: {
-        backgroundColor: Colors.primary.red,
-        borderRadius: 28,
-        height: Math.max(56, height * 0.07),
-        maxHeight: 64,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: Math.max(20, height * 0.03),
-        shadowColor: Colors.primary.red,
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    continueButtonDisabled: {
-        backgroundColor: Colors.text.light,
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    continueButtonText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: Colors.primary.white,
     },
     secondaryActions: {
         flexDirection: 'row',

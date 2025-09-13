@@ -26,16 +26,31 @@ export const useUser = () => {
         }
     }
 
-    const createUser = async (idToken: string, uid: string, phoneNumber: string) => {
+    const createUser = async (idToken: string, supabaseUser: any) => {
         try {
             console.log({ createUserAPI });
-            console.log({ uid, phoneNumber });
+            console.log({ supabaseUser });
 
-            if (!phoneNumber || phoneNumber.trim() === '') {
-                throw new Error('Phone number is required');
+            if (!supabaseUser?.id) {
+                throw new Error('Supabase user ID is required');
             }
 
-            const response = await axios.post(createUserAPI, { uid, phoneNumber }, {
+            if (!supabaseUser?.email) {
+                throw new Error('Email is required');
+            }
+
+            const userData = {
+                supabase_id: supabaseUser.id,
+                email: supabaseUser.email,
+                phoneNumber: supabaseUser.phone,
+                displayName: supabaseUser.user_metadata?.full_name || supabaseUser.email.split('@')[0],
+                photoURL: supabaseUser.user_metadata?.avatar_url,
+                provider: supabaseUser.app_metadata?.provider || 'email',
+            };
+
+            console.log('Creating user with data:', userData);
+
+            const response = await axios.post(createUserAPI, userData, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                     'Content-Type': 'application/json',
@@ -53,7 +68,7 @@ export const useUser = () => {
         }
     }
 
-    const getOrCreateUser = async (idToken: string, uid: string, phoneNumber: string) => {
+    const getOrCreateUser = async (idToken: string, supabaseUser: any) => {
         try {
             return await getUser(idToken);
         }
@@ -62,7 +77,7 @@ export const useUser = () => {
             console.log('getUser failed with status:', status);
             if (status === 404) {
                 console.log('User not found, creating user...');
-                await createUser(idToken, uid, phoneNumber);
+                await createUser(idToken, supabaseUser);
                 return await getUser(idToken);
             }
             throw error;

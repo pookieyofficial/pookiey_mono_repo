@@ -1,11 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
-    uid: string;
-    email?: string;
+    supabase_id: string;
+    email: string;
     phoneNumber?: string;
     displayName?: string;
     photoURL?: string;
+    provider: "google" | "email" | "phone";
     isEmailVerified: boolean;
     isPhoneVerified: boolean;
     status: "active" | "banned" | "deleted" | "suspended";
@@ -46,13 +47,19 @@ export interface IUserPreferences {
 
 const UserSchema = new Schema<IUser>(
     {
-        uid: { type: String, required: true, unique: true, index: true },
-        email: { type: String, unique: true, sparse: true, index: true },
-        phoneNumber: { type: String, required: true, unique: true, sparse: true, index: true },
+        supabase_id: { type: String, required: true, unique: true, index: true },
+        email: { type: String, required: true, unique: true, index: true },
+        phoneNumber: { type: String, unique: true, sparse: true, index: true },
         displayName: String,
         photoURL: String,
+        provider: { 
+            type: String, 
+            enum: ["google", "email", "phone"], 
+            required: true,
+            default: "email"
+        },
         isEmailVerified: { type: Boolean, default: false },
-        isPhoneVerified: { type: Boolean, default: true },
+        isPhoneVerified: { type: Boolean, default: false },
         status: {
             type: String,
             enum: ["active", "banned", "deleted", "suspended"],

@@ -1,0 +1,41 @@
+import { router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useRef } from 'react';
+import { useSupabaseAuth } from './useSupabaseAuth';
+import { useAuthStore } from '../store/authStore';
+
+export function useSupabaseAuthStateManager() {
+    const { initialize, setIdToken, isLoading } = useAuthStore();
+    const isInitializedRef = useRef(false);
+    const lastAuthStateRef = useRef<boolean | null>(null);
+    const { user, session, loading } = useSupabaseAuth();
+    
+    SplashScreen.preventAutoHideAsync();
+
+    useEffect(() => {
+        const isAuthenticated = !!user && !!session;
+
+        if (lastAuthStateRef.current === isAuthenticated) {
+            return;
+        }
+        lastAuthStateRef.current = isAuthenticated;
+
+        if (!isInitializedRef.current) {
+            isInitializedRef.current = true;
+            initialize();
+        }
+
+        useAuthStore.getState().setLoading(loading);
+        
+        if (!loading) {
+            SplashScreen.hideAsync();
+        }
+    }, [user, session, loading, initialize]);
+
+    return {
+        user,
+        session,
+        loading,
+        isAuthenticated: !!user && !!session,
+    };
+}

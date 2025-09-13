@@ -1,4 +1,4 @@
-import { useAuthStateManager } from '@/hooks/useAuthStateManager';
+import { useSupabaseAuthStateManager } from '@/hooks/useSupabaseAuthStateManager';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -19,7 +19,7 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const isLoading = useAuthStore((s) => s.isLoading);
-  useAuthStateManager();
+  useSupabaseAuthStateManager();
 
   useEffect(() => {
     if (!isLoading) {
