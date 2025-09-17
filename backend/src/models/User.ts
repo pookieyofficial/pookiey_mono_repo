@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
-    supabase_id: string;
+    user_id: string;
     email: string;
     phoneNumber?: string;
     displayName?: string;
@@ -15,6 +15,7 @@ export interface IUser extends Document {
     createdAt: Date;
     updatedAt: Date;
     lastLoginAt?: Date;
+    notificationTokens?: string[];
 }
 
 export interface IUserProfile {
@@ -47,14 +48,14 @@ export interface IUserPreferences {
 
 const UserSchema = new Schema<IUser>(
     {
-        supabase_id: { type: String, required: true, unique: true, index: true },
+        user_id: { type: String, required: true, unique: true, index: true },
         email: { type: String, required: true, unique: true, index: true },
-        phoneNumber: { type: String, unique: true, sparse: true, index: true },
-        displayName: String,
-        photoURL: String,
-        provider: { 
-            type: String, 
-            enum: ["google", "email", "phone"], 
+        phoneNumber: { type: String, unique: true, sparse: true, index: true, },
+        displayName: { type: String, default: "" },
+        photoURL: { type: String, default: "" },
+        provider: {
+            type: String,
+            enum: ["google", "email", "phone"],
             required: true,
             default: "email"
         },
@@ -70,7 +71,7 @@ const UserSchema = new Schema<IUser>(
             lastName: { type: String, index: true },
             dateOfBirth: Date,
             gender: { type: String, enum: ["male", "female", "other"] },
-            bio: String,
+            bio: { type: String, default: "" },
             location: {
                 type: { type: String, enum: ["Point"], default: "Point" },
                 coordinates: { type: [Number], index: "2dsphere" },
@@ -79,17 +80,17 @@ const UserSchema = new Schema<IUser>(
             },
             photos: [
                 {
-                    url: String,
+                    url: { type: String, default: "" },
                     isPrimary: { type: Boolean, default: false },
                     uploadedAt: { type: Date, default: Date.now },
                 },
             ],
             interests: [String],
-            height: Number,
-            education: String,
-            occupation: String,
-            company: String,
-            school: String,
+            height: { type: Number, default: 0 },
+            education: { type: String, default: "" },
+            occupation: { type: String, default: "" },
+            company: { type: String, default: "" },
+            school: { type: String, default: "" },
             isOnboarded: { type: Boolean, default: false },
         },
         preferences: {
@@ -99,9 +100,10 @@ const UserSchema = new Schema<IUser>(
         },
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, default: Date.now },
-        lastLoginAt: Date,
+        lastLoginAt: { type: Date, default: Date.now },
+        notificationTokens: { type: [String], default: [] },
     },
     { timestamps: true }
 );
 
-export const User = mongoose.model<IUser>("User", UserSchema);
+export const User = mongoose.model<IUser>("Users", UserSchema);

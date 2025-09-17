@@ -1,19 +1,16 @@
 import { Request, Response } from "express";
 import { User } from "../models";
+import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 
 export const getMe = async (req: Request, res: Response) => {
     try {
-        console.log('getMe called with supabase_id:', (req.user as any)?.supabase_id);
-        
+
         const user = (req.user as any)?.user;
-        console.log('User found in DB:', !!user);
-        
+        console.log({ user })
+
         if (!user) {
-            console.log('User not found, returning 404');
             return res.status(404).json({ message: "User not found" });
         }
-        
-        console.log('User found, returning user data');
         res.json({ success: true, data: user });
     }
     catch (error) {
@@ -24,11 +21,11 @@ export const getMe = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const { supabase_id, email, phoneNumber, displayName, photoURL, provider = "email" } = req.body;
+        const { user_id, email, phoneNumber, displayName, photoURL, provider = "email" } = req.body;
 
-        console.log({ supabase_id, email, phoneNumber, provider });
+        console.log({ user_id, email, phoneNumber, provider });
 
-        if (!supabase_id) {
+        if (!user_id) {
             return res.status(400).json({ success: false, message: "Supabase ID is required" });
         }
 
@@ -36,34 +33,21 @@ export const createUser = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Email is required" });
         }
 
-        // First check if user already exists with this supabase_id
-        const existingUser = await User.findOne({ supabase_id });
+        // First check if user already exists with this user_id
+        const existingUser = await User.findOne({ user_id });
         if (existingUser) {
             res.json({ success: true, message: "User already exists", data: existingUser });
             return;
         }
 
-        // Check if user exists with this email but different supabase_id
+        // Check if a user already registered with this email
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
-            // Update the existing user with the new supabase_id (account linking)
-            console.log('Linking existing email account with new Supabase ID');
-            const updatedUser = await User.findOneAndUpdate(
-                { email },
-                { 
-                    supabase_id,
-                    provider,
-                    photoURL: photoURL || existingEmail.photoURL,
-                    displayName: displayName || existingEmail.displayName,
-                    isEmailVerified: true,
-                    lastLoginAt: new Date()
-                },
-                { new: true }
-            );
-            res.json({ success: true, message: "Account linked successfully", data: updatedUser });
+            res.status(400).json({ success: false, message: "Email already registered" });
             return;
         }
 
+        // Check if a user already registered with this phone number
         if (phoneNumber) {
             const existingPhone = await User.findOne({ phoneNumber });
             if (existingPhone) {
@@ -72,12 +56,12 @@ export const createUser = async (req: Request, res: Response) => {
             }
         }
 
-        // Create new user with Supabase data
+        // Create new user with data from Supabase
         const userData: any = {
-            supabase_id,
+            user_id,
             email,
             provider,
-            displayName: displayName || email.split('@')[0], // Use email prefix as default display name
+            displayName: displayName || email.split('@')[0],
             photoURL,
             isEmailVerified: provider === "google" || provider === "email",
             isPhoneVerified: !!phoneNumber,
@@ -87,6 +71,7 @@ export const createUser = async (req: Request, res: Response) => {
             userData.phoneNumber = phoneNumber;
         }
 
+        // Create new user in database
         const response = await User.create(userData);
         res.json({ success: true, data: response });
     }
@@ -99,7 +84,23 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const user = req.user;
-        const updatedUser = await User.findOneAndUpdate({ supabase_id: (user as any)?.supabase_id }, req.body, { new: true });
+        if (!user) {
+            res.status(400).json({ message: "User not found" });
+            return;
+        }
+        if (req.body.user_id || req.body.email || req.body.phoneNumber) {
+            res.status(400).json({ message: "User ID, email, and phone number cannot be updated" });
+            return;
+        }
+
+        const updates = parseForMonggoSetUpdates(req.body);
+        console.log({ updates })
+
+        const updatedUser = await User.findOneAndUpdate(
+            { user_id: (user as any)?.user_id },
+            { $set: updates as any },
+            { new: true, runValidators: true });
+
         if (!updatedUser) {
             res.status(400).json({ message: "User not found" });
             return;
@@ -109,5 +110,17 @@ export const updateUser = async (req: Request, res: Response) => {
     catch (error) {
         console.error('updateUser error:', error);
         res.status(400).json({ message: "Update user failed" });
+    }
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+    try {
+        const users = await User.find();
+        console.log({ users })
+        res.json({ success: true, data: users });
+    }
+    catch (error) {
+        console.error('getUsers error:', error);
+        res.status(400).json({ message: "Get users failed" });
     }
 };

@@ -7,7 +7,7 @@ The backend has been successfully migrated from Firebase Authentication to Supab
 ## 🔧 **Changes Made**
 
 ### **1. User Model (`src/models/User.ts`)**
-- **Changed:** `uid` → `supabase_id`
+- **Changed:** `uid` → `user_id`
 - **Changed:** `phoneNumber` → Optional field
 - **Added:** `provider` field to track auth method (google, email, phone)
 - **Updated:** Email is now required field
@@ -24,12 +24,12 @@ The backend has been successfully migrated from Firebase Authentication to Supab
 - **Replaced:** Firebase Admin SDK → Supabase client
 - **Updated:** `verifyUser()` - now verifies Supabase JWT tokens
 - **Updated:** `verifyToken()` - now uses Supabase user data
-- **Changed:** User lookup by `supabase_id` instead of `uid`
+- **Changed:** User lookup by `user_id` instead of `uid`
 
 ### **4. User Controllers (`src/controllers/userControllers.ts`)**
 - **Updated:** `createUser()` - now accepts Supabase user data
-- **Updated:** `getMe()` - uses `supabase_id` for logging
-- **Updated:** `updateUser()` - finds user by `supabase_id`
+- **Updated:** `getMe()` - uses `user_id` for logging
+- **Updated:** `updateUser()` - finds user by `user_id`
 - **Added:** Support for email, displayName, photoURL, provider
 
 ### **5. Frontend Integration (`App/hooks/useUser.ts`)**
@@ -68,7 +68,7 @@ NODE_ENV=development
 **After:**
 ```json
 {
-  "supabase_id": "supabase_user_id",
+  "user_id": "supabase_user_id",
   "email": "user@example.com",
   "phoneNumber": "+1234567890",
   "displayName": "John Doe",
@@ -86,7 +86,7 @@ NODE_ENV=development
 ### **User Document Structure**
 ```javascript
 {
-  supabase_id: String,      // Required, unique
+  user_id: String,      // Required, unique
   email: String,            // Required, unique
   phoneNumber: String,      // Optional, unique
   displayName: String,      // Optional
@@ -142,7 +142,7 @@ npm start
 - **Backward Compatibility:** None - this is a breaking change
 - **Data Migration:** Existing Firebase users will need to re-authenticate
 - **Token Format:** Supabase JWT tokens are different from Firebase
-- **User ID:** All references to `uid` changed to `supabase_id`
+- **User ID:** All references to `uid` changed to `user_id`
 
 ## ✅ **Verification Checklist**
 

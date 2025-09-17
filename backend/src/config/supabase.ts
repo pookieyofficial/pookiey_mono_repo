@@ -17,15 +17,13 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 export const verifySupabaseToken = async (token: string) => {
     try {
         const { data: { user }, error } = await supabase.auth.getUser(token);
-        
+
         if (error) {
-            console.error('Supabase token verification error:', error);
             return null;
         }
-        
+
         return user;
     } catch (error) {
-        console.error('Error verifying Supabase token:', error);
         return null;
     }
 };

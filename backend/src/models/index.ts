@@ -1,4 +1,3 @@
 export { User } from "./User";
-export { Match } from "./Match";
-export { Message } from "./Message";
+export { Matches } from "./Matches";
 export { Report } from "./Report";
