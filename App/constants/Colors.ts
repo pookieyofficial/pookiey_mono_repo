@@ -57,6 +57,16 @@ export const Colors = {
   opacity: {
     semiTransparent: 0.6,
     shadow: 0.15,
-    buttonShadow: 0.3,
+    buttonShadow: 0.4,
   },
+  primaryBackgroundColor:"#4B164C",
+  secondaryBackgroundColor:"#FCF3FA",
+  primaryForegroundColor:"#",
+  secondaryForegroundColor:"#",
+  buttonBackgroundColor:"#",
+  buttonForegroundColor:"#",
+  parentBackgroundColor:"#fff",
+  iconsColor:"#4B164C",
+  titleColor:"#000",
+  textColor:"#fff"
 };
