@@ -1,21 +1,24 @@
 import CustomBackButton from '@/components/CustomBackButton';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
+import { Colors } from '@/constants/Colors';
 import { useContacts } from '@/hooks/useContacts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { router } from 'expo-router';
 import React from 'react';
+import { useOnboardingStore } from '@/store/onboardingStore';
 import {
     FlatList,
-    SafeAreaView,
     StyleSheet,
     Text,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function ContactScreen() {
+
     const { isLoading, contacts, hasPermission, requestContactsPermission } = useContacts();
 
 
@@ -24,7 +27,8 @@ export default function ContactScreen() {
     };
 
     const handleAccessContacts = async () => {
-        await requestContactsPermission();
+         await requestContactsPermission();
+      
     };
 
     const renderContactItem = ({ item }: { item: Contacts.Contact }) => {
@@ -173,7 +177,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: '#666666',
+        color: Colors.secondaryForegroundColor,
         textAlign: 'center',
         lineHeight: 24,
         paddingHorizontal: 20,

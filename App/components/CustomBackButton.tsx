@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -7,7 +8,7 @@ export default function CustomBackButton() {
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Ionicons name="chevron-back" size={24} color="#E53E3E" />
+                <Ionicons name="chevron-back" size={24} color={Colors.buttonForegroundColor} />
             </TouchableOpacity>
         </View>
     )
@@ -19,6 +20,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         alignItems: 'center',
         marginBottom: 20,
+        marginTop:20,
     },
     backButton: {
         width: 44,

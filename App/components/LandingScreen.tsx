@@ -108,7 +108,7 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
         //     clearTimeout(autoScrollTimer.current);
         // }
         // onComplete();
-        router.push('/(auth)/login')
+        router.push('/(onboarding)/profile')
     };
 
     const renderImage = (item: OnboardingSlide, index: number) => {

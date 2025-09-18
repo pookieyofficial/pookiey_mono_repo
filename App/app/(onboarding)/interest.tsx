@@ -1,17 +1,19 @@
+import CustomBackButton from '@/components/CustomBackButton';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
+import { Colors } from '@/constants/Colors';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interests = [
     { id: 'photography', name: 'Photography', icon: 'camera' },
@@ -84,14 +86,13 @@ export default function InterestScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <CustomBackButton />
+            </View>
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
-
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                            <Ionicons name="chevron-back" size={24} color="#E53E3E" />
-                        </TouchableOpacity>
-                    </View>
+                        
+                    
 
                     <View style={styles.titleSection}>
                         <ThemedText type="title" style={styles.titleOverride}>Interests</ThemedText>
@@ -121,6 +122,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#ffffff',
+        justifyContent:"center",
     },
     scrollView: {
         flex: 1,
@@ -134,6 +136,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 32,
+        marginLeft:10,
     },
     backButton: {
         width: 44,
@@ -164,7 +167,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 15,
-        color: '#666666',
+        color: Colors.secondaryForegroundColor,
         lineHeight: 22,
         fontWeight: '400',
     },
@@ -198,9 +201,9 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     interestChipSelected: {
-        backgroundColor: '#E53E3E',
-        borderColor: '#E53E3E',
-        shadowColor: '#E53E3E',
+        backgroundColor: Colors.primaryBackgroundColor,
+        borderColor: Colors.primaryBackgroundColor,
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 4,
