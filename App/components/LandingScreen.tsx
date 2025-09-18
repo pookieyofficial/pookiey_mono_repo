@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import React, { useEffect, useRef, useState } from 'react';
+import { Router, useRouter } from 'expo-router';
 import {
     Animated,
     Dimensions,
@@ -46,6 +47,7 @@ interface OnboardingProps {
 }
 
 export default function LandingScreen({ onComplete }: OnboardingProps) {
+    const router = useRouter()
     const [currentSlide, setCurrentSlide] = useState(0);
     const slideAnim = useRef(new Animated.Value(0)).current;
     const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
@@ -102,10 +104,11 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
     };
 
     const handleCreateAccount = () => {
-        if (autoScrollTimer.current) {
-            clearTimeout(autoScrollTimer.current);
-        }
-        onComplete();
+        // if (autoScrollTimer.current) {
+        //     clearTimeout(autoScrollTimer.current);
+        // }
+        // onComplete();
+        router.push('/(onboarding)/profile')
     };
 
     const renderImage = (item: OnboardingSlide, index: number) => {
@@ -351,8 +354,8 @@ const styles = StyleSheet.create({
             height: 4,
         },
         shadowOpacity: Colors.opacity.buttonShadow,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowRadius: 18,
+        elevation: 10,
     },
     createAccountButtonText: {
         fontSize: 18,

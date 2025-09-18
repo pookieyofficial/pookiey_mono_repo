@@ -18,7 +18,9 @@ export const useContacts = () => {
                 
                 const { data } = await Contacts.getContactsAsync({
                     fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+                    
                 });
+                console.log(JSON.stringify(data[25]))
                 
                 setContacts(data);
                 setHasPermission(true);

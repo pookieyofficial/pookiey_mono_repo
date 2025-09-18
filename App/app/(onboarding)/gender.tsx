@@ -1,17 +1,18 @@
 import CustomBackButton from '@/components/CustomBackButton';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
+import { Colors } from '@/constants/Colors';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type GenderOption = 'Woman' | 'Man';
 
@@ -117,17 +118,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#ffffff',
+        backgroundColor: Colors.secondaryBackgroundColor,
         borderWidth: 1.5,
-        borderColor: '#e8e8e8',
+        borderColor: Colors.primaryBackgroundColor,
         borderRadius: 16,
         paddingHorizontal: 20,
         paddingVertical: 18,
         minHeight: 60,
     },
     genderOptionSelected: {
-        backgroundColor: '#E53E3E',
-        borderColor: '#E53E3E',
+        backgroundColor: Colors.primaryBackgroundColor,
+        borderColor: Colors.primaryBackgroundColor,
     },
     genderText: {
         fontSize: 17,

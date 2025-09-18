@@ -1,4 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "@/constants/Colors";
 
 export default function MainButton(props: { title: string, onPress: () => void, disabled?: boolean }) {
     return (
@@ -26,7 +27,7 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     confirmButton: {
-        backgroundColor: '#E53E3E',
+        backgroundColor: Colors.primaryBackgroundColor,
         borderRadius: 16,
         paddingVertical: 18,
         alignItems: 'center',
