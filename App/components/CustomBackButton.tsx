@@ -1,15 +1,26 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View, Text } from "react-native";
 
-export default function CustomBackButton() {
+interface CustomBackButtonProps {
+    skipButtonRoute?: string;
+}
+
+export default function CustomBackButton({ skipButtonRoute }: CustomBackButtonProps) {
     const router = useRouter();
+
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <Ionicons name="chevron-back" size={24} color={Colors.buttonForegroundColor} />
             </TouchableOpacity>
+
+            {skipButtonRoute && (
+                <TouchableOpacity onPress={() => router.push(skipButtonRoute as any)} style={styles.skipButton}>
+                    <Text style={styles.skipButtonText}>Skip</Text>
+                </TouchableOpacity>
+            )}
         </View>
     )
 }
@@ -19,8 +30,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        marginBottom: 20,
-        marginTop:20,
+        marginTop: 10,
+        marginLeft: 10,
+        marginBottom: 15,
     },
     backButton: {
         width: 44,
@@ -31,5 +43,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#ffffff',
+    },
+    skipButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 'auto',
+        marginRight: 15,
+    },
+    skipButtonText: {
+        fontSize: 16,
+        color: Colors.primaryForegroundColor,
+        fontWeight: '600',
     },
 })

@@ -86,13 +86,11 @@ export default function InterestScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <CustomBackButton />
-            </View>
+            <CustomBackButton />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
-                        
-                    
+
+
 
                     <View style={styles.titleSection}>
                         <ThemedText type="title" style={styles.titleOverride}>Interests</ThemedText>
@@ -122,21 +120,20 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#ffffff',
-        justifyContent:"center",
+        justifyContent: "center",
     },
     scrollView: {
         flex: 1,
     },
     content: {
         paddingHorizontal: 24,
-        paddingTop: 20,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 32,
-        marginLeft:10,
+        marginLeft: 10,
     },
     backButton: {
         width: 44,
@@ -181,7 +178,7 @@ const styles = StyleSheet.create({
     interestChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0, 0.05)',

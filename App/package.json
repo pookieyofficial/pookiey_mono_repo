@@ -58,7 +58,9 @@
     "tailwindcss": "^3.4.17",
     "zustand": "^5.0.8",
     "@react-native-community/datetimepicker": "8.4.4",
-    "expo-image-picker": "~17.0.8"
+    "expo-image-picker": "~17.0.8",
+    "expo-notifications": "~0.32.11",
+    "expo-device": "~8.0.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -24,6 +24,7 @@ interface AuthState {
   isLoading: boolean;
   isInitialized: boolean;
   idToken: string | null;
+  notificationTokens: string[];
 }
 
 interface AuthActions {
@@ -34,6 +35,10 @@ interface AuthActions {
   initialize: () => void;
   getIdToken: () => string | null;
   setIdToken: (token: string | null) => void;
+  addNotificationToken: (token: string) => void;
+  removeNotificationToken: (token: string) => void;
+  getNotificationTokens: () => string[];
+  setNotificationTokens: (tokens: string[]) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -44,6 +49,7 @@ const initialState: AuthState = {
   isLoading: true,
   isInitialized: false,
   idToken: null,
+  notificationTokens: [],
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -72,6 +78,7 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
           idToken: null,
+          notificationTokens: [],
         });
       },
 
@@ -91,6 +98,27 @@ export const useAuthStore = create<AuthStore>()(
       setIdToken: (token: string | null) => {
         set({ idToken: token });
       },
+
+      addNotificationToken: (token: string) => {
+        const { notificationTokens } = get();
+        if (!notificationTokens.includes(token)) {
+          set({ notificationTokens: [...notificationTokens, token] });
+        }
+      },
+
+      removeNotificationToken: (token: string) => {
+        const { notificationTokens } = get();
+        set({ notificationTokens: notificationTokens.filter(t => t !== token) });
+      },
+
+      getNotificationTokens: () => {
+        const { notificationTokens } = get();
+        return notificationTokens;
+      },
+
+      setNotificationTokens: (tokens: string[]) => {
+        set({ notificationTokens: tokens });
+      },
     }),
     {
       name: 'auth-storage',
@@ -100,6 +128,7 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         idToken: state.idToken,
+        notificationTokens: state.notificationTokens,
       }),
 
       onRehydrateStorage: () => (state) => {

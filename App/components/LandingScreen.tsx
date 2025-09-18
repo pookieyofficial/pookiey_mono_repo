@@ -190,7 +190,7 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
                                 style={[
                                     styles.dot,
                                     {
-                                        backgroundColor: index === currentSlide ? Colors.onboarding.dotActive : Colors.onboarding.dotInactive,
+                                        backgroundColor: index === currentSlide ? Colors.primaryBackgroundColor : "grey",
                                     }
                                 ]}
                                 onPress={() => goToSlide(index)}
@@ -243,12 +243,12 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.onboarding.background,
     },
     header: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
         paddingBottom: 10,
     },
     headerText: {
         fontSize: 16,
-        color: Colors.onboarding.headerText,
+        color: Colors.primaryBackgroundColor,
         fontWeight: '500',
     },
     content: {
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: Math.min(28, width * 0.07),
         fontWeight: 'bold',
-        color: Colors.onboarding.titleText,
+        color: Colors.primaryBackgroundColor,
         textAlign: 'center',
         marginBottom: 12,
     },
     description: {
         fontSize: Math.min(16, width * 0.04),
-        color: Colors.onboarding.descriptionText,
+        color: Colors.primaryBackgroundColor,
         textAlign: 'center',
         lineHeight: Math.min(24, width * 0.06),
         paddingHorizontal: 10,
@@ -343,12 +343,12 @@ const styles = StyleSheet.create({
         width: Math.min(width * 0.85, 350),
         height: Math.max(48, height * 0.06),
         maxHeight: 60,
-        backgroundColor: Colors.onboarding.buttonBackground,
+        backgroundColor: Colors.primaryBackgroundColor,
         borderRadius: Math.max(15, height * 0.02),
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        shadowColor: Colors.onboarding.buttonShadow,
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 4,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     createAccountButtonText: {
         fontSize: 18,
         fontWeight: '600',
-        color: Colors.onboarding.buttonText,
+        color: "white",
     },
     footerContainer: {
         width: '100%',
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     },
     termsText: {
         fontSize: 12,
-        color: Colors.onboarding.descriptionText,
+        color: Colors.primaryBackgroundColor,
         textAlign: 'center',
         lineHeight: 22,
         flexWrap: 'wrap',
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     },
     linkText: {
         fontSize: 14,
-        color: Colors.onboarding.linkText,
+        color: Colors.primaryBackgroundColor,
         fontWeight: '600',
         textDecorationLine: 'underline',
     },
@@ -396,12 +396,12 @@ const styles = StyleSheet.create({
     },
     signInText: {
         fontSize: 12,
-        color: Colors.onboarding.descriptionText,
+        color: Colors.primaryBackgroundColor,
         textAlign: 'center',
     },
     signInLink: {
         fontSize: 12,
-        color: Colors.onboarding.linkText,
+        color: Colors.primaryBackgroundColor,
         fontWeight: '600',
     },
 });

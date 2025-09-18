@@ -25,23 +25,23 @@ const getDialogConfig = (type: DialogType) => {
     switch (type) {
         case 'success':
             return {
-                color: Colors.primary.red,
+                color: Colors.primaryBackgroundColor,
                 backgroundColor: 'transparent',
             };
         case 'error':
             return {
-                color: Colors.primary.red,
+                color: Colors.primaryBackgroundColor,
                 backgroundColor: 'transparent',
             };
         case 'warning':
             return {
-                color: '#FF9800',
+                color: Colors.primaryBackgroundColor,
                 backgroundColor: 'transparent',
             };
         case 'info':
         default:
             return {
-                color: '#2196F3',
+                color: Colors.primaryBackgroundColor,
                 backgroundColor: 'transparent',
             };
     }
@@ -95,7 +95,7 @@ export default function CustomDialog({
                     {secondaryButton && (
                         <Button
                             onPress={secondaryButton.onPress}
-                            textColor={Colors.text.secondary}
+                            textColor={Colors.primaryBackgroundColor}
                             labelStyle={styles.secondaryButton}
                         >
                             {secondaryButton.text}
@@ -103,10 +103,10 @@ export default function CustomDialog({
                     )}
                     <Button
                         onPress={primaryButton.onPress}
-                        textColor={config.color}
+                        textColor={Colors.primaryBackgroundColor}
                         labelStyle={styles.primaryButton}
                         mode="contained"
-                        buttonColor={config.color}
+                        buttonColor={Colors.primaryBackgroundColor}
                     >
                         {primaryButton.text}
                     </Button>
@@ -147,18 +147,19 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: 14,
-        color: Colors.text.secondary,
+        color:"#000",
         textAlign: 'left',
     },
     primaryButton: {
         fontSize: 14,
         fontWeight: '600',
-        color: Colors.primary.white,
+        color: "white",
         paddingHorizontal: 12,
 
     },
     secondaryButton: {
         fontSize: 16,
         fontWeight: '500',
+        color: "white",
     },
 });

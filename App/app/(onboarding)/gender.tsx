@@ -24,6 +24,7 @@ export default function GenderScreen() {
     };
 
     const handleContinue = () => {
+        if (gender === '') return
         setGender(gender as GenderOption);
         router.push('/(onboarding)/interest');
     };
@@ -63,8 +64,8 @@ export default function GenderScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <CustomBackButton />
             <View style={styles.content}>
-                <CustomBackButton />
 
                 <ThemedText type='title'>I am a</ThemedText>
 
@@ -76,7 +77,6 @@ export default function GenderScreen() {
                 <MainButton
                     title="Continue"
                     onPress={handleContinue}
-                    disabled={gender === ''}
                 />
             </View>
         </SafeAreaView>
@@ -91,9 +91,8 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 20,
     },
-    
+
     progressContainer: {
         marginBottom: 32,
     },

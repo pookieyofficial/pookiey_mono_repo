@@ -2,6 +2,7 @@ import CustomBackButton from '@/components/CustomBackButton';
 import CustomDialog from '@/components/CustomDialog';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
+import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/hooks/useLocation';
 import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/authStore';
@@ -26,11 +27,12 @@ export default function LocationScreen() {
         location,
         address,
         error,
-        requestLocationPermission
+        requestLocationPermission,
+        clearError
     } = useLocation();
 
     const [showErrorDialog, setShowErrorDialog] = useState(false);
-    const { idToken } = useAuthStore();
+    const { idToken, getNotificationTokens } = useAuthStore();
     const { updateUser } = useUser();
     const { setLocation } = useOnboardingStore();
     const [updatingUser, setUpdatingUser] = useState(false);
@@ -44,6 +46,8 @@ export default function LocationScreen() {
             const firstName = nameParts[0] || '';
             const lastName = nameParts.slice(1).join(' ') || '';
 
+            const notificationTokens = getNotificationTokens();
+            
             const profileData = {
                 profile: {
                     firstName,
@@ -64,7 +68,8 @@ export default function LocationScreen() {
                     interests: store.interests || [],
                     occupation: store.occupation,
                     isOnboarded: true
-                }
+                },
+                ...(notificationTokens.length > 0 && { notificationTokens })
             };
 
             console.log('Saving onboarding data:', profileData);
@@ -82,16 +87,21 @@ export default function LocationScreen() {
     };
 
     const handleAccessLocation = async () => {
+        console.log('Handle access location called');
+        clearError();
         const success = await requestLocationPermission();
-        if (!success && error) {
+        console.log('Permission request success:', success);
+        console.log('Current error:', error);
+        if (!success) {
             setShowErrorDialog(true);
         }
     };
+    
     useEffect(() => {
-        if (error) {
+        if (error && !showErrorDialog) {
             setShowErrorDialog(true);
         }
-    }, [error]);
+    }, [error, showErrorDialog]);
 
     if (hasPermission && location) {
         const mapRegion = {
@@ -103,8 +113,8 @@ export default function LocationScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
+                <CustomBackButton />
                 <View style={styles.content}>
-                    <CustomBackButton />
 
                     <View style={styles.locationHeader}>
                         <ThemedText type="subtitle">
@@ -149,8 +159,8 @@ export default function LocationScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <CustomBackButton />
             <View style={styles.content}>
-                <CustomBackButton />
 
                 <View style={styles.illustrationContainer}>
                     <View style={styles.illustration}>
@@ -158,7 +168,7 @@ export default function LocationScreen() {
                         <View style={[styles.circle, styles.circle2]} />
                         <View style={[styles.circle, styles.circle3]} />
                         <View style={styles.locationPinContainer}>
-                            <Ionicons name="location" size={60} color="#e74c3c" />
+                            <Ionicons name="location" size={60} color={"white"} />
                         </View>
                     </View>
                 </View>
@@ -175,7 +185,7 @@ export default function LocationScreen() {
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? "Getting location..." : "Allow location access"}
+                    title={isLoading ? "Getting location..." : "Allow location"}
                     onPress={handleAccessLocation}
                     disabled={isLoading}
                 />
@@ -185,11 +195,15 @@ export default function LocationScreen() {
                 visible={showErrorDialog}
                 type="error"
                 message={"Unable to access location. Please allow location access to continue."}
-                onDismiss={() => setShowErrorDialog(false)}
+                onDismiss={() => {
+                    setShowErrorDialog(false);
+                    clearError();
+                }}
                 primaryButton={{
                     text: "Try Again",
                     onPress: () => {
                         setShowErrorDialog(false);
+                        clearError();
                         handleAccessLocation();
                     }
                 }}
@@ -205,20 +219,16 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingHorizontal: 20,
     },
     illustrationContainer: {
         flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        marginVertical: 40,
     },
     illustration: {
         width: 200,
         height: 200,
         position: 'relative',
-        justifyContent: 'center',
         alignItems: 'center',
     },
     circle: {
@@ -228,30 +238,30 @@ const styles = StyleSheet.create({
     circle1: {
         width: 120,
         height: 120,
-        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+        backgroundColor: 'rgba(168, 85, 247, 0.8)',
         top: 20,
         left: 40,
     },
     circle2: {
         width: 100,
         height: 100,
-        backgroundColor: 'rgba(231, 76, 60, 0.3)',
+        backgroundColor: 'rgba(168, 85, 247, 0.6)',
         top: 10,
         right: 30,
     },
     circle3: {
         width: 80,
         height: 80,
-        backgroundColor: 'rgba(231, 76, 60, 0.4)',
+        backgroundColor: 'rgba(168, 85, 247, 0.4)',
         bottom: 30,
         left: 60,
     },
     locationPinContainer: {
         zIndex: 10,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'transparent',
         borderRadius: 40,
         padding: 20,
-        shadowColor: '#000',
+        shadowColor: Colors.secondaryForegroundColor,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -262,18 +272,16 @@ const styles = StyleSheet.create({
     },
     textContainer: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 150,
     },
     title: {
         textAlign: 'center',
         marginBottom: 16,
-        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,
-        color: '#666666',
+        color: Colors.secondaryForegroundColor,
         textAlign: 'center',
-        lineHeight: 24,
         paddingHorizontal: 20,
     },
     spacer: {
@@ -285,12 +293,12 @@ const styles = StyleSheet.create({
     },
     premiumBadge: {
         fontSize: 14,
-        color: '#e74c3c',
+        color: Colors.secondaryForegroundColor,
         fontWeight: '600',
         marginTop: 8,
         paddingHorizontal: 12,
         paddingVertical: 4,
-        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+        backgroundColor: Colors.secondaryForegroundColor,
         borderRadius: 12,
         textAlign: 'center',
     },
@@ -299,7 +307,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         // borderRadius: 16,
         overflow: 'hidden',
-        shadowColor: '#000',
+        shadowColor: Colors.secondaryForegroundColor,
         shadowOffset: {
             width: 0,
             height: 4,
@@ -313,10 +321,10 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     customMarker: {
-        backgroundColor: '#ffffff',
+        backgroundColor: Colors.primaryBackgroundColor,
         borderRadius: 20,
         padding: 8,
-        shadowColor: '#000',
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -330,11 +338,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 16,
         paddingHorizontal: 20,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: Colors.primaryBackgroundColor,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#e9ecef',
-        shadowColor: '#000',
+        borderColor: Colors.secondaryForegroundColor,
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -347,11 +355,11 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#ffffff',
+        backgroundColor: Colors.primaryBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
-        shadowColor: '#000',
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 1,
@@ -366,12 +374,12 @@ const styles = StyleSheet.create({
     coordinatesText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1a1a1a',
+        color: Colors.secondaryForegroundColor,
         marginBottom: 4,
     },
     addressText: {
         fontSize: 14,
-        color: '#666666',
+        color: Colors.secondaryForegroundColor,
         lineHeight: 20,
     },
 });

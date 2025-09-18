@@ -6,7 +6,7 @@ import { useContacts } from '@/hooks/useContacts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import {
     FlatList,
@@ -21,14 +21,18 @@ export default function ContactScreen() {
 
     const { isLoading, contacts, hasPermission, requestContactsPermission } = useContacts();
 
+    useEffect(() => {
+        requestContactsPermission();
+    }, []);
+
 
     const handleContinue = () => {
-        router.push('/(onboarding)/location');
+        router.push('/(onboarding)/notification');
     };
 
     const handleAccessContacts = async () => {
-         await requestContactsPermission();
-      
+        await requestContactsPermission();
+
     };
 
     const renderContactItem = ({ item }: { item: Contacts.Contact }) => {
@@ -51,8 +55,8 @@ export default function ContactScreen() {
     if (hasPermission && contacts.length > 0) {
         return (
             <SafeAreaView style={styles.container}>
+                <CustomBackButton />
                 <View style={styles.content}>
-                    <CustomBackButton />
 
                     <View style={styles.contactsHeader}>
                         <ThemedText type="title">
@@ -62,7 +66,7 @@ export default function ContactScreen() {
 
                     <FlatList
                         data={contacts}
-                        keyExtractor={(item, index) => item.id || index.toString()}
+                        keyExtractor={(item: any, index: any) => item.id || index.toString()}
                         renderItem={renderContactItem}
                         style={styles.contactsList}
                         showsVerticalScrollIndicator={false}
@@ -80,30 +84,33 @@ export default function ContactScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <CustomBackButton skipButtonRoute='/(onboarding)/notification' />
             <View style={styles.content}>
-                <CustomBackButton />
 
                 <View style={styles.illustrationContainer}>
                     <View style={styles.illustration}>
                         <View style={[styles.circle, styles.circle1]} />
                         <View style={[styles.circle, styles.circle2]} />
                         <View style={[styles.circle, styles.circle3]} />
+                        <View style={styles.contactPinContainer}>
+                            <Ionicons name="person" size={60} color={"white"} />
+                        </View>
                     </View>
                 </View>
 
                 <View style={styles.textContainer}>
                     <ThemedText type="title" style={styles.title}>
-                        Search friend's
+                        Search friends
                     </ThemedText>
                     <ThemedText style={styles.subtitle}>
-                        You can find friends from your contact lists to connected
+                        You can find friends from your contact lists to connect
                     </ThemedText>
                 </View>
 
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? "Requesting..." : "Access to a contact list"}
+                    title={isLoading ? "Requesting..." : "Access Contacts"}
                     onPress={handleAccessContacts}
                     disabled={isLoading}
                 />
@@ -119,14 +126,13 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingHorizontal: 20,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 13,
     },
     illustrationContainer: {
         flex: 1,
@@ -165,6 +171,20 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(168, 85, 247, 0.4)',
         bottom: 30,
         left: 60,
+    },
+    contactPinContainer: {
+        zIndex: 10,
+        backgroundColor: 'transparent',
+        borderRadius: 40,
+        padding: 20,
+        shadowColor: Colors.secondaryForegroundColor,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
     textContainer: {
         alignItems: 'center',
