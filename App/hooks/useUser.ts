@@ -32,7 +32,7 @@ export const useUser = () => {
             }
 
             const userData = {
-                supabase_id: supabaseUser.id,
+                user_id: supabaseUser.id,
                 email: supabaseUser.email,
                 phoneNumber: supabaseUser.phone,
                 displayName: supabaseUser.user_metadata?.full_name || supabaseUser.email.split('@')[0],

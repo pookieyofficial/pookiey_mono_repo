@@ -6,6 +6,7 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import React, { useState } from 'react';
 import {
     Dimensions,
+    Image,
     KeyboardAvoidingView,
     Platform,
     SafeAreaView,
@@ -15,7 +16,8 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    Linking
 } from 'react-native';
 import CountryPicker from "react-native-country-picker-modal";
 import { PaperProvider } from 'react-native-paper';
@@ -108,44 +110,176 @@ export default function SupabaseLoginScreen() {
                 >
                     <ScrollView style={styles.content}
                         keyboardShouldPersistTaps='handled'
+                        contentContainerStyle={styles.scrollContent}
                     >
                         <View style={styles.mainContent}>
-                            <Text style={styles.title}>
-                                {isOtpSent ? 'Verify Code' : 'Welcome Back'}
-                            </Text>
-                            <Text style={styles.description}>
-                                {isOtpSent
-                                    ? `Please enter the 6-digit code sent to +${callingCode} ${phoneNumber}`
-                                    : 'Sign in with your phone number or Google account to continue.'
-                                }
-                            </Text>
-
                             {!isOtpSent ? (
                                 <>
-                                    {/* Google Sign In Button */}
-                                    <TouchableOpacity
-                                        style={styles.googleButton}
-                                        onPress={handleGoogleSignIn}
-                                        disabled={googleLoading || isLoading}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Ionicons name="logo-google" size={20} color="#4285F4" />
-                                        <Text style={styles.googleButtonText}>
-                                            {googleLoading ? 'Signing in...' : 'Continue with Google'}
-                                        </Text>
-                                    </TouchableOpacity>
+                                    {/* Top Section */}
+                                    <View style={styles.topSection}>
+                                        {/* Logo */}
+                                        <View style={styles.logoContainer}>
+                                            <Image
+                                                source={require('@/assets/images/icon.png')}
+                                                style={styles.logo}
+                                                resizeMode="contain"
+                                            />
+                                        </View>
 
-                                    <View style={styles.divider}>
-                                        <View style={styles.dividerLine} />
-                                        <Text style={styles.dividerText}>OR</Text>
-                                        <View style={styles.dividerLine} />
+                                        {/* Title */}
+                                        <Text style={styles.title}>Sign up to continue</Text>
+
+                                        {/* Email Button */}
+                                        <TouchableOpacity
+                                            style={styles.emailButton}
+                                            onPress={() => {
+                                                // TODO: Implement email signup
+                                                showDialog('Coming Soon', 'Email signup will be available soon', 'info');
+                                            }}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={styles.emailButtonText}>Continue with email</Text>
+                                        </TouchableOpacity>
+
+                                        {/* Phone Button */}
+                                        {/* <TouchableOpacity
+                                            style={styles.phoneButton}
+                                            onPress={() => {
+                                                // This will show the phone input
+                                                setFocusedInput('phone');
+                                            }}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={styles.phoneButtonText}>Use phone number</Text>
+                                        </TouchableOpacity> */}
                                     </View>
 
-                                    {/* Phone Input */}
+                                    {/* Bottom Section */}
+                                    <View style={styles.bottomSection}>
+                                        {/* Social Buttons */}
+                                        <View style={styles.socialButtonsContainer}>
+                                            {/* Divider */}
+                                            <View style={styles.divider}>
+                                                <View style={styles.dividerLine} />
+                                                <Text style={styles.dividerText}>or sign up with</Text>
+                                                <View style={styles.dividerLine} />
+                                            </View>
+
+                                            {/* Social Buttons Row */}
+                                            <View style={styles.socialButtonsRow}>
+                                                {/* Facebook */}
+                                                <TouchableOpacity
+                                                    style={styles.socialButton}
+                                                    onPress={() => {
+                                                        showDialog('Coming Soon', 'Facebook signup will be available soon', 'info');
+                                                    }}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Ionicons name="logo-facebook" size={24} color={Colors.primary.red} />
+                                                </TouchableOpacity>
+
+                                                {/* Google */}
+                                                <TouchableOpacity
+                                                    style={styles.socialButton}
+                                                    onPress={handleGoogleSignIn}
+                                                    disabled={googleLoading}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Ionicons name="logo-google" size={24} color={Colors.primary.red} />
+                                                </TouchableOpacity>
+
+                                                {/* Apple */}
+                                                <TouchableOpacity
+                                                    style={styles.socialButton}
+                                                    onPress={() => {
+                                                        showDialog('Coming Soon', 'Apple signup will be available soon', 'info');
+                                                    }}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Ionicons name="logo-apple" size={24} color={Colors.primary.red} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+
+                                        {/* Terms and Privacy */}
+                                        <View style={styles.termsContainer}>
+                                            <TouchableOpacity
+                                                onPress={() => Linking.openURL('https://example.com/terms')}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={styles.termsText}>Terms of use</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.separator}> </Text>
+                                            <TouchableOpacity
+                                                onPress={() => Linking.openURL('https://example.com/privacy')}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={styles.termsText}>Privacy Policy</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    {/* OTP Screen */}
+                                    <Text style={styles.title}>Verify Code</Text>
+                                    <Text style={styles.description}>
+                                        Please enter the 6-digit code sent to +{callingCode} {phoneNumber}
+                                    </Text>
+                                    
                                     <View style={styles.inputSection}>
                                         <View style={[
+                                            styles.otpInputContainer,
+                                            focusedInput === 'otp' && styles.inputFocused
+                                        ]}>
+                                            <TextInput
+                                                style={styles.otpInput}
+                                                placeholder="000000"
+                                                placeholderTextColor={Colors.text.light}
+                                                value={otp}
+                                                onChangeText={setOtp}
+                                                keyboardType="number-pad"
+                                                maxLength={6}
+                                                onFocus={() => setFocusedInput('otp')}
+                                                onBlur={() => setFocusedInput(null)}
+                                                autoFocus
+                                                textAlign="center"
+                                            />
+                                        </View>
+                                    </View>
+
+                                    <MainButton
+                                        disabled={isLoading}
+                                        title="Verify Code"
+                                        onPress={handleVerifyOtpWithDialog} />
+
+                                    <View style={styles.secondaryActions}>
+                                        <TouchableOpacity
+                                            onPress={handleResendOtpWithDialog}
+                                            disabled={isLoading}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={styles.linkText}>Resend Code</Text>
+                                        </TouchableOpacity>
+                                        <Text style={styles.separatorText}>•</Text>
+                                        <TouchableOpacity
+                                            onPress={handleChangeNumber}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={styles.linkText}>Change Number</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </>
+                            )}
+
+                            {/* Phone Input Modal */}
+                            {focusedInput === 'phone' && !isOtpSent && (
+                                <View style={styles.phoneInputOverlay}>
+                                    <View style={styles.phoneInputModal}>
+                                        <Text style={styles.modalTitle}>Enter Phone Number</Text>
+                                        <View style={[
                                             styles.phoneInputContainer,
-                                            focusedInput === 'phone' && styles.inputFocused
+                                            styles.modalPhoneInput
                                         ]}>
                                             <View style={styles.countryCodeContainer}>
                                                 <CountryPicker
@@ -169,61 +303,28 @@ export default function SupabaseLoginScreen() {
                                                 onChangeText={setPhoneNumber}
                                                 keyboardType="phone-pad"
                                                 maxLength={15}
-                                                onFocus={() => setFocusedInput('phone')}
-                                                onBlur={() => setFocusedInput(null)}
                                                 autoFocus
                                             />
                                         </View>
+                                        <View style={styles.modalButtons}>
+                                            <TouchableOpacity
+                                                style={styles.cancelButton}
+                                                onPress={() => setFocusedInput(null)}
+                                            >
+                                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.sendButton}
+                                                onPress={() => {
+                                                    handleSendOtpWithDialog();
+                                                    setFocusedInput(null);
+                                                }}
+                                                disabled={isLoading || !phoneNumber.trim()}
+                                            >
+                                                <Text style={styles.sendButtonText}>Send Code</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
-                                </>
-                            ) : (
-                                <View style={styles.inputSection}>
-                                    <View style={[
-                                        styles.otpInputContainer,
-                                        focusedInput === 'otp' && styles.inputFocused
-                                    ]}>
-                                        <TextInput
-                                            style={styles.otpInput}
-                                            placeholder="000000"
-                                            placeholderTextColor={Colors.text.light}
-                                            value={otp}
-                                            onChangeText={setOtp}
-                                            keyboardType="number-pad"
-                                            maxLength={6}
-                                            onFocus={() => setFocusedInput('otp')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            autoFocus
-                                            textAlign="center"
-                                        />
-                                    </View>
-                                </View>
-                            )}
-
-                            <MainButton
-                                disabled={isLoading || googleLoading}
-                                title={isOtpSent ? 'Verify Code' : 'Continue with Phone'}
-                                onPress={isOtpSent ? handleVerifyOtpWithDialog : handleSendOtpWithDialog} />
-
-                            {isOtpSent && (
-                                <View style={styles.secondaryActions}>
-                                    <TouchableOpacity
-                                        onPress={handleResendOtpWithDialog}
-                                        disabled={isLoading}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={styles.linkText}>
-                                            Resend Code
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.separatorText}>•</Text>
-                                    <TouchableOpacity
-                                        onPress={handleChangeNumber}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={styles.linkText}>
-                                            Change Number
-                                        </Text>
-                                    </TouchableOpacity>
                                 </View>
                             )}
                         </View>
@@ -254,61 +355,94 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
         paddingHorizontal: Math.max(24, width * 0.06),
-        paddingTop: Math.max(20, height * 0.03),
+        paddingTop: Math.max(60, height * 0.08),
+        paddingBottom: Math.max(40, height * 0.05),
     },
     mainContent: {
         flex: 1,
         maxWidth: 400,
         alignSelf: 'center',
         width: '100%',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+    },
+    topSection: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        paddingTop: 20,
+    },
+    bottomSection: {
+        justifyContent: 'flex-end',
+    },
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    logo: {
+        width: 80,
+        height: 80,
     },
     title: {
-        fontSize: Math.min(32, width * 0.08),
+        fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.text.primary,
-        marginBottom: Math.max(16, height * 0.02),
+        color: Colors.primary.black,
         textAlign: 'center',
+        marginBottom: 40,
     },
     description: {
-        fontSize: Math.min(16, width * 0.04),
+        fontSize: 16,
         color: Colors.text.secondary,
-        lineHeight: Math.min(24, width * 0.06),
-        marginBottom: Math.max(40, height * 0.05),
+        lineHeight: 24,
+        marginBottom: 30,
         textAlign: 'center',
         paddingHorizontal: 16,
     },
-    googleButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.primary.white,
-        borderWidth: 1,
-        borderColor: Colors.text.light,
+    emailButton: {
+        backgroundColor: Colors.primary.red,
         borderRadius: 12,
-        height: Math.max(56, height * 0.07),
-        maxHeight: 64,
-        marginBottom: Math.max(20, height * 0.03),
-        shadowColor: '#000',
+        height: 56,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+        marginTop: 20,
+        shadowColor: Colors.onboarding.shadowColor,
         shadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.1,
+        shadowOpacity: Colors.opacity.shadow,
         shadowRadius: 4,
         elevation: 2,
     },
-    googleButtonText: {
+    emailButtonText: {
         fontSize: 16,
-        fontWeight: '500',
-        color: Colors.text.primary,
-        marginLeft: 12,
+        fontWeight: '600',
+        color: Colors.primary.white,
+    },
+    phoneButton: {
+        backgroundColor: Colors.primary.white,
+        borderWidth: 1,
+        borderColor: Colors.text.light,
+        borderRadius: 12,
+        height: 56,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 30,
+    },
+    phoneButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.primary.red,
     },
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: Math.max(20, height * 0.03),
+        marginBottom: 30,
+        width: '100%',
     },
     dividerLine: {
         flex: 1,
@@ -321,8 +455,111 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginHorizontal: 16,
     },
+    socialButtonsContainer: {
+        marginBottom: 40,
+        alignItems: 'center',
+    },
+    socialButtonsRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 20,
+    },
+    socialButton: {
+        width: 56,
+        height: 56,
+        backgroundColor: Colors.primary.white,
+        borderWidth: 1,
+        borderColor: Colors.text.light,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: Colors.onboarding.shadowColor,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: Colors.opacity.shadow,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    termsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    termsText: {
+        fontSize: 14,
+        color: Colors.primary.red,
+        fontWeight: '500',
+    },
+    separator: {
+        fontSize: 14,
+        color: Colors.primary.red,
+        marginHorizontal: 8,
+    },
+    // Modal styles
+    phoneInputOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    phoneInputModal: {
+        backgroundColor: Colors.primary.white,
+        borderRadius: 16,
+        padding: 24,
+        margin: 20,
+        width: '90%',
+        maxWidth: 400,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.text.primary,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    modalPhoneInput: {
+        marginBottom: 20,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: Colors.text.light,
+        borderRadius: 8,
+        height: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.text.primary,
+    },
+    sendButton: {
+        flex: 1,
+        backgroundColor: Colors.primary.red,
+        borderRadius: 8,
+        height: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.primary.white,
+    },
+    // Existing styles for OTP and phone input
     inputSection: {
-        marginBottom: Math.max(40, height * 0.05),
+        marginBottom: 30,
         alignItems: 'center',
     },
     phoneInputContainer: {
@@ -333,8 +570,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.text.light,
         borderRadius: 12,
         paddingHorizontal: 16,
-        height: Math.max(56, height * 0.07),
-        maxHeight: 64,
+        height: 56,
         width: '100%',
     },
     inputFocused: {
@@ -368,8 +604,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.text.light,
         borderRadius: 12,
         width: '100%',
-        height: Math.max(56, height * 0.07),
-        maxHeight: 64,
+        height: 56,
         justifyContent: 'center',
         alignItems: 'center',
     },

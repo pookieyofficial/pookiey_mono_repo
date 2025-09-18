@@ -12,6 +12,7 @@ import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync()
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
