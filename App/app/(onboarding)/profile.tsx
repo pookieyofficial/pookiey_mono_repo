@@ -69,6 +69,9 @@ export default function ProfileScreen() {
 
   const handleBirthdayChange = (event: any, selectedDate: any) => {
 
+    // only close picker on android on user confirm click, on iOS it is default.
+    Platform.OS === "android" && setShowDatePicker(false);
+
     if (selectedDate) {
       setTempDate(selectedDate);
       setBirthday(selectedDate.toISOString());
@@ -253,7 +256,7 @@ export default function ProfileScreen() {
             </TouchableWithoutFeedback>
 
             <View style={styles.datePickerContainer}>
-              
+
               <DateTimePicker
                 value={tempDate}
                 mode="date"

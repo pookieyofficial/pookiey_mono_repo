@@ -9,13 +9,13 @@ import { router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import React, { useEffect, useState } from 'react';
 import {
-    SafeAreaView,
     StyleSheet,
     View,
     Platform
 } from 'react-native';
 
 import * as Device from 'expo-device';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function NotificationScreen() {
     const [isLoading, setIsLoading] = useState(false);

@@ -11,13 +11,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
     StyleSheet,
-    Text,
     View
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function LocationScreen() {
