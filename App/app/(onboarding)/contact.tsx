@@ -5,7 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { useContacts } from '@/hooks/useContacts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import {
@@ -20,7 +20,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ContactScreen() {
 
     const { isLoading, contacts, hasPermission, requestContactsPermission } = useContacts();
-
+    const router = useRouter();
+    
     useEffect(() => {
         requestContactsPermission();
     }, []);
