@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -170,7 +169,7 @@ export default function ProfileScreen() {
           <View style={styles.content}>
             <View style={styles.header}>
               <ThemedText type="title" style={styles.title}>Profile details</ThemedText>
-              <Text style={styles.subtitle}>Let's get to know you better</Text>
+              <ThemedText type='subtitle' style={styles.subtitle}>Let's get to know you better</ThemedText>
             </View>
 
             <View style={styles.profilePictureContainer}>
@@ -188,12 +187,12 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
-              <Text style={styles.profilePictureHint}>Tap to change photo</Text>
+              <ThemedText type='default' style={styles.profilePictureHint}>Tap to change photo</ThemedText>
             </View>
 
             <View style={styles.inputContainer}>
               <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>First name</Text>
+                <ThemedText type='default' style={styles.inputLabel}>First name</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   value={firstName}
@@ -204,7 +203,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Last name</Text>
+                <ThemedText type='default' style={styles.inputLabel}>Last name</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   value={lastName}
@@ -215,7 +214,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Birthday</Text>
+                <ThemedText type='default' style={styles.inputLabel}>Birthday</ThemedText>
                 <TouchableOpacity
                   style={styles.birthdayButton}
                   onPress={() => setShowDatePicker(true)}
@@ -224,12 +223,12 @@ export default function ProfileScreen() {
                     <View style={styles.calendarIconContainer}>
                       <Ionicons name="calendar" size={20} color={Colors.primaryForegroundColor} />
                     </View>
-                    <Text style={[
+                    <ThemedText type='default' style={[
                       styles.birthdayText,
                       birthday && styles.birthdayTextSelected
                     ]}>
                       {formatDate(birthday)}
-                    </Text>
+                    </ThemedText>
                   </View>
                 </TouchableOpacity>
               </View>

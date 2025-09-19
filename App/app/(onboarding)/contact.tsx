@@ -46,8 +46,8 @@ export default function ContactScreen() {
                     <Ionicons name="person" size={20} color="#666666" />
                 </View>
                 <View style={styles.contactInfo}>
-                    <Text style={styles.contactName}>{displayName}</Text>
-                    <Text style={styles.contactPhone}>{phoneNumber}</Text>
+                    <ThemedText type='defaultSemiBold' style={styles.contactName}>{displayName}</ThemedText>
+                    <ThemedText type='default' style={styles.contactPhone}>{phoneNumber}</ThemedText>
                 </View>
             </View>
         );

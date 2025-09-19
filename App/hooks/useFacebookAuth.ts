@@ -3,26 +3,25 @@ import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../config/supabaseConfig';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { Alert } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export interface GoogleAuthResult {
+export interface FacebookAuthResult {
   data: any;
   error: AuthError | null;
 }
 
-export function useGoogleAuth() {
+export function useFacebookAuth() {
   const [loading, setLoading] = useState(false);
 
-  const signInWithGoogleMobile = async (): Promise<GoogleAuthResult> => {
+  const signInWithFacebookMobile = async (): Promise<FacebookAuthResult> => {
     try {
       setLoading(true);
 
       const redirectUri = AuthSession.makeRedirectUri({native: 'thedatingapp://auth/callback', preferLocalhost: false});
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: 'facebook',
         options: {
           redirectTo: redirectUri,
           skipBrowserRedirect: true,
@@ -45,8 +44,8 @@ export function useGoogleAuth() {
           }
         );
 
-        if (result.type === 'success' && (result as any).url) {
-          const url = new URL((result as any).url);
+        if (result.type === 'success' && result.url) {
+          const url = new URL(result.url);
           const hash = url.hash.substring(1);
           const params = new URLSearchParams(hash);
 
@@ -59,6 +58,8 @@ export function useGoogleAuth() {
           }
 
           if (accessToken) {
+            console.log({ accessToken, refreshToken });
+
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || '',
@@ -77,6 +78,7 @@ export function useGoogleAuth() {
 
       return { data: null, error: new AuthError('OAuth flow failed') };
     } catch (error) {
+      console.log('Facebook sign in error:', error);
       return { data: null, error: error as AuthError };
     } finally {
       setLoading(false);
@@ -85,6 +87,6 @@ export function useGoogleAuth() {
 
   return {
     loading,
-    signInWithGoogleMobile,
+    signInWithFacebookMobile,
   };
 }

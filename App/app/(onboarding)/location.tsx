@@ -45,13 +45,13 @@ export default function LocationScreen() {
             const lastName = nameParts.slice(1).join(' ') || '';
 
             const notificationTokens = getNotificationTokens();
-            
+
             const profileData = {
                 profile: {
                     firstName,
                     lastName,
                     dateOfBirth: store.birthday ? new Date(store.birthday) : undefined,
-                    gender: store.gender as "male" | "female" | "other",
+                    gender: store.gender === 'Man' ? 'male' : 'female',
                     bio: store.bio,
                     location: {
                         type: "Point" as const,
@@ -94,7 +94,7 @@ export default function LocationScreen() {
             setShowErrorDialog(true);
         }
     };
-    
+
     useEffect(() => {
         if (error && !showErrorDialog) {
             setShowErrorDialog(true);

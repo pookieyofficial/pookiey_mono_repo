@@ -5,7 +5,7 @@ import { verifyUser, verifyToken } from "../middleware/userMiddlewares";
 const userRouter = Router();
 
 userRouter.get("/me", verifyToken, getMe);
-userRouter.post("/me", createUser);
+userRouter.post("/me", verifyToken, createUser);
 userRouter.patch("/me", verifyUser, updateUser);
 
 userRouter.get("/get-users", verifyToken, getUsers);

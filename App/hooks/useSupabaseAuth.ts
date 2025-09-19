@@ -123,21 +123,33 @@ export function useSupabaseAuth() {
   // This function is used to handle the authentication success after any authentication method
   const handleAuthSuccess = async (supabaseUser: SupabaseUser, accessToken: string) => {
     try {
+
       if (!supabaseUser?.id) {
+        console.log('❌ handleAuthSuccess - No user ID, redirecting to auth');
         router.replace('/(auth)');
         logout();
         await hideSplashScreen();
         return;
       }
 
+      console.log('🔄 handleAuthSuccess - Calling getOrCreateUser...');
       const user = await getOrCreateUser(
         accessToken,
         supabaseUser
       );
 
+      console.log('✅ handleAuthSuccess - User result:', {
+        success: user?.success,
+        hasProfile: !!user?.data?.profile,
+        isOnboarded: user?.data?.profile?.isOnboarded,
+        email: user?.data?.email
+      });
+
       if (user?.data?.profile?.isOnboarded) {
+        console.log('🏠 handleAuthSuccess - User onboarded, navigating to home');
         router.replace('/(home)');
       } else {
+        console.log('📝 handleAuthSuccess - User not onboarded, navigating to onboarding');
         router.replace('/(onboarding)/profile');
       }
 
@@ -146,7 +158,7 @@ export function useSupabaseAuth() {
 
       await hideSplashScreen();
     } catch (error: any) {
-      console.error('Error handling auth success:', error);
+      console.error('❌ handleAuthSuccess - Error:', error);
       router.replace('/(auth)');
       logout();
 

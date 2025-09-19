@@ -74,12 +74,12 @@ export default function InterestScreen() {
                     size={18}
                     color={isSelected ? '#ffffff' : '#666666'}
                 />
-                <Text style={[
+                <ThemedText type='defaultSemiBold' style={[
                     styles.interestText,
                     isSelected && styles.interestTextSelected,
                 ]}>
                     {interest.name}
-                </Text>
+                </ThemedText>
             </TouchableOpacity>
         );
     };

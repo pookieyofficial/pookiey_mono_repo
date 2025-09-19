@@ -44,7 +44,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
         req.user = {
             user_id: supabaseUser.id,
             email: supabaseUser.email,
-            phoneNumber: supabaseUser.phone,
+            phoneNumber: supabaseUser.phone || supabaseUser.user_metadata?.phone,
             user: user
         } as any;
         console.log({ reqUser: req.user })

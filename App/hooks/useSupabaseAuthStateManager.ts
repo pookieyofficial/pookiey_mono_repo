@@ -1,5 +1,3 @@
-import { router } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { useAuthStore } from '../store/authStore';

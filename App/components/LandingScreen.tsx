@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from './ThemedText';
 const { width, height } = Dimensions.get('window');
 
 interface OnboardingSlide {
@@ -108,7 +109,8 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
         //     clearTimeout(autoScrollTimer.current);
         // }
         // onComplete();
-        router.push('/(onboarding)/profile')
+        router.replace('/(auth)/login')
+        // router.push('/(onboarding)/profile')
     };
 
     const renderImage = (item: OnboardingSlide, index: number) => {
@@ -179,8 +181,8 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
 
                 <View style={styles.middleSection}>
                     <View style={styles.textContainer}>
-                        <Text style={styles.title}>{currentSlideData.title}</Text>
-                        <Text style={styles.description}>{currentSlideData.description}</Text>
+                        <ThemedText type='title' style={styles.title}>{currentSlideData.title}</ThemedText>
+                        <ThemedText type='subtitle' style={styles.description}>{currentSlideData.description}</ThemedText>
                     </View>
                     
                     <View style={styles.pagination}>
@@ -206,29 +208,29 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
                         onPress={handleCreateAccount}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.createAccountButtonText}>
+                        <ThemedText style={styles.createAccountButtonText}>
                             Let's Continue!
-                        </Text>
+                        </ThemedText>
                     </TouchableOpacity>
 
                     <View style={styles.footerContainer}>
                         <View style={styles.termsContainer}>
-                            <Text style={styles.termsText}>
+                            <ThemedText style={styles.termsText}>
                                 By continuing, you agree to our{' '}
-                                <Text
+                                <ThemedText
                                     style={styles.linkText}
                                     onPress={() => {/* Handle Terms navigation */ }}
                                 >
                                     Terms & Conditions
-                                </Text>
+                                </ThemedText>
                                 {' '}and{' '}
-                                <Text
+                                <ThemedText
                                     style={styles.linkText}
                                     onPress={() => {/* Handle Privacy navigation */ }}
                                 >
                                     Privacy Policy
-                                </Text>
-                            </Text>
+                                </ThemedText>
+                            </ThemedText>
                         </View>
                     </View>
                 </View>

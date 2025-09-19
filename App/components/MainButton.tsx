@@ -1,5 +1,6 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Colors } from "@/constants/Colors";
+import { ThemedText } from "./ThemedText";
 
 export default function MainButton(props: { title: string, onPress: () => void, disabled?: boolean }) {
     return (
@@ -13,10 +14,9 @@ export default function MainButton(props: { title: string, onPress: () => void, 
                     ?
                     <ActivityIndicator size="small" color="#ffffff" />
                     :
-                    <Text
-                        style={styles.confirmButtonText}>
+                    <ThemedText type='defaultSemiBold' style={{ color: '#ffffff' }}>
                         {props.title}
-                    </Text>}
+                    </ThemedText>}
             </TouchableOpacity>
         </View>
     )
@@ -40,11 +40,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
-    },
-    confirmButtonText: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#ffffff',
-        letterSpacing: 0.5,
     },
 })

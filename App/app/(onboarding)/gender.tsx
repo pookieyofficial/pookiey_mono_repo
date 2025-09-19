@@ -8,7 +8,6 @@ import { router } from 'expo-router';
 import React from 'react';
 import {
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -18,10 +17,6 @@ type GenderOption = 'Woman' | 'Man';
 
 export default function GenderScreen() {
     const { setGender, gender } = useOnboardingStore();
-
-    const handleBack = () => {
-        router.back();
-    };
 
     const handleContinue = () => {
         if (gender === '') return
@@ -45,12 +40,12 @@ export default function GenderScreen() {
                 onPress={() => handleGenderSelect(gender)}
                 activeOpacity={0.7}
             >
-                <Text style={[
+                <ThemedText type='defaultSemiBold' style={[
                     styles.genderText,
                     isSelected && styles.genderTextSelected,
                 ]}>
                     {gender}
-                </Text>
+                </ThemedText>
                 {isSelected && (
                     <Ionicons
                         name="checkmark"

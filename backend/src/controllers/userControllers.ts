@@ -4,7 +4,7 @@ import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 
 export const getMe = async (req: Request, res: Response) => {
     try {
-
+        console.info("getMe controller");
         const user = (req.user as any)?.user;
         console.log({ user })
 
@@ -21,9 +21,19 @@ export const getMe = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const { user_id, email, phoneNumber, displayName, photoURL, provider = "email" } = req.body;
+        console.info("createUser controller");
+        
+        // Get user data from verified token (middleware sets this)
+        const tokenUser = req.user as any;
+        const { displayName, photoURL, provider = "google" } = req.body;
+        
+        // Use token data as source of truth for critical fields
+        const user_id = tokenUser.user_id;
+        const email = tokenUser.email;
+        const phoneNumber = tokenUser.phoneNumber;
 
-        console.log({ user_id, email, phoneNumber, provider });
+        console.log("Token user data:", { user_id, email, phoneNumber, provider });
+        console.log("Request body data:", { displayName, photoURL, provider });
 
         if (!user_id) {
             return res.status(400).json({ success: false, message: "Supabase ID is required" });
@@ -83,6 +93,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
     try {
+        console.info("updateUser controller");
         const user = req.user;
         if (!user) {
             res.status(400).json({ message: "User not found" });
@@ -115,6 +126,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
     try {
+        console.info("getUsers controller");
         const users = await User.find();
         console.log({ users })
         res.json({ success: true, data: users });
