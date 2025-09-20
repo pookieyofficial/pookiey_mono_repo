@@ -20,10 +20,7 @@ export default function Page() {
       const result = await signInWithFacebookMobile();
       if (result.error) {
         Alert.alert('Facebook Sign In Error', result.error.message);
-        console.log('Facebook sign in error:', result.error);
       } else {
-        // Handle successful sign in - navigate to home or onboarding
-        console.log('Facebook sign in successful:', result.data);
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred during Facebook sign in');
@@ -35,10 +32,6 @@ export default function Page() {
       const result = await signInWithGoogleMobile();
       if (result.error) {
         Alert.alert('Google Sign In Error', result.error.message);
-        console.log('Google sign in error:', result.error);
-      } else {
-        // Handle successful sign in - navigate to home or onboarding
-        console.log('Google sign in successful:', result.data);
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred during Google sign in');

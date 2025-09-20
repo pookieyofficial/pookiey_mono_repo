@@ -1,4 +1,3 @@
-import { useSupabaseAuthStateManager } from '@/hooks/useSupabaseAuthStateManager';
 import { useAuthStore } from '@/store/authStore';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -24,9 +23,26 @@ export default function RootLayout() {
 
   // Check if the user is loading
   const isLoading = useAuthStore((s) => s.isLoading);
+  
+  // Initialize auth system once
+  const { setupAuthListener, getInitialSession } = useAuthStore();
 
-  // Handle the authentication state change globally in the app
-    useSupabaseAuthStateManager();
+  // Initialize auth system once on app load
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('🚀 Initializing centralized auth system...');
+      
+      // Setup the auth listener (singleton - only runs once)
+      setupAuthListener();
+      
+      // Get initial session
+      await getInitialSession();
+      
+      console.log('✅ Centralized auth system initialized');
+    };
+
+    initializeAuth();
+  }, []); // Empty dependency array ensures this runs only once
 
   // Handle deep linking URLs
   useEffect(() => {

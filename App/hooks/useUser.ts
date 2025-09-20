@@ -21,8 +21,11 @@ export const useUser = () => {
     }
 
     const createUser = async (idToken: string, supabaseUser: any) => {
+        if (!idToken) {
+            return Error('No ID token');
+        }
+
         try {
-            console.log('🔍 createUser - Supabase user data:', JSON.stringify(supabaseUser, null, 2));
 
             if (!supabaseUser?.id) {
                 throw new Error('Supabase user ID is required');
@@ -40,9 +43,6 @@ export const useUser = () => {
                 provider: supabaseUser.app_metadata?.provider || 'google',
             };
 
-            console.log('📤 createUser - Sending additional user data to backend:', JSON.stringify(userData, null, 2));
-
-
             const response = await axios.post(createUserAPI, userData, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
@@ -58,35 +58,26 @@ export const useUser = () => {
 
     const getOrCreateUser = async (idToken: string, supabaseUser: any) => {
         try {
-            console.log('🔍 getOrCreateUser - Attempting to fetch existing user...');
             const existingUser = await getUser(idToken);
-            console.log('✅ getOrCreateUser - Found existing user:', existingUser?.data?.email);
             return existingUser;
         }
         catch (error: any) {
             const status = error?.response?.status;
-            console.log('❌ getOrCreateUser - Get user failed with status:', status);
-            
+
             if (status === 404) {
                 try {
-                    console.log('🔄 getOrCreateUser - User not found, creating new user...');
                     const createResult = await createUser(idToken, supabaseUser);
-                    console.log('✅ getOrCreateUser - User created:', createResult?.success);
-                    
+
                     if (createResult?.success) {
-                        console.log('🔄 getOrCreateUser - Fetching newly created user...');
                         return await getUser(idToken);
                     }
                     return createResult;
                 } catch (createError: any) {
-                    console.log('❌ getOrCreateUser - Create user failed:', createError?.response?.status);
-                    
+
                     if (createError?.response?.status === 400) {
                         try {
-                            console.log('🔄 getOrCreateUser - Retrying get user after 400 error...');
                             return await getUser(idToken);
                         } catch (getError) {
-                            console.log('❌ getOrCreateUser - Final get user failed');
                             throw createError;
                         }
                     }
@@ -98,6 +89,10 @@ export const useUser = () => {
     }
 
     const updateUser = async (idToken: string, userData: any) => {
+        if (!idToken) {
+            return Error('No ID token');
+        }
+
         try {
             const response = await axios.patch(updateUserAPI, userData, {
                 headers: {

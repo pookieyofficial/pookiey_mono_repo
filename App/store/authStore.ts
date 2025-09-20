@@ -1,7 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '@supabase/supabase-js';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { supabase } from '../config/supabaseConfig';
+import { useUser } from '../hooks/useUser';
 
 export interface SupabaseUser {
   id: string;
@@ -20,15 +24,20 @@ export interface SupabaseUser {
 
 interface AuthState {
   user: SupabaseUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
   idToken: string | null;
   notificationTokens: string[];
+  isAuthListenerSetup: boolean;
+  lastAuthState: boolean | null;
+  splashHidden: boolean;
 }
 
 interface AuthActions {
   setUser: (user: SupabaseUser | null) => void;
+  setSession: (session: Session | null) => void;
   login: (user: SupabaseUser) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
@@ -39,17 +48,33 @@ interface AuthActions {
   removeNotificationToken: (token: string) => void;
   getNotificationTokens: () => string[];
   setNotificationTokens: (tokens: string[]) => void;
+
+  // Supabase auth methods
+  signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
+  signInWithPhone: (phone: string) => Promise<{ data: any; error: AuthError | null }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ data: any; error: AuthError | null }>;
+  signOut: () => Promise<void>;
+
+  // Auth state management
+  setupAuthListener: () => void;
+  getInitialSession: () => Promise<void>;
+  handleAuthSuccess: (supabaseUser: SupabaseUser, accessToken: string) => Promise<void>;
+  hideSplashScreen: () => Promise<void>;
 }
 
 type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
   user: null,
+  session: null,
   isAuthenticated: false,
   isLoading: true,
   isInitialized: false,
   idToken: null,
   notificationTokens: [],
+  isAuthListenerSetup: false,
+  lastAuthState: null,
+  splashHidden: false,
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -64,6 +89,10 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
+      setSession: (session: Session | null) => {
+        set({ session });
+      },
+
       login: (user: SupabaseUser) => {
         set({
           user,
@@ -75,6 +104,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: () => {
         set({
           user: null,
+          session: null,
           isAuthenticated: false,
           isLoading: false,
           idToken: null,
@@ -119,6 +149,201 @@ export const useAuthStore = create<AuthStore>()(
       setNotificationTokens: (tokens: string[]) => {
         set({ notificationTokens: tokens });
       },
+
+      // Supabase auth methods
+      signInWithEmail: async (email: string, password: string) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw error;
+          return { data, error: null };
+        } catch (error) {
+          return { data: null, error: error as AuthError };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      signInWithPhone: async (phone: string) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.signInWithOtp({
+            phone,
+          });
+          if (error) throw error;
+          return { data, error: null };
+        } catch (error) {
+          return { data: null, error: error as AuthError };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      verifyOtp: async (phone: string, token: string) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.verifyOtp({
+            phone,
+            token,
+            type: 'sms',
+          });
+          if (error) throw error;
+          return { data, error: null };
+        } catch (error) {
+          return { data: null, error: error as AuthError };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      signOut: async () => {
+        try {
+          set({ isLoading: true });
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
+          const { logout } = get();
+          logout();
+        } catch (error) {
+          console.error('Sign out error:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      // Auth state management methods
+      hideSplashScreen: async () => {
+        const { splashHidden } = get();
+        if (!splashHidden) {
+          try {
+            setTimeout(async () => {
+              await SplashScreen.hideAsync();
+              set({ splashHidden: true });
+            }, 300);
+          } catch {
+            console.error('Error hiding splash screen');
+          }
+        }
+      },
+
+      handleAuthSuccess: async (supabaseUser: SupabaseUser, accessToken: string) => {
+
+        try {
+          if (!supabaseUser?.id) {
+            router.replace('/(auth)');
+            const { logout } = get();
+            logout();
+            const { hideSplashScreen } = get();
+            await hideSplashScreen();
+            return;
+          }
+
+          console.log('🔄 --- ---  handleAuthSuccess - Calling getOrCreateUser...');
+
+          // Get the useUser hook instance
+          const { getOrCreateUser } = useUser();
+          const user = await getOrCreateUser(accessToken, supabaseUser);
+
+
+          if (user?.data?.profile?.isOnboarded) {
+            router.replace('/(home)');
+          } else {
+            router.replace('/(onboarding)/profile');
+          }
+
+          const { login, setIdToken } = get();
+          login(supabaseUser);
+          setIdToken(accessToken);
+
+          const { hideSplashScreen } = get();
+          await hideSplashScreen();
+
+        } catch (error: any) {
+          router.replace('/(auth)');
+          const { logout } = get();
+          logout();
+
+          const { hideSplashScreen } = get();
+          await hideSplashScreen();
+        }
+      },
+
+      getInitialSession: async () => {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+
+          if (error) {
+            set({ isLoading: false });
+            return;
+          }
+
+          if (session) {
+            const { setSession, setUser, handleAuthSuccess } = get();
+            setSession(session);
+            setUser(session.user as SupabaseUser);
+            await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
+          } else {
+            set({ isLoading: false });
+            const { hideSplashScreen } = get();
+            await hideSplashScreen();
+          }
+        } catch (error) {
+          set({ isLoading: false });
+          const { hideSplashScreen } = get();
+          await hideSplashScreen();
+        }
+      },
+
+      setupAuthListener: () => {
+        const { isAuthListenerSetup } = get();
+
+        // Prevent multiple listeners
+        if (isAuthListenerSetup) {
+          return;
+        }
+
+        set({ isAuthListenerSetup: true });
+
+        // Handle the authentication state change globally in the app
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          const { lastAuthState, isInitialized, isLoading } = get();
+          const isAuthenticated = !!session?.user;
+
+          // Prevent duplicate processing
+          if (lastAuthState === isAuthenticated) {
+            return;
+          }
+
+          set({ lastAuthState: isAuthenticated });
+
+          if (session?.user) {
+            const { setSession, setUser, handleAuthSuccess } = get();
+            setSession(session);
+            setUser(session.user as SupabaseUser);
+            console.log("Session data: ", session)
+            await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
+          } else {
+            const { setSession, setUser, logout, hideSplashScreen } = get();
+            setSession(null);
+            setUser(null);
+
+            if (isInitialized && !isLoading) {
+              router.replace('/(auth)');
+              logout();
+            }
+            await hideSplashScreen();
+          }
+
+          const { initialize } = get();
+          if (!isInitialized) {
+            initialize();
+          }
+
+          set({ isLoading: false });
+        });
+      },
     }),
     {
       name: 'auth-storage',
@@ -126,6 +351,7 @@ export const useAuthStore = create<AuthStore>()(
 
       partialize: (state) => ({
         user: state.user,
+        session: state.session,
         isAuthenticated: state.isAuthenticated,
         idToken: state.idToken,
         notificationTokens: state.notificationTokens,
