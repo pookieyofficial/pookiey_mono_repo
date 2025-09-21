@@ -20,19 +20,22 @@ async function signUpUser(email: string, password: string) {
 
         const data = await response.json();
 
+
         if (!response.ok) throw data;
 
         console.log('✅ Signed up user:', data);
+        console.log(data.id)
 
 
         const user = await fetch(`http://localhost:${process.env.PORT || 6969}/api/v1/user/me`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email: data.email, user_id: data.id })
+            body: JSON.stringify({ email: data.email, user_id: data.id, provider: 'email' })
         })
         const userData = await user.json();
+        console.log({ userData })
         console.log('✅ User created:', userData);
 
 

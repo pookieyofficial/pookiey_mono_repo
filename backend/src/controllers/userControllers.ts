@@ -22,16 +22,16 @@ export const getMe = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
     try {
         console.info("createUser controller");
-        
-        // Get user data from verified token (middleware sets this)
-        const tokenUser = req.user as any;
-        const { displayName, photoURL, provider = "google" } = req.body;
-        
-        // Use token data as source of truth for critical fields
-        const user_id = tokenUser.user_id;
-        const email = tokenUser.email;
-        const phoneNumber = tokenUser.phoneNumber;
 
+        // Use token data as source of truth for critical fields
+        // const tokenUser = req.user as any;
+
+        // const user_id = tokenUser.user_id;
+        // const email = tokenUser.email;
+        // const phoneNumber = tokenUser.phoneNumber;
+
+        // Get user data from verified token (middleware sets this)
+        const { displayName, photoURL, provider = "google", user_id, email, phoneNumber } = req.body;
         console.log("Token user data:", { user_id, email, phoneNumber, provider });
         console.log("Request body data:", { displayName, photoURL, provider });
 
@@ -127,12 +127,101 @@ export const updateUser = async (req: Request, res: Response) => {
 export const getUsers = async (req: Request, res: Response) => {
     try {
         console.info("getUsers controller");
-        const users = await User.find();
-        console.log({ users })
+
+        const currentUserId = req.user?.user_id;
+
+        // Validate location data
+        const longitude = parseFloat(req.query.longitude ? req.query.longitude as string : req.user?.profile?.location?.coordinates[0] as unknown as string);
+        const latitude = parseFloat(req.query.latitude ? req.query.latitude as string : req.user?.profile?.location?.coordinates[1] as unknown as string);
+
+        if (isNaN(latitude) || isNaN(longitude)) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid latitude and longitude are required"
+            });
+        }
+
+        const userLocation = [longitude, latitude];
+        const radius = parseInt(req.query.radius as string) || 5000;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const minAge = parseInt(req.query.minAge as string) || 18;
+        const maxAge = parseInt(req.query.maxAge as string) || 30;
+        const interests = (req.query.interests as string)?.split(",") || [];
+
+        const skip = (page - 1) * limit;
+
+        console.log({ userLocation })
+        console.log({ radius })
+        console.log({ page })
+        console.log({ limit })
+        console.log({ minAge })
+        console.log({ maxAge })
+        console.log({ interests })
+        console.log({ currentUserId })
+
+        // Check if we have valid coordinates
+        if (!userLocation[0] || !userLocation[1]) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid location coordinates"
+            });
+        }
+
+        const users = await User.aggregate([
+            {
+                $geoNear: {
+                    near: { type: "Point", coordinates: userLocation as [number, number] },
+                    distanceField: "dist.calculated",
+                    spherical: true,
+                    maxDistance: radius,
+                },
+            },
+            // 2. Exclude self
+            { $match: { user_id: { $ne: currentUserId } } },
+            // 3. Age filter
+            // { $match: { age: { $gte: minAge, $lte: maxAge } } },
+            // 4. Interest filter (at least one match)
+            // { $match: interests.length > 0 ? { interests: { $in: interests } } : {} },
+            // 5. Exclude already interacted users
+            {
+                $lookup: {
+                    from: "interactions",
+                    let: { targetId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$fromUser", currentUserId] },
+                                        { $eq: ["$toUser", "$$targetId"] },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "alreadyInteracted",
+                },
+            },
+            // { $match: { alreadyInteracted: { $size: 0 } } },
+            // // 6. Compute shared interests
+            // {
+            //     $addFields: {
+            //         sharedInterests: { $size: { $setIntersection: ["$interests", interests] } },
+            //         randomFactor: { $rand: {} },
+            //     },
+            // },
+            // // 7. Weighted sort: shared interests + random
+            // { $sort: { sharedInterests: -1, randomFactor: 1 } },
+            // 8. Pagination
+            { $skip: skip },
+            { $limit: limit },
+        ]);
+
+        console.log({ users });
         res.json({ success: true, data: users });
-    }
-    catch (error) {
-        console.error('getUsers error:', error);
-        res.status(400).json({ message: "Get users failed" });
+    } catch (error) {
+        console.error("getUsers error:", error);
+        res.status(400).json({ success: false, message: "Get users failed" });
     }
 };

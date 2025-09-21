@@ -34,6 +34,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
             return res.status(401).json({ message: "Unauthorized - No token provided" });
         }
 
+        console.log({ token })
         const supabaseUser = await verifySupabaseToken(token);
         if (!supabaseUser) {
             return res.status(401).json({ message: "Unauthorized - Invalid token" });
