@@ -23,7 +23,7 @@ export default function RootLayout() {
 
   // Check if the user is loading
   const isLoading = useAuthStore((s) => s.isLoading);
-  
+
   // Initialize auth system once
   const { setupAuthListener, getInitialSession } = useAuthStore();
 
@@ -31,13 +31,13 @@ export default function RootLayout() {
   useEffect(() => {
     const initializeAuth = async () => {
       console.log('🚀 Initializing centralized auth system...');
-      
+
       // Setup the auth listener (singleton - only runs once)
       setupAuthListener();
-      
+
       // Get initial session
       await getInitialSession();
-      
+
       console.log('✅ Centralized auth system initialized');
     };
 
@@ -62,13 +62,6 @@ export default function RootLayout() {
     return () => sub.remove();
 
   }, []);
-
-  // Wait for the fonts to load
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
 
   if (!loaded && !error) {
     return null;

@@ -23,15 +23,14 @@ export const createUser = async (req: Request, res: Response) => {
     try {
         console.info("createUser controller");
 
-        // Use token data as source of truth for critical fields
-        // const tokenUser = req.user as any;
-
-        // const user_id = tokenUser.user_id;
-        // const email = tokenUser.email;
-        // const phoneNumber = tokenUser.phoneNumber;
-
         // Get user data from verified token (middleware sets this)
-        const { displayName, photoURL, provider = "google", user_id, email, phoneNumber } = req.body;
+        const tokenUser = req.user as any;
+        const { displayName, photoURL, provider = "google" } = req.body;
+        
+        const user_id = tokenUser.user_id;
+        const email = tokenUser.email;
+        const phoneNumber = tokenUser.phoneNumber;
+        
         console.log("Token user data:", { user_id, email, phoneNumber, provider });
         console.log("Request body data:", { displayName, photoURL, provider });
 

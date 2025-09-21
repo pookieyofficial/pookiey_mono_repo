@@ -204,6 +204,7 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
+          router.replace('/(auth)');
           const { logout } = get();
           logout();
         } catch (error) {

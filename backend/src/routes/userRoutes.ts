@@ -7,7 +7,7 @@ const userRouter = Router();
 userRouter.get("/me", verifyToken, getMe);
 userRouter.get("/get-users", verifyUser, getUsers);
 
-userRouter.post("/me", createUser);
+userRouter.post("/me", verifyToken, createUser);
 userRouter.patch("/me", verifyUser, updateUser);
 
 
