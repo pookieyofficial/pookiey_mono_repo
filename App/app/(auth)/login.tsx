@@ -81,7 +81,7 @@ export default function Page() {
               activeOpacity={0.8}
               onPress={handleGoogleSignIn}
               disabled={googleLoading || facebookLoading}
-            >
+            > 
               <View style={[styles.OauthLogocontainer]}>
                 <AntDesign name="google" size={LOGO_SIZE} color={"white"} />
               </View>
