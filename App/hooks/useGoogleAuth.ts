@@ -3,7 +3,6 @@ import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '../config/supabaseConfig';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { Alert } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -19,7 +18,8 @@ export function useGoogleAuth() {
     try {
       setLoading(true);
 
-      const redirectUri = AuthSession.makeRedirectUri({native: 'thedatingapp://auth/callback', preferLocalhost: false});
+      const redirectUri = AuthSession.makeRedirectUri({ native: 'thedatingapp://auth/callback', preferLocalhost: false });
+      console.log({ redirectUri });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

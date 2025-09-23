@@ -8,6 +8,7 @@ import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -68,8 +69,9 @@ export default function RootLayout() {
   }
 
   return (
-    <PaperProvider>
-      <ThemeProvider value={DefaultTheme}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PaperProvider>
+        <ThemeProvider value={DefaultTheme}>
         {/* <Stack initialRouteName="(onboarding)/profile" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(home)" />
@@ -79,7 +81,8 @@ export default function RootLayout() {
           <Stack.Screen name='(auth)' />
         </Stack>
         <StatusBar style="auto" backgroundColor='red' />
-      </ThemeProvider>
-    </PaperProvider>
+        </ThemeProvider>
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 }

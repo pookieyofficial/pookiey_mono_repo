@@ -8,12 +8,15 @@ import { Foundation } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import CustomLoader from '@/components/CustomLoader';
 
 const { width } = Dimensions.get('window');
 
 export default function Page() {
   const { loading: facebookLoading, signInWithFacebookMobile } = useFacebookAuth();
   const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
+
+  const LOGO_SIZE = 27;
 
   const handleFacebookSignIn = async () => {
     try {
@@ -38,7 +41,11 @@ export default function Page() {
     }
   };
 
-  const LOGO_SIZE = 27;
+  if(googleLoading || facebookLoading)
+  return (
+    <CustomLoader messages={["Logging you in..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
+  )
+
   return (
     <SafeAreaView style={styles.container}>
 
@@ -81,7 +88,7 @@ export default function Page() {
               activeOpacity={0.8}
               onPress={handleGoogleSignIn}
               disabled={googleLoading || facebookLoading}
-            > 
+            >
               <View style={[styles.OauthLogocontainer]}>
                 <AntDesign name="google" size={LOGO_SIZE} color={"white"} />
               </View>
