@@ -1,4 +1,4 @@
-import { getUserAPI, createUserAPI, updateUserAPI } from "../APIs/userAPIs";
+import { getUserAPI, createUserAPI, updateUserAPI, getRecommendedUsersAPI } from "../APIs/userAPIs";
 import axios from "axios";
 
 export const useUser = () => {
@@ -107,5 +107,26 @@ export const useUser = () => {
         }
     }
 
-    return { getUser, createUser, getOrCreateUser, updateUser };
+    const getRecommendedUsers = async (idToken: string, userData: any) => {
+        if (!idToken) {
+            return Error('No ID token');
+        }
+        try {
+            const response = await axios.get(getRecommendedUsersAPI, {
+                params: userData,
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+
+    return { getUser, createUser, getOrCreateUser, updateUser, getRecommendedUsers };
+
+
 }

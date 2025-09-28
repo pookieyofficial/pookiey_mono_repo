@@ -44,6 +44,13 @@ export interface IUserPreferences {
     distanceMaxKm: number;
     ageRange: [number, number];
     showMe: ("male" | "female" | "other")[];
+    notificationPermissions: {
+        like: boolean;
+        message: boolean;
+        match: boolean;
+        comment: boolean;
+        follow: boolean;
+    };
 }
 
 const UserSchema = new Schema<IUser>(
