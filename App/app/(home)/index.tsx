@@ -1,27 +1,92 @@
 import { useAuth } from '@/hooks/useAuth'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { View, Text, TouchableOpacity, ImageSourcePropType } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { CardItem, SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
 import { Colors } from '@/constants/Colors'
+import { useUser } from '@/hooks/useUser'
+import { RecommendedUser } from '@/types/User'
 
 export default function index() {
-  const { signOut } = useAuth()
-  const data: CardItem[] = useMemo(() => [
-    { id: 1, name: 'Jessica Parker', age: 23, job: 'Professional model', image: require('@/assets/images/loginPageImage.png') as ImageSourcePropType },
-    { id: 2, name: 'Camila Snow', age: 23, job: 'Marketer', image: require('@/assets/images/react-logo.png') as ImageSourcePropType },
-    { id: 3, name: 'Bred Jackson', age: 25, job: 'Photograph', image: require('@/assets/images/partial-react-logo.png') as ImageSourcePropType },
-  ], [])
 
-  const onSwiped = (item: CardItem, action: SwipeAction) => {
+  const { getRecommendedUsers } = useUser()
+  const { idToken } = useAuth()
+
+  const { signOut } = useAuth()
+
+  const [profiles, setProfiles] = useState<RecommendedUser[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const onSwiped = async (item: RecommendedUser, action: SwipeAction) => {
     console.log(`Swiped ${action} on`, item)
+    const nextProfiles = profiles.filter(profile => profile._id !== item._id)
+    setProfiles(nextProfiles)
+    if (nextProfiles.length <= 5) {
+      await loadMoreProfiles()
+    }
   }
+
+  useEffect(() => {
+    initializeProfiles()
+  }, [idToken])
+
+  const initializeProfiles = async () => {
+    setIsLoading(true)
+    try {
+      const recommendedUsers = await getRecommendedUsers(idToken as string, {
+        maxDistance: 1000,
+        limit: 10,
+        offset: 0
+      })
+      setProfiles(recommendedUsers.data || [])
+    } catch (error) {
+      console.error('Error initializing profiles:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadMoreProfiles = async () => {
+    try {
+      const recommendedUsers = await getRecommendedUsers(idToken as string, {
+        maxDistance: 1000,
+        limit: 10,
+        offset: 0
+      })
+      if (recommendedUsers.data && recommendedUsers.data.length > 0) {
+        setProfiles(prevProfiles => {
+          const combined = [...prevProfiles, ...recommendedUsers.data]
+          const uniqueProfiles = combined.filter((profile, index, self) => 
+            index === self.findIndex(p => p._id === profile._id)
+          )
+          return uniqueProfiles
+        })
+      }
+    } catch (error) {
+      console.error('Error loading more profiles:', error)
+    }
+  }
+
+  const handleRefreshProfiles = async () => {
+    setIsLoading(true)
+    await initializeProfiles()
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
       <View style={{ flex: 1 }}>
-        <SwipeDeck data={data} onSwiped={onSwiped} />
-        <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, right: 12 }}>
+        {isLoading && profiles.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ThemedText>Loading profiles...</ThemedText>
+          </View>
+        ) : (
+          <SwipeDeck data={profiles} onSwiped={onSwiped} />
+        )}
+        <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 12, right: 12 }}>
+          <ThemedText>Refresh</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>
         </TouchableOpacity>
       </View>

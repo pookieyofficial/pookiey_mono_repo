@@ -4,10 +4,10 @@ dotenv.config();
 
 
 const supabaseUrl = process.env.SUPABASE_URL as string;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string  ;
 
-if (!supabaseServiceKey) {
-    console.warn('SUPABASE_SERVICE_ROLE_KEY is not set. Some operations may fail.');
+if (!supabaseServiceKey || !supabaseUrl) {
+    console.warn('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL is not set.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
