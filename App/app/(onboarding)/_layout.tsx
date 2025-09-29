@@ -8,6 +8,8 @@ export default function _layout() {
                 <Stack.Screen name="profile" />
                 <Stack.Screen name="gender" />
                 <Stack.Screen name="interest" />
+                <Stack.Screen name="image" />
+                <Stack.Screen name="zodiacSign" />
                 <Stack.Screen name="contact" />
                 <Stack.Screen name="notification" />
                 <Stack.Screen name="location" />
