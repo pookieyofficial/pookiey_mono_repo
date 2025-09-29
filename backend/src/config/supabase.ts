@@ -1,16 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!supabaseServiceKey) {
-    console.warn('SUPABASE_SERVICE_ROLE_KEY is not set. Some operations may fail.');
-    console.log({supabaseUrl})
-    console.log({supabaseServiceKey})
-    throw new Error("no Supabase is Comfigured in the backend")
+const supabaseUrl = process.env.SUPABASE_URL as string;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string  ;
+
+if (!supabaseServiceKey || !supabaseUrl) {
+    console.warn('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL is not set.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseServiceKey, {

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { User } from "../models";
 import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
+import { isValidLocation } from "../utils/validateCoordinates";
 
 export const getMe = async (req: Request, res: Response) => {
     try {
@@ -26,11 +27,11 @@ export const createUser = async (req: Request, res: Response) => {
         // Get user data from verified token (middleware sets this)
         const tokenUser = req.user as any;
         const { displayName, photoURL, provider = "google" } = req.body;
-        
+
         const user_id = tokenUser.user_id;
         const email = tokenUser.email;
         const phoneNumber = tokenUser.phoneNumber;
-        
+
         console.log("Token user data:", { user_id, email, phoneNumber, provider });
         console.log("Request body data:", { displayName, photoURL, provider });
 
@@ -141,7 +142,7 @@ export const getUsers = async (req: Request, res: Response) => {
         }
 
         const userLocation = [longitude, latitude];
-        const radius = parseInt(req.query.radius as string) || 5000;
+        const radius = parseFloat(req.query.radius as string) || 5000;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const minAge = parseInt(req.query.minAge as string) || 18;
@@ -167,13 +168,17 @@ export const getUsers = async (req: Request, res: Response) => {
             });
         }
 
+        if (!(isValidLocation(longitude, latitude))) {
+            return res.status(400).json({ success: false, message: "Incorrect longitude or latitude values" })
+        }
+
         const users = await User.aggregate([
             {
                 $geoNear: {
                     near: { type: "Point", coordinates: userLocation as [number, number] },
                     distanceField: "dist.calculated",
                     spherical: true,
-                    maxDistance: radius,
+                    maxDistance: radius * 1000,
                 },
             },
             // 2. Exclude self
@@ -215,9 +220,10 @@ export const getUsers = async (req: Request, res: Response) => {
             // 8. Pagination
             { $skip: skip },
             { $limit: limit },
+            { $project: { profile: 1, distance: 1, age: 1, displayName: 1 } },
         ]);
 
-        console.log({ users });
+        // console.log({ users });
         res.json({ success: true, data: users });
     } catch (error) {
         console.error("getUsers error:", error);

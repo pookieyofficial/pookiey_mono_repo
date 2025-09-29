@@ -1,23 +1,15 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { ThemedText } from './ThemedText';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import { Feather } from '@expo/vector-icons';
-import { Home, Heart, Star, Plus } from 'react-native-feather'
+import { Heart, Star, Plus, } from 'react-native-feather'
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export type CardItem = {
-    id: string | number;
-    name: string;
-    age: number;
-    job?: string;
-    image: any;
-};
+export type CardItem = any
 
 export type SwipeAction = 'left' | 'right' | 'up';
 
@@ -32,33 +24,43 @@ const ACTION_BUTTON_LOGO_SIZE = 30;
 
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
     const insets = useSafeAreaInsets();
-    const [index, setIndex] = useState(0);
-    const current = data[index];
-    const next = data[index + 1];
+    const current = data[0];
+    const next = data[1];
+    const third = data[2];
+
+    // Keep last known secondary cards to avoid flicker during rapid swipes/fetch
+    const lastNextRef = useRef<CardItem | null>(null);
+    if (next) lastNextRef.current = next;
+    const visualNext = next || lastNextRef.current;
 
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const rotateZ = useSharedValue(0);
     const nextScale = useSharedValue(0.96);
-    const nextTranslateY = useSharedValue(14);
+    const nextTranslateY = useSharedValue(-25);
+
+
+    const calculateAge = (dateOfBirth: Date) => {
+        const today = new Date();
+        const birthDate = new Date(dateOfBirth);
+        console.log(birthDate)
+
+        const age = today.getFullYear() - birthDate.getFullYear();
+        console.log(age)
+        return age;
+    }
 
     const resetCard = () => {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
         rotateZ.value = withSpring(0);
         nextScale.value = withSpring(0.96);
-        nextTranslateY.value = withSpring(14);
+        nextTranslateY.value = withSpring(-22);
     };
 
     const advance = (action: SwipeAction) => {
         if (!current) return;
         onSwiped?.(current, action);
-        setIndex((prev) => prev + 1);
-        translateX.value = 0;
-        translateY.value = 0;
-        rotateZ.value = 0;
-        nextScale.value = 0.96;
-        nextTranslateY.value = 14;
     };
 
     const pan = Gesture.Pan()
@@ -69,7 +71,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
             translateY.value = e.translationY;
             rotateZ.value = translateX.value * 0.0009;
             nextScale.value = 0.96 + Math.min(Math.abs(translateX.value) / (SCREEN_WIDTH * 1.8), 0.06);
-            nextTranslateY.value = 14 - Math.min(Math.abs(translateX.value) / 10, 10);
+            nextTranslateY.value = -22 + Math.min(Math.abs(translateX.value) / 10, 10);
         })
         .onEnd(() => {
             const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD_X;
@@ -82,14 +84,26 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
                 translateX.value = withTiming(x * 1.2, { duration: 260 }, () => runOnJS(advance)(shouldSwipeRight ? 'right' : shouldSwipeLeft ? 'left' : 'up'));
                 translateY.value = withTiming(y * 1.2, { duration: 260 });
                 rotateZ.value = withTiming((shouldSwipeRight ? 1 : -1) * 0.15, { duration: 260 });
+                // Promote next card smoothly while current animates out
+                nextScale.value = withTiming(1, { duration: 260 });
+                nextTranslateY.value = withTiming(0, { duration: 260 });
             } else {
                 translateX.value = withSpring(0);
                 translateY.value = withSpring(0);
                 rotateZ.value = withSpring(0);
                 nextScale.value = withSpring(0.96);
-                nextTranslateY.value = withSpring(14);
+                nextTranslateY.value = withSpring(-22);
             }
         });
+
+    // When current card changes (data[0]), reset transforms for the new layout
+    useEffect(() => {
+        translateX.value = 0;
+        translateY.value = 0;
+        rotateZ.value = 0;
+        nextScale.value = 0.96;
+        nextTranslateY.value = -22;
+    }, [current?.id, current?._id]);
 
     const currentStyle = useAnimatedStyle(() => ({
         transform: [
@@ -106,6 +120,39 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
         ],
         opacity: current ? 1 : 0,
     }));
+
+    // Overlays - appear animations based on swipe direction
+    const likeOpacityStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(translateX.value, [0, SWIPE_THRESHOLD_X], [0, 1], Extrapolation.CLAMP),
+        transform: [{ scale: interpolate(translateX.value, [0, SWIPE_THRESHOLD_X], [0.9, 1], Extrapolation.CLAMP) }]
+    }));
+
+    const dislikeOpacityStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD_X, 0], [1, 0], Extrapolation.CLAMP),
+        transform: [{ scale: interpolate(translateX.value, [-SWIPE_THRESHOLD_X, 0], [1, 0.9], Extrapolation.CLAMP) }]
+    }));
+
+    const superLikeOpacityStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(translateY.value, [-SWIPE_THRESHOLD_Y, 0], [1, 0], Extrapolation.CLAMP),
+        transform: [{ scale: interpolate(translateY.value, [-SWIPE_THRESHOLD_Y, 0], [1, 0.9], Extrapolation.CLAMP) }]
+    }));
+
+    const overlayColorStyle = useAnimatedStyle(() => {
+        const likeProgress = interpolate(translateX.value, [0, SWIPE_THRESHOLD_X], [0, 0.7], Extrapolation.CLAMP);
+        const dislikeProgress = interpolate(translateX.value, [-SWIPE_THRESHOLD_X, 0], [0.7, 0], Extrapolation.CLAMP);
+        const superLikeProgress = interpolate(translateY.value, [-SWIPE_THRESHOLD_Y, 0], [0.7, 0], Extrapolation.CLAMP);
+
+        // Choose dominant overlay per axis
+        let bg = 'transparent';
+        if (superLikeProgress > likeProgress && superLikeProgress > dislikeProgress) {
+            bg = `rgba(59, 130, 246, ${superLikeProgress})`; // blue-ish for superlike
+        } else if (likeProgress >= dislikeProgress) {
+            bg = `rgba(34, 197, 94, ${likeProgress})`; // green-ish for like
+        } else {
+            bg = `rgba(239, 68, 68, ${dislikeProgress})`; // red-ish for dislike
+        }
+        return { backgroundColor: bg };
+    });
 
     const triggerSwipe = useCallback((action: SwipeAction) => {
         if (!current) return;
@@ -137,31 +184,118 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
 
             {/* Middle Section - Cards */}
             <View style={styles.middleSection}>
-                {next && (
-                    <Animated.View style={[styles.card, styles.nextCard, nextStyle]}>
-                        <Image source={next.image} resizeMode="cover" style={styles.image} />
+
+                {/* Third Card (background, subtle) */}
+                {third && (
+                    <Animated.View style={[styles.card, styles.thirdCard, { transform: [{ scale: 0.94 }, { translateY: -28 }] }] }>
+                        <Image
+                            source={third?.profile?.photos?.[0]?.url
+                                ? { uri: third.profile.photos[0].url }
+                                : require('@/assets/images/loginPageImage.png')}
+                            resizeMode="cover"
+                            style={styles.image} />
+
                         <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.7)']}
+                            colors={['transparent', 'rgba(0,0,0,0.55)']}
                             style={styles.gradient}
                         />
+
                         <View style={styles.footer}>
-                            <ThemedText type='defaultSemiBold'>{next.name}, {next.age}</ThemedText>
-                            {next.job ? <ThemedText type='default'>{next.job}</ThemedText> : null}
+                            <ThemedText type='bold' style={styles.name}>
+                                {third?.displayName}, {calculateAge(third?.profile?.dateOfBirth)}
+                            </ThemedText>
+                            {third?.profile?.occupation ? (
+                                <ThemedText type='default' style={styles.job}>
+                                    {third?.profile?.occupation}
+                                </ThemedText>
+                            ) : null}
                         </View>
                     </Animated.View>
                 )}
 
-                <GestureDetector gesture={pan}>
-                    <Animated.View style={[styles.card, currentStyle]}>
-                        <Image source={current.image} resizeMode="cover" style={styles.image} />
+                {/* Next Card */}
+                {visualNext && (
+                    <Animated.View style={[styles.card, styles.nextCard, nextStyle]}>
+                        <Image
+                            source={visualNext?.profile?.photos?.[0]?.url
+                                ? { uri: visualNext.profile.photos[0].url }
+                                : require('@/assets/images/loginPageImage.png')}
+                            resizeMode="cover"
+                            style={styles.image} />
+
                         <LinearGradient
                             colors={['transparent', 'rgba(0,0,0,0.7)']}
                             style={styles.gradient}
                         />
+
                         <View style={styles.footer}>
-                            <ThemedText style={styles.name}>{current.name}, {current.age}</ThemedText>
-                            {current.job ? <ThemedText style={styles.job}>{current.job}</ThemedText> : null}
+
+                            <ThemedText type='bold' style={styles.name}>
+                                {visualNext?.displayName}, {calculateAge(visualNext?.profile?.dateOfBirth)}
+                            </ThemedText>
+
+                            {visualNext?.profile?.occupation
+                                ?
+                                <ThemedText type='default' style={styles.job}>
+                                    {visualNext?.profile?.occupation}
+                                </ThemedText>
+                                :
+                                null}
+
                         </View>
+                    </Animated.View>
+                )}
+
+
+                {/* Current Card */}
+                <GestureDetector gesture={pan}>
+                    <Animated.View style={[styles.card, currentStyle]}>
+
+                        <Image
+                            source={current?.profile?.photos?.[0]?.url
+                                ? { uri: current.profile.photos[0].url }
+                                : require('@/assets/images/loginPageImage.png')}
+                            resizeMode="cover"
+                            style={styles.image} />
+
+                        {/* Action color overlay */}
+                        <Animated.View pointerEvents="none" style={[styles.overlayFill, overlayColorStyle]} />
+
+                        <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.7)']}
+                            style={styles.gradient}
+                        />
+
+                        <View style={styles.footer}>
+
+                            <ThemedText type='bold' style={styles.name}>
+                                {current?.displayName}, {calculateAge(current?.profile?.dateOfBirth)}
+                            </ThemedText>
+
+                            {current?.profile?.occupation
+                                ?
+                                <ThemedText type='default' style={styles.job}>
+                                    {current?.profile?.occupation}
+                                </ThemedText>
+                                : null
+                            }
+                        </View>
+
+                        {/* Like badge (right swipe) */}
+                        <Animated.View pointerEvents="none" style={[styles.badgeLike, likeOpacityStyle]}>
+                            <Heart width={24} height={24} color="#10B981" />
+                        </Animated.View>
+
+                        {/* Dislike badge (left swipe) */}
+                        <Animated.View pointerEvents="none" style={[styles.badgeDislike, dislikeOpacityStyle]}>
+                            <Plus width={24} height={24} color="#EF4444" style={{ transform: [{ rotate: '45deg' }] }} />
+                        </Animated.View>
+
+                        {/* Superlike badge (up swipe) */}
+                        <Animated.View pointerEvents="none" style={[styles.badgeSuperLike, superLikeOpacityStyle]}>
+                            <Star width={24} height={24} color="#3B82F6" />
+                        </Animated.View>
+
                     </Animated.View>
                 </GestureDetector>
             </View>
@@ -178,25 +312,38 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
     );
 };
 
+
+
+
+
 const ActionRow: React.FC<{ onLeft: () => void; onRight: () => void; onUp: () => void }> = ({ onLeft, onRight, onUp }) => {
+
     const accent = Colors.primaryBackgroundColor || Colors.primary?.red || '#E53E3E';
+
     return (
         <View style={styles.actions}>
+
+            {/* Like Button */}
             <View style={[styles.actionBtn, styles.shadowSm]}>
                 <ThemedText onPress={onLeft}>
-                    <Plus strokeWidth={2} width={ACTION_BUTTON_LOGO_SIZE - 5} height={ACTION_BUTTON_LOGO_SIZE - 5} color="orange" />
+                    <Plus style={{ transform: [{ rotate: '45deg' }] }} strokeWidth={4} width={ACTION_BUTTON_LOGO_SIZE - 5} height={ACTION_BUTTON_LOGO_SIZE - 5} color="orange" />
                 </ThemedText>
             </View>
+
+            {/* Dislike Button */}
             <View style={[styles.actionBtnLg, styles.shadowLg, { backgroundColor: accent }]}>
                 <ThemedText type='title' onPress={onRight}>
-                    <Heart width={ACTION_BUTTON_LOGO_SIZE + 5} height={ACTION_BUTTON_LOGO_SIZE + 5} color="white" />
+                    <Heart fill={'white'} width={ACTION_BUTTON_LOGO_SIZE + 5} height={ACTION_BUTTON_LOGO_SIZE + 5} color="white" />
                 </ThemedText>
             </View>
+
+            {/* Super Like Button */}
             <View style={[styles.actionBtn, styles.shadowSm]}>
                 <ThemedText onPress={onUp} >
-                    <Star strokeWidth={2} width={ACTION_BUTTON_LOGO_SIZE - 10} height={ACTION_BUTTON_LOGO_SIZE - 10} color={Colors.primaryBackgroundColor} />
+                    <Star fill={Colors.primaryBackgroundColor} strokeWidth={4} width={ACTION_BUTTON_LOGO_SIZE - 10} height={ACTION_BUTTON_LOGO_SIZE - 10} color={Colors.primaryBackgroundColor} />
                 </ThemedText>
             </View>
+
         </View>
     );
 };
@@ -206,7 +353,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     topSection: {
-        height: 60, // Reserved space for top bar
+        height: 60,
     },
     middleSection: {
         flex: 1,
@@ -225,6 +372,10 @@ const styles = StyleSheet.create({
     nextCard: {
         zIndex: 0,
     },
+    thirdCard: {
+        zIndex: -1,
+        opacity: 0.95,
+    },
     image: {
         width: '100%',
         height: '100%',
@@ -235,6 +386,7 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: 160,
+        
     },
     footer: {
         position: 'absolute',
@@ -262,6 +414,36 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    overlayFill: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    badgeLike: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    badgeDislike: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    badgeSuperLike: {
+        position: 'absolute',
+        top: 16,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(59, 130, 246, 0.12)',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 999,
     },
     actionBtn: {
         width: ACTION_BUTTON_LOGO_SIZE * 2,

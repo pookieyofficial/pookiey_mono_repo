@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "TheDatingApp",
-    "slug": "TheDatingApp",
+    "name": "Pookiey",
+    "slug": "Pookiey",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "thedatingapp",
+    "scheme": "pookiey",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
@@ -21,7 +21,7 @@
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS"
       ],
-      "package": "com.shadowdeveloper.thedatingapp"
+      "package": "com.pookiey.pookiey"
     },
     "web": {
       "bundler": "metro",
