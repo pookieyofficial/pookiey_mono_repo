@@ -1,8 +1,8 @@
 import { useAuth } from '@/hooks/useAuth'
-import React, { useEffect, useMemo, useState } from 'react'
-import { View, Text, TouchableOpacity, ImageSourcePropType } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import SwipeDeck, { CardItem, SwipeAction } from '@/components/SwipeDeck'
+import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
 import { Colors } from '@/constants/Colors'
 import { useUser } from '@/hooks/useUser'
@@ -39,7 +39,7 @@ export default function index() {
         limit: 10,
         offset: 0
       })
-      setProfiles(recommendedUsers.data || [])
+      setProfiles(recommendedUsers?.data || [])
     } catch (error) {
       console.error('Error initializing profiles:', error)
     } finally {
@@ -54,10 +54,11 @@ export default function index() {
         limit: 10,
         offset: 0
       })
-      if (recommendedUsers.data && recommendedUsers.data.length > 0) {
+
+      if (recommendedUsers?.data && recommendedUsers?.data?.length > 0) {
         setProfiles(prevProfiles => {
           const combined = [...prevProfiles, ...recommendedUsers.data]
-          const uniqueProfiles = combined.filter((profile, index, self) => 
+          const uniqueProfiles = combined.filter((profile, index, self) =>
             index === self.findIndex(p => p._id === profile._id)
           )
           return uniqueProfiles
@@ -76,19 +77,24 @@ export default function index() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
       <View style={{ flex: 1 }}>
-        {isLoading && profiles.length === 0 ? (
+
+        {isLoading && profiles.length === 0
+          ?
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ThemedText>Loading profiles...</ThemedText>
           </View>
-        ) : (
+          :
           <SwipeDeck data={profiles} onSwiped={onSwiped} />
-        )}
+        }
+
         <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 12, right: 12 }}>
           <ThemedText>Refresh</ThemedText>
         </TouchableOpacity>
+
         <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>
         </TouchableOpacity>
+
       </View>
     </SafeAreaView>
   )
