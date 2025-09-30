@@ -9,10 +9,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import CustomLoader from '@/components/CustomLoader';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 export default function Page() {
+  const router = useRouter()
   const { loading: facebookLoading, signInWithFacebookMobile } = useFacebookAuth();
   const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
 
@@ -68,7 +70,10 @@ export default function Page() {
         </View>
 
         <View style={styles.buttonsContainer}>
-          <TouchableOpacity activeOpacity={0.8} style={styles.LogInEmailContainer}>
+
+          {/* THIS IS NOW THE LOG IN WITH THE EMAIL AND OTP */}
+          <TouchableOpacity activeOpacity={0.8} style={styles.LogInEmailContainer}
+          onPress={() => router.push('/(auth)/loginwithEmail')}>
             <View style={styles.emailIconContainer}>
               <Foundation name='mail' size={LOGO_SIZE + 5} color={Colors.primaryBackgroundColor} />
             </View>
