@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { ThemedText } from './ThemedText';
@@ -145,11 +146,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
         // Choose dominant overlay per axis
         let bg = 'transparent';
         if (superLikeProgress > likeProgress && superLikeProgress > dislikeProgress) {
-            bg = `rgba(59, 130, 246, ${superLikeProgress})`; // blue-ish for superlike
+            bg = `rgba(233, 64, 87, ${superLikeProgress})`; // blue-ish for superlike
         } else if (likeProgress >= dislikeProgress) {
-            bg = `rgba(34, 197, 94, ${likeProgress})`; // green-ish for like
+            bg = `rgba(233, 64, 87, ${likeProgress})`; // green-ish for like
         } else {
-            bg = `rgba(239, 68, 68, ${dislikeProgress})`; // red-ish for dislike
+            bg = `rgba(233, 162, 0, ${dislikeProgress})`; // red-ish for dislike
         }
         return { backgroundColor: bg };
     });
@@ -187,7 +188,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
 
                 {/* Third Card (background, subtle) */}
                 {third && (
-                    <Animated.View style={[styles.card, styles.thirdCard, { transform: [{ scale: 0.94 }, { translateY: -28 }] }] }>
+                    <Animated.View style={[styles.card, styles.thirdCard, { transform: [{ scale: 0.94 }, { translateY: -28 }] }]}>
                         <Image
                             source={third?.profile?.photos?.[0]?.url
                                 ? { uri: third.profile.photos[0].url }
@@ -195,10 +196,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
                             resizeMode="cover"
                             style={styles.image} />
 
-                        <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.55)']}
-                            style={styles.gradient}
-                        />
+                        <BlurView intensity={80} tint="dark" style={styles.gradient} />
 
                         <View style={styles.footer}>
                             <ThemedText type='bold' style={styles.name}>
@@ -223,10 +221,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
                             resizeMode="cover"
                             style={styles.image} />
 
-                        <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.7)']}
-                            style={styles.gradient}
-                        />
+                        <BlurView intensity={30} tint="dark" style={styles.gradient} />
 
                         <View style={styles.footer}>
 
@@ -261,10 +256,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
                         {/* Action color overlay */}
                         <Animated.View pointerEvents="none" style={[styles.overlayFill, overlayColorStyle]} />
 
-                        <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.7)']}
-                            style={styles.gradient}
-                        />
+                        <BlurView intensity={30} tint="dark" style={styles.gradient} />
 
                         <View style={styles.footer}>
 
@@ -283,17 +275,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
 
                         {/* Like badge (right swipe) */}
                         <Animated.View pointerEvents="none" style={[styles.badgeLike, likeOpacityStyle]}>
-                            <Heart width={24} height={24} color="#10B981" />
+                            <Heart fill={"white"} strokeWidth={3} width={50} height={50} color={"white"} />
                         </Animated.View>
 
                         {/* Dislike badge (left swipe) */}
                         <Animated.View pointerEvents="none" style={[styles.badgeDislike, dislikeOpacityStyle]}>
-                            <Plus width={24} height={24} color="#EF4444" style={{ transform: [{ rotate: '45deg' }] }} />
+                            <Plus strokeWidth={5} width={50} height={50} color={"orange"} style={{ transform: [{ rotate: '45deg' }] }} />
                         </Animated.View>
 
                         {/* Superlike badge (up swipe) */}
                         <Animated.View pointerEvents="none" style={[styles.badgeSuperLike, superLikeOpacityStyle]}>
-                            <Star width={24} height={24} color="#3B82F6" />
+                            <Star fill={Colors.primaryBackgroundColor} strokeWidth={3} width={40} height={40} color={Colors.primaryBackgroundColor} />
                         </Animated.View>
 
                     </Animated.View>
@@ -324,25 +316,25 @@ const ActionRow: React.FC<{ onLeft: () => void; onRight: () => void; onUp: () =>
         <View style={styles.actions}>
 
             {/* Like Button */}
-            <View style={[styles.actionBtn, styles.shadowSm]}>
-                <ThemedText onPress={onLeft}>
+            <Pressable onPress={onLeft} style={[styles.actionBtn, styles.shadowSm]}>
+                <ThemedText>
                     <Plus style={{ transform: [{ rotate: '45deg' }] }} strokeWidth={4} width={ACTION_BUTTON_LOGO_SIZE - 5} height={ACTION_BUTTON_LOGO_SIZE - 5} color="orange" />
                 </ThemedText>
-            </View>
+            </Pressable>
 
             {/* Dislike Button */}
-            <View style={[styles.actionBtnLg, styles.shadowLg, { backgroundColor: accent }]}>
-                <ThemedText type='title' onPress={onRight}>
+            <Pressable onPress={onRight} style={[styles.actionBtnLg, styles.shadowLg, { backgroundColor: accent }]}>
+                <ThemedText type='title'>
                     <Heart fill={'white'} width={ACTION_BUTTON_LOGO_SIZE + 5} height={ACTION_BUTTON_LOGO_SIZE + 5} color="white" />
                 </ThemedText>
-            </View>
+            </Pressable>
 
             {/* Super Like Button */}
-            <View style={[styles.actionBtn, styles.shadowSm]}>
-                <ThemedText onPress={onUp} >
+            <Pressable onPress={onUp} style={[styles.actionBtn, styles.shadowSm]}>
+                <ThemedText>
                     <Star fill={Colors.primaryBackgroundColor} strokeWidth={4} width={ACTION_BUTTON_LOGO_SIZE - 10} height={ACTION_BUTTON_LOGO_SIZE - 10} color={Colors.primaryBackgroundColor} />
                 </ThemedText>
-            </View>
+            </Pressable>
 
         </View>
     );
@@ -385,8 +377,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: 160,
-        
+        height: 80,
+
     },
     footer: {
         position: 'absolute',
@@ -418,32 +410,42 @@ const styles = StyleSheet.create({
     overlayFill: {
         ...StyleSheet.absoluteFillObject,
     },
+
     badgeLike: {
         position: 'absolute',
-        top: 16,
-        right: 16,
-        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        top: '40%',
+        left: '40%',
+        transform: [{ translateX: -40 }, { translateY: -40 }],
+        backgroundColor: Colors.primaryBackgroundColor,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
         borderRadius: 999,
+        zIndex: 10,
+        elevation: 10,
     },
     badgeDislike: {
         position: 'absolute',
-        top: 16,
-        left: 16,
-        backgroundColor: 'rgba(239, 68, 68, 0.12)',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        top: '40%',
+        left: '40%',
+        transform: [{ translateX: -40 }, { translateY: -40 }],
+        backgroundColor: 'white',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
         borderRadius: 999,
+        zIndex: 10,
+        elevation: 10,
     },
     badgeSuperLike: {
         position: 'absolute',
-        top: 16,
-        alignSelf: 'center',
-        backgroundColor: 'rgba(59, 130, 246, 0.12)',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        top: '40%',
+        left: '40%',
+        transform: [{ translateX: -40 }, { translateY: -40 }],
+        backgroundColor: 'white',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
         borderRadius: 999,
+        zIndex: 10,
+        elevation: 10,
     },
     actionBtn: {
         width: ACTION_BUTTON_LOGO_SIZE * 2,
