@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import CustomBackButton from '@/components/CustomBackButton';
 import MainButton from '@/components/MainButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mail } from 'react-native-feather';
 import { useAuth } from '@/hooks/useAuth';
+import CustomLoader from '@/components/CustomLoader';
+import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
 
 export default function LoginWithEmail() {
   const [email, setEmail] = useState('');
-  const { signInWithLink } = useAuth();
+  const { signInWithLink, isLoading } = useAuth();
+  const isDeepLinkProcessing = useDeepLinkProcessing();
 
   const handleContinue = async () => {
     if (!email) return;
-    
+
     console.log('Send magic link to:', email);
     const result = await signInWithLink(email);
-    
+
     if (result.error) {
       Alert.alert('Error', result.error.message);
     } else {
@@ -28,9 +30,21 @@ export default function LoginWithEmail() {
         [{ text: 'OK' }]
       );
     }
-    
+
     console.log('Magic link result:', result);
   };
+
+  if (isLoading) {
+    return (
+      <CustomLoader messages={["Sending magic link..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
+    )
+  }
+
+  if (isDeepLinkProcessing) {
+    return (
+      <CustomLoader messages={["Verifying magic link..", "Authenticating..", "Almost there..", "Setting up your account.."]} />
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>

@@ -148,7 +148,6 @@ export const useAuthStore = create<AuthStore>()(
         set({ notificationTokens: tokens });
       },
 
-
       signInWithLink: async (email: string) => {
         try {
           set({ isLoading: true });
