@@ -40,7 +40,7 @@ export default function InterestScreen() {
     };
 
     const handleContinue = () => {
-        router.push('/(onboarding)/image');
+        router.push('/(onboarding)/location');
     };
 
     const toggleInterest = (interestName: string) => {

@@ -10,7 +10,7 @@ export function useAuth() {
     isInitialized,
     idToken,
     notificationTokens,
-    
+
     // Actions
     setUser,
     setSession,
@@ -24,11 +24,9 @@ export function useAuth() {
     removeNotificationToken,
     getNotificationTokens,
     setNotificationTokens,
-    
+
     // Supabase auth methods
-    signInWithEmail,
-    signInWithPhone,
-    verifyOtp,
+    signInWithLink,
     signOut,
   } = useAuthStore();
 
@@ -41,7 +39,7 @@ export function useAuth() {
     isInitialized,
     idToken,
     notificationTokens,
-    
+
     // Actions
     setUser,
     setSession,
@@ -55,11 +53,9 @@ export function useAuth() {
     removeNotificationToken,
     getNotificationTokens,
     setNotificationTokens,
-    
+
     // Supabase auth methods
-    signInWithEmail,
-    signInWithPhone,
-    verifyOtp,
+    signInWithLink,
     signOut,
   };
 }

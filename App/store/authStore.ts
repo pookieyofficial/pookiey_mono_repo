@@ -50,9 +50,7 @@ interface AuthActions {
   setNotificationTokens: (tokens: string[]) => void;
 
   // Supabase auth methods
-  signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
-  signInWithPhone: (phone: string) => Promise<{ data: any; error: AuthError | null }>;
-  verifyOtp: (phone: string, token: string) => Promise<{ data: any; error: AuthError | null }>;
+  signInWithLink: (email: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<void>;
 
   // Auth state management
@@ -150,45 +148,12 @@ export const useAuthStore = create<AuthStore>()(
         set({ notificationTokens: tokens });
       },
 
-      // Supabase auth methods
-      signInWithEmail: async (email: string, password: string) => {
-        try {
-          set({ isLoading: true });
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (error) throw error;
-          return { data, error: null };
-        } catch (error) {
-          return { data: null, error: error as AuthError };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
 
-      signInWithPhone: async (phone: string) => {
+      signInWithLink: async (email: string) => {
         try {
           set({ isLoading: true });
           const { data, error } = await supabase.auth.signInWithOtp({
-            phone,
-          });
-          if (error) throw error;
-          return { data, error: null };
-        } catch (error) {
-          return { data: null, error: error as AuthError };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      verifyOtp: async (phone: string, token: string) => {
-        try {
-          set({ isLoading: true });
-          const { data, error } = await supabase.auth.verifyOtp({
-            phone,
-            token,
-            type: 'sms',
+            email: email,
           });
           if (error) throw error;
           return { data, error: null };

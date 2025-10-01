@@ -1,42 +1,60 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import CustomBackButton from '@/components/CustomBackButton';
+import MainButton from '@/components/MainButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Mail } from 'react-native-feather';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginWithEmail() {
   const [email, setEmail] = useState('');
+  const { signInWithLink } = useAuth();
 
-  const handleSendMagicLink = () => {
-    // You can add your logic here
+  const handleContinue = async () => {
+    if (!email) return;
+    
     console.log('Send magic link to:', email);
+    const result = await signInWithLink(email);
+    
+    if (result.error) {
+      Alert.alert('Error', result.error.message);
+    } else {
+      Alert.alert(
+        'Check Your Email! 📧',
+        `We've sent a magic link to ${email}. Click the link to sign in.`,
+        [{ text: 'OK' }]
+      );
+    }
+    
+    console.log('Magic link result:', result);
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <SafeAreaView style={styles.container}>
+      <CustomBackButton />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <ThemedText type="title" style={styles.title}>
-              Sign In with Email
-            </ThemedText>
-            <ThemedText type="default" style={styles.subtitle}>
-              Enter your email to receive a magic link
-            </ThemedText>
-          </View>
+          {/* Title */}
+          <ThemedText type="title">Sign In with Email</ThemedText>
+
+          {/* Subtitle */}
+          <ThemedText type="default" style={styles.subtitle}>
+            We'll send you a secure link to sign in on this device.
+          </ThemedText>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
-            <IconSymbol 
-              name="paperplane.fill" 
-              size={20} 
-              color={Colors.iconsColor} 
+            <Mail
+              color={Colors.iconsColor}
               style={styles.inputIcon}
+              width={20}
+              height={20}
             />
             <TextInput
               style={styles.textInput}
@@ -51,62 +69,44 @@ export default function LoginWithEmail() {
             />
           </View>
 
-          {/* Send Magic Link Button */}
-          <TouchableOpacity 
-            style={[
-              styles.button,
-              { backgroundColor: email ? Colors.primaryBackgroundColor : Colors.text?.light }
-            ]}
-            onPress={handleSendMagicLink}
-            disabled={!email}
-            activeOpacity={0.8}
-          >
-            <ThemedText type="bold" style={styles.buttonText}>
-              Send Magic Link
-            </ThemedText>
-          </TouchableOpacity>
-
-          {/* Footer */}
+          {/* Footer
           <View style={styles.footer}>
             <ThemedText type="default" style={styles.footerText}>
               We'll send you a secure link to sign in
             </ThemedText>
+          </View> */}
+
+          {/* Continue Button */}
+          <View style={styles.footer}>
+
+            <MainButton
+              title="Continue"
+              onPress={handleContinue}
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.parentBackgroundColor,
+    backgroundColor: '#ffffff',
   },
   keyboardView: {
     flex: 1,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.titleColor,
-    marginBottom: 8,
-    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: Colors.text?.secondary,
-    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 32,
     lineHeight: 22,
   },
   inputContainer: {
@@ -138,34 +138,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontFamily: 'HellixMedium',
   },
-  button: {
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: Colors.primaryBackgroundColor,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonText: {
-    fontSize: 16,
-    color: Colors.primary?.white,
-    fontWeight: 'bold',
-  },
   footer: {
-    alignItems: 'center',
-    paddingTop: 20,
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 20,
   },
   footerText: {
     fontSize: 14,
     color: Colors.text?.secondary,
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 16,
   },
 });

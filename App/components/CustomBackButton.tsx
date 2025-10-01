@@ -13,7 +13,7 @@ export default function CustomBackButton({ skipButtonRoute }: CustomBackButtonPr
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Ionicons name="chevron-back" size={24} color={Colors.buttonForegroundColor} />
+                <Ionicons name="chevron-back" size={24} color={Colors.primaryBackgroundColor} />
             </TouchableOpacity>
 
             {skipButtonRoute && (
@@ -39,10 +39,10 @@ const styles = StyleSheet.create({
         height: 44,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#f0f0f0',
+        borderColor: "#f0f0f0",
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#ffffff',
+        backgroundColor: "white",
     },
     skipButton: {
         flexDirection: 'row',
