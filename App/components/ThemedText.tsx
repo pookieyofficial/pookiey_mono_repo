@@ -47,8 +47,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    fontFamily: 'HellixBold',
+    fontFamily: 'HellixSemiBold',
   },
   subtitle: {
     fontSize: 20,
