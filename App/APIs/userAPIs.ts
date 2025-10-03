@@ -3,3 +3,4 @@ export const getUserAPI = BASE_URL + "/user/me";
 export const createUserAPI = BASE_URL + "/user/me";
 export const updateUserAPI = BASE_URL + "/user/me";
 export const getRecommendedUsersAPI = BASE_URL + "/user/get-users";
+export const getPresignedUrlAPI = BASE_URL + "/api/v1/s3/get-presigned-url";
