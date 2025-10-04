@@ -93,9 +93,7 @@ export default function index() {
           <ThemedText>Refresh</ThemedText>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/(onboarding)/image')} style={{ position: 'absolute', top: 12, right: 200 }}>
-          <ThemedText>image</ThemedText>
-        </TouchableOpacity>
+        
 
         <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>

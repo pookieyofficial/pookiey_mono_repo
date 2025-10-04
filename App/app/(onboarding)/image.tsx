@@ -11,18 +11,21 @@ import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3';
+import { useOnboardingStore } from '@/store/onboardingStore';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_SIZE = (screenWidth - 80) / 3;
 
 export default function PremiumImageSelectorScreen() {
   const router = useRouter();
+  const { photos,setPhotos } = useOnboardingStore();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedImageMimeTypes, setSelectedImageMimeTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
+    console.log({photos})
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
@@ -30,9 +33,20 @@ export default function PremiumImageSelectorScreen() {
     }).start();
   }, []);
 
+  // Load existing photos from store on component mount
+  useEffect(() => {
+    if (photos && photos.length > 0) {
+      setSelectedImages(photos);
+      // Set default mime type for existing photos
+      setSelectedImageMimeTypes(photos.map(() => 'image/jpeg'));
+      console.log("Loaded existing photos from store:", photos);
+    }
+  }, [photos]);
+
   const handleupload = async () => {
     try {
-      const arrayofPresignedUrls = await requestPresignedURl(selectedImageMimeTypes)
+      if(!Array.isArray(photos) || photos.length === 0){
+        const arrayofPresignedUrls = await requestPresignedURl(selectedImageMimeTypes)
       //here we have to parse the localImageurl, presignedurl, mimeType from the array and have to make an array
       let resultArray = []
       
@@ -44,10 +58,25 @@ export default function PremiumImageSelectorScreen() {
         }
         resultArray.push(obj)
       }
+      let ImagePublicUrl = []
+        for(let i = 0; i < selectedImages.length; i++){
+          const fileUrl = arrayofPresignedUrls[i].fileURL
+          console.log({fileUrl})
+          ImagePublicUrl.push(fileUrl)
+        }
+        // Save the public URLs to Zustand store
+        setPhotos(ImagePublicUrl);
+        console.log("Photos saved to store:", ImagePublicUrl);
+        console.log("publicurl of image is ",photos )
       console.log("resultArray", resultArray);
       
       const uploadResponse = await uploadMultipleTos3(resultArray)
+      
+        
+      
+      
       console.log("uploadResponse", uploadResponse)
+      }
     } catch (error) {
       console.log("error from handleUpload", error)
     }
@@ -118,13 +147,19 @@ export default function PremiumImageSelectorScreen() {
       }),
     ]).start();
 
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setSelectedImageMimeTypes(prev => prev.filter((_, i) => i !== index));
+    const newSelectedImages = selectedImages.filter((_, i) => i !== index);
+    const newSelectedImageMimeTypes = selectedImageMimeTypes.filter((_, i) => i !== index);
+    
+    setSelectedImages(newSelectedImages);
+    setSelectedImageMimeTypes(newSelectedImageMimeTypes);
+    
+    // Update the store with the remaining images
+    setPhotos(newSelectedImages);
   };
 
   const handleContinue = () => {
     if (selectedImages.length === 6) {
-      router.push('/(home)');
+      router.push('/(onboarding)/gender');
     } else {
       pickImages();
     }
