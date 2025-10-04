@@ -11,6 +11,7 @@ interface OnboardingState {
     interests: string[];
     bio: string;
     profilePicture: string;
+    photos: string[];
 }
 
 interface OnboardingActions {
@@ -22,6 +23,7 @@ interface OnboardingActions {
     setInterests: (interests: string[]) => void;
     setBio: (bio: string) => void;
     setProfilePicture: (profilePicture: string) => void;
+    setPhotos: (photos: string[]) => void;
 }
 
 type OnboardingStore = OnboardingState & OnboardingActions;
@@ -35,6 +37,7 @@ const initialState: OnboardingState = {
     interests: [],
     bio: '',
     profilePicture: '',
+    photos: [],
 }
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -49,6 +52,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
             setInterests: (interests: string[]) => set({ interests }),
             setBio: (bio: string) => set({ bio }),
             setProfilePicture: (profilePicture: string) => set({ profilePicture }),
+            setPhotos: (photos: string[]) => set({ photos }),
             }),
         {
             name: 'onboarding-storage',
@@ -62,6 +66,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 interests: state.interests,
                 bio: state.bio,
                 profilePicture: state.profilePicture,
+                photos: state.photos,
             }),
         }
     )

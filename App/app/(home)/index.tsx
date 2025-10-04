@@ -7,8 +7,10 @@ import { ThemedText } from '@/components/ThemedText'
 import { Colors } from '@/constants/Colors'
 import { useUser } from '@/hooks/useUser'
 import { RecommendedUser } from '@/types/User'
+import { useRouter } from 'expo-router'
 
 export default function index() {
+  const router = useRouter()
 
   const { getRecommendedUsers } = useUser()
   const { idToken } = useAuth()
@@ -90,6 +92,8 @@ export default function index() {
         <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 12, right: 12 }}>
           <ThemedText>Refresh</ThemedText>
         </TouchableOpacity>
+
+        
 
         <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>

@@ -40,7 +40,7 @@ export default function InterestScreen() {
     };
 
     const handleContinue = () => {
-        router.push('/(onboarding)/location');
+        router.push('/(onboarding)/contact');
     };
 
     const toggleInterest = (interestName: string) => {
