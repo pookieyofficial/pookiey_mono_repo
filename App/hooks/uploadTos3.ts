@@ -1,4 +1,5 @@
-import { getPresignedUrlAPI } from "@/APIs/userAPIs";
+import { getPresignedUrlAPI } from "@/APIs/awsAPI";
+import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
 import * as FileSystem from "expo-file-system/legacy";
 
@@ -53,15 +54,22 @@ export async function requestPresignedURl(imageExtension: string[]) {
     console.log("imageExtension from requestPresignedURl: ", imageExtension);
     
     try {
+        const idToken = useAuthStore.getState().getIdToken();
+        
+        if (!idToken) {
+            console.error("❌ No authentication token found");
+            throw new Error("Authentication token is required");
+        }
         
         const response = await axios.post(getPresignedUrlAPI, {imageExtension}, {
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`,
             },
-            
         })
 
-        return response.data.urls;
+        console.log("✅ Presigned URLs response:", response.data);
+        return response.data.data.urls;
     } catch (error) {
         console.error("❌ Upload error from requestPresignedURl: ", error);
         return false;

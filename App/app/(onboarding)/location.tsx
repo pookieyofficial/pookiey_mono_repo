@@ -58,11 +58,11 @@ export default function LocationScreen() {
                         coordinates: location ? [location.coords.longitude, location.coords.latitude] : undefined,
                         city: address,
                     },
-                    photos: store.profilePicture ? [{
-                        url: store.profilePicture,
-                        isPrimary: true,
+                    photos: store.photos ? store.photos.map((photoUrl, index) => ({
+                        url: photoUrl,
+                        isPrimary: index === 0,
                         uploadedAt: new Date()
-                    }] : [],
+                    })) : [],
                     interests: store.interests || [],
                     occupation: store.occupation,
                     isOnboarded: true

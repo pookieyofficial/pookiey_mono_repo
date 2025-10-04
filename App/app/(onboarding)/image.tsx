@@ -18,17 +18,17 @@ const CARD_SIZE = (screenWidth - 80) / 3;
 
 export default function PremiumImageSelectorScreen() {
   const router = useRouter();
-  const { photos,setPhotos } = useOnboardingStore();
+  const { photos, setPhotos } = useOnboardingStore();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedImageMimeTypes, setSelectedImageMimeTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
-    console.log({photos})
+    console.log({ photos })
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 600,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -45,37 +45,37 @@ export default function PremiumImageSelectorScreen() {
 
   const handleupload = async () => {
     try {
-      if(!Array.isArray(photos) || photos.length === 0){
+      if (!Array.isArray(photos) || photos.length === 0) {
         const arrayofPresignedUrls = await requestPresignedURl(selectedImageMimeTypes)
-      //here we have to parse the localImageurl, presignedurl, mimeType from the array and have to make an array
-      let resultArray = []
-      
-      for( let i = 0; i < selectedImages.length; i++){
-        let obj = {
-          LocalUrl: selectedImages[i],
-          PresignedUrl: arrayofPresignedUrls[i].uploadUrl,
-          MimeType: selectedImageMimeTypes[i]
+        //here we have to parse the localImageurl, presignedurl, mimeType from the array and have to make an array
+        let resultArray = []
+
+        for (let i = 0; i < selectedImages.length; i++) {
+          let obj = {
+            LocalUrl: selectedImages[i],
+            PresignedUrl: arrayofPresignedUrls[i].uploadUrl,
+            MimeType: selectedImageMimeTypes[i]
+          }
+          resultArray.push(obj)
         }
-        resultArray.push(obj)
-      }
-      let ImagePublicUrl = []
-        for(let i = 0; i < selectedImages.length; i++){
+        let ImagePublicUrl = []
+        for (let i = 0; i < selectedImages.length; i++) {
           const fileUrl = arrayofPresignedUrls[i].fileURL
-          console.log({fileUrl})
+          console.log({ fileUrl })
           ImagePublicUrl.push(fileUrl)
         }
         // Save the public URLs to Zustand store
         setPhotos(ImagePublicUrl);
         console.log("Photos saved to store:", ImagePublicUrl);
-        console.log("publicurl of image is ",photos )
-      console.log("resultArray", resultArray);
-      
-      const uploadResponse = await uploadMultipleTos3(resultArray)
-      
-        
-      
-      
-      console.log("uploadResponse", uploadResponse)
+        console.log("publicurl of image is ", photos)
+        console.log("resultArray", resultArray);
+
+        const uploadResponse = await uploadMultipleTos3(resultArray)
+
+
+
+
+        console.log("uploadResponse", uploadResponse)
       }
     } catch (error) {
       console.log("error from handleUpload", error)
@@ -114,13 +114,13 @@ export default function PremiumImageSelectorScreen() {
         // Success animation feedback
         Animated.sequence([
           Animated.timing(fadeAnim, {
-            toValue: 0.9,
-            duration: 200,
+            toValue: 0.95,
+            duration: 150,
             useNativeDriver: true,
           }),
           Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 200,
+            duration: 150,
             useNativeDriver: true,
           }),
         ]).start();
@@ -136,23 +136,23 @@ export default function PremiumImageSelectorScreen() {
   const removeImage = (index: number) => {
     Animated.sequence([
       Animated.timing(fadeAnim, {
-        toValue: 0.95,
-        duration: 150,
+        toValue: 0.98,
+        duration: 100,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 150,
+        duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
 
     const newSelectedImages = selectedImages.filter((_, i) => i !== index);
     const newSelectedImageMimeTypes = selectedImageMimeTypes.filter((_, i) => i !== index);
-    
+
     setSelectedImages(newSelectedImages);
     setSelectedImageMimeTypes(newSelectedImageMimeTypes);
-    
+
     // Update the store with the remaining images
     setPhotos(newSelectedImages);
   };
@@ -184,7 +184,7 @@ export default function PremiumImageSelectorScreen() {
               {
                 scale: fadeAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.8, 1],
+                  outputRange: [0.95, 1],
                 }),
               },
             ],
@@ -233,16 +233,16 @@ export default function PremiumImageSelectorScreen() {
     <SafeAreaView style={styles.container}>
       <CustomBackButton />
 
-      {/* Premium Header */}
+      {/* Modern Header */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <ThemedText type="title">
+          <ThemedText style={styles.title}>
             Show Your Best Self
           </ThemedText>
           <View style={styles.titleUnderline} />
         </View>
         <ThemedText style={styles.subtitle}>
-          Add 6 photos that showcase your personality and interests.
+          Add 6 photos that showcase your personality and interests
         </ThemedText>
 
         {/* Progress Indicator */}
@@ -277,44 +277,6 @@ export default function PremiumImageSelectorScreen() {
         <View style={styles.imageGrid}>
           {Array.from({ length: 6 }, (_, index) => renderImageCard(index))}
         </View>
-
-        {/* Premium Tips Section */}
-        <View style={styles.tipsContainer}>
-          <View style={styles.tipsHeader}>
-            <Ionicons name="sparkles" size={24} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.tipsTitle}>Photo Tips</ThemedText>
-          </View>
-
-          <View style={styles.tipsGrid}>
-            <View style={styles.tipItem}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="sunny" size={20} color={Colors.primaryBackgroundColor} />
-              </View>
-              <ThemedText style={styles.tipText}>Good lighting</ThemedText>
-            </View>
-
-            <View style={styles.tipItem}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="person" size={20} color={Colors.primaryBackgroundColor} />
-              </View>
-              <ThemedText style={styles.tipText}>Clear face</ThemedText>
-            </View>
-
-            <View style={styles.tipItem}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="happy" size={20} color={Colors.primaryBackgroundColor} />
-              </View>
-              <ThemedText style={styles.tipText}>Genuine smile</ThemedText>
-            </View>
-
-            <View style={styles.tipItem}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="images" size={20} color={Colors.primaryBackgroundColor} />
-              </View>
-              <ThemedText style={styles.tipText}>Variety of shots</ThemedText>
-            </View>
-          </View>
-        </View>
       </ScrollView>
 
       {/* Enhanced Bottom Button */}
@@ -339,101 +301,99 @@ export default function PremiumImageSelectorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.parentBackgroundColor,
-
+    backgroundColor: '#FAFBFC',
   },
   scrollableContainer: {
     flex: 1,
-    marginBottom: 20,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-    backgroundColor: Colors.parentBackgroundColor,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+    backgroundColor: '#FAFBFC',
   },
   titleContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   title: {
-    textAlign: 'center',
-    marginBottom: 8,
-    color: Colors.primaryBackgroundColor,
+    textAlign: 'left',
+    marginBottom: 12,
+    color: '#1A1A1A',
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   titleUnderline: {
-    width: 60,
-    height: 4,
+    width: 40,
+    height: 3,
     backgroundColor: Colors.primaryBackgroundColor,
     borderRadius: 2,
-    opacity: 0.8,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: Colors.text.secondary,
-    lineHeight: 24,
-    marginBottom: 25,
-    fontWeight: '500',
+    fontSize: 17,
+    textAlign: 'left',
+    color: '#6B7280',
+    lineHeight: 26,
+    marginBottom: 32,
+    fontWeight: '400',
   },
   progressContainer: {
-    marginBottom: 10,
+    marginBottom: 24,
   },
   progressLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   progressText: {
-    fontSize: 14,
-    color: Colors.text.secondary,
+    fontSize: 15,
+    color: '#374151',
     fontWeight: '600',
   },
   progressPercentage: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.primaryBackgroundColor,
     fontWeight: '700',
   },
   progressBarBackground: {
     width: '100%',
-    height: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: Colors.primaryBackgroundColor,
-    borderRadius: 3,
-    shadowColor: Colors.primaryBackgroundColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 4,
   },
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    gap: 16,
   },
   imageCard: {
     width: CARD_SIZE,
     height: CARD_SIZE,
-    marginBottom: 15,
-    borderRadius: 20,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
-    shadowColor: Colors.primaryBackgroundColor,
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
   cardTouchable: {
     flex: 1,
@@ -445,12 +405,12 @@ const styles = StyleSheet.create({
   selectedImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
+    borderRadius: 15,
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 15,
   },
   removeButton: {
     position: 'absolute',
@@ -458,122 +418,72 @@ const styles = StyleSheet.create({
     right: 8,
   },
   removeButtonInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.primaryBackgroundColor,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   imageNumberBadge: {
     position: 'absolute',
     bottom: 8,
     left: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   imageNumberText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
-    color: Colors.primaryBackgroundColor,
+    color: '#374151',
   },
   emptyCard: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: '#D1D5DB',
     borderStyle: 'dashed',
+    backgroundColor: '#FAFAFA',
   },
   emptyCardGradient: {
-    backgroundColor: Colors.parentBackgroundColor,
+    backgroundColor: '#FAFAFA',
   },
   addIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(74, 144, 226, 0.2)',
-    borderStyle: 'dashed',
   },
   addText: {
-    fontSize: 13,
-    color: Colors.text.tertiary,
+    fontSize: 12,
+    color: '#6B7280',
     textAlign: 'center',
-    fontWeight: '600',
-  },
-  tipsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    shadowColor: Colors.primaryBackgroundColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  tipsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  tipsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.primaryBackgroundColor,
-    marginLeft: 8,
-  },
-  tipsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  tipItem: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 6,
-  },
-  tipIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(74, 144, 226, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 226, 0.2)',
-  },
-  tipText: {
-    fontSize: 13,
-    color: Colors.text.secondary,
-    fontWeight: '600',
-    flex: 1,
+    fontWeight: '500',
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    backgroundColor: Colors.parentBackgroundColor,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    backgroundColor: '#FAFBFC',
   },
 });

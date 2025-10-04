@@ -4,7 +4,7 @@ import connectDB from "./config/mongoDB";
 import userRouter from "./routes/userRoutes";
 import { RootAPIResponse } from "./utils/rootAPIResponse";
 import interactionRouter from "./routes/interactionRoutes";
-import s3presignedUrlRouter from "./routes/s3presignedUrl";
+import awsRouter from "./routes/awsRoutes";
 import requestIp from "request-ip"
 dotenv.config();
 
@@ -17,13 +17,12 @@ app.use(requestIp.mw());
 connectDB();
 
 app.get("/", async (req, res) => {
-  // This is a joke response for the tech geeks
   res.send(RootAPIResponse);
 });
 
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/interaction', interactionRouter)
-app.use('/api/v1/s3', s3presignedUrlRouter)
+app.use('/api/v1/aws', awsRouter)
 
 app.listen(PORT as number, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`)
