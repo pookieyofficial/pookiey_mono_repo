@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert, Dimensions, ScrollView, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -10,6 +10,7 @@ import CustomBackButton from '@/components/CustomBackButton';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
+import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_SIZE = (screenWidth - 80) / 3;
@@ -17,10 +18,11 @@ const CARD_SIZE = (screenWidth - 80) / 3;
 export default function PremiumImageSelectorScreen() {
   const router = useRouter();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageMimeTypes, setSelectedImageMimeTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
@@ -28,12 +30,35 @@ export default function PremiumImageSelectorScreen() {
     }).start();
   }, []);
 
+  const handleupload = async () => {
+    try {
+      const arrayofPresignedUrls = await requestPresignedURl(selectedImageMimeTypes)
+      //here we have to parse the localImageurl, presignedurl, mimeType from the array and have to make an array
+      let resultArray = []
+      
+      for( let i = 0; i < selectedImages.length; i++){
+        let obj = {
+          LocalUrl: selectedImages[i],
+          PresignedUrl: arrayofPresignedUrls[i].uploadUrl,
+          MimeType: selectedImageMimeTypes[i]
+        }
+        resultArray.push(obj)
+      }
+      console.log("resultArray", resultArray);
+      
+      const uploadResponse = await uploadMultipleTos3(resultArray)
+      console.log("uploadResponse", uploadResponse)
+    } catch (error) {
+      console.log("error from handleUpload", error)
+    }
+  }
+
   const pickImages = async () => {
     try {
       setIsLoading(true);
-      
+
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (permissionResult.granted === false) {
         Alert.alert("Permission Required", "Please grant camera roll permissions to select images.");
         return;
@@ -47,10 +72,16 @@ export default function PremiumImageSelectorScreen() {
         selectionLimit: 6 - selectedImages.length,
       });
 
+
+
       if (!result.canceled && result.assets) {
         const newImages = result.assets.map(asset => asset.uri);
+        const newMimeTypes = result.assets.map(asset => asset.mimeType || 'image/jpeg');
         setSelectedImages(prev => [...prev, ...newImages].slice(0, 6));
-        
+        setSelectedImageMimeTypes(prev => [...prev, ...newMimeTypes].slice(0, 6));
+        console.log("Selected Images:", selectedImages);
+        console.log("Selected Mime Types:", selectedImageMimeTypes)
+
         // Success animation feedback
         Animated.sequence([
           Animated.timing(fadeAnim, {
@@ -86,13 +117,14 @@ export default function PremiumImageSelectorScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-    
+
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setSelectedImageMimeTypes(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleContinue = () => {
     if (selectedImages.length === 6) {
-      router.push('/(onboarding)/contact');
+      router.push('/(home)');
     } else {
       pickImages();
     }
@@ -105,7 +137,7 @@ export default function PremiumImageSelectorScreen() {
   const renderImageCard = (index: number) => {
     const imageUri = selectedImages[index];
     const isEmpty = !imageUri;
-    
+
     return (
       <Animated.View
         key={index}
@@ -131,8 +163,8 @@ export default function PremiumImageSelectorScreen() {
         >
           {imageUri ? (
             <View style={styles.imageContainer}>
-              <Image 
-                source={{ uri: imageUri }} 
+              <Image
+                source={{ uri: imageUri }}
                 style={styles.selectedImage}
                 transition={300}
               />
@@ -165,7 +197,7 @@ export default function PremiumImageSelectorScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <CustomBackButton />
-      
+
       {/* Premium Header */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
@@ -177,7 +209,7 @@ export default function PremiumImageSelectorScreen() {
         <ThemedText style={styles.subtitle}>
           Add 6 photos that showcase your personality and interests.
         </ThemedText>
-        
+
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressLabels}>
@@ -189,7 +221,7 @@ export default function PremiumImageSelectorScreen() {
             </ThemedText>
           </View>
           <View style={styles.progressBarBackground}>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.progressFill,
                 {
@@ -202,7 +234,7 @@ export default function PremiumImageSelectorScreen() {
       </View>
 
       {/* Enhanced Scrollable Image Grid */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollableContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -217,7 +249,7 @@ export default function PremiumImageSelectorScreen() {
             <Ionicons name="sparkles" size={24} color={Colors.primaryBackgroundColor} />
             <ThemedText style={styles.tipsTitle}>Photo Tips</ThemedText>
           </View>
-        
+
           <View style={styles.tipsGrid}>
             <View style={styles.tipItem}>
               <View style={styles.tipIcon}>
@@ -225,21 +257,21 @@ export default function PremiumImageSelectorScreen() {
               </View>
               <ThemedText style={styles.tipText}>Good lighting</ThemedText>
             </View>
-            
+
             <View style={styles.tipItem}>
               <View style={styles.tipIcon}>
                 <Ionicons name="person" size={20} color={Colors.primaryBackgroundColor} />
               </View>
               <ThemedText style={styles.tipText}>Clear face</ThemedText>
             </View>
-            
+
             <View style={styles.tipItem}>
               <View style={styles.tipIcon}>
                 <Ionicons name="happy" size={20} color={Colors.primaryBackgroundColor} />
               </View>
               <ThemedText style={styles.tipText}>Genuine smile</ThemedText>
             </View>
-            
+
             <View style={styles.tipItem}>
               <View style={styles.tipIcon}>
                 <Ionicons name="images" size={20} color={Colors.primaryBackgroundColor} />
@@ -254,11 +286,14 @@ export default function PremiumImageSelectorScreen() {
       <View style={styles.buttonContainer}>
         <MainButton
           title={
-            isComplete 
-              ? "Continue" 
+            isComplete
+              ? "Continue"
               : `Select ${remainingImages} More Photo${remainingImages !== 1 ? 's' : ''}`
           }
-          onPress={handleContinue}
+          onPress={() => {
+            handleContinue();
+            handleupload();
+          }}
           disabled={isLoading}
         />
       </View>
