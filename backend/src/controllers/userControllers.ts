@@ -220,7 +220,7 @@ export const getUsers = async (req: Request, res: Response) => {
             // 8. Pagination
             { $skip: skip },
             { $limit: limit },
-            { $project: { profile: 1, distance: 1, age: 1, displayName: 1 } },
+            { $project: { profile: 1, distance: 1, age: 1, displayName: 1, user_id: 1 } },
         ]);
 
         // console.log({ users });

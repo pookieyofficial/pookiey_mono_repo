@@ -42,7 +42,10 @@ export const interaction = async (req: Request, res: Response) => {
         // Check if other user has interacted with this user
         const otherUserInteraction = await Interaction.findOne({ fromUser: toUser, toUser: fromUser }).session(session);
 
-        if (otherUserInteraction && (otherUserInteraction.type === type || otherUserInteraction.type === "superlike")) {
+        // Create a match if both users have positive interactions (like or superlike)
+        if (otherUserInteraction && 
+            (otherUserInteraction.type === "like" || otherUserInteraction.type === "superlike") &&
+            (type === "like" || type === "superlike")) {
 
             const match = await Matches.create(
                 [{ user1Id: fromUser, user2Id: toUser, status: "matched", initiatedBy: fromUser }],

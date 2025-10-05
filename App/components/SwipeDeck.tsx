@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,7 +7,8 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { ThemedText } from './ThemedText';
-import { Heart, Star, Plus, } from 'react-native-feather'
+import { Heart, Star, Plus, } from 'react-native-feather';
+import { useUserInteraction } from '../hooks/userInteraction';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export type CardItem = any
@@ -17,17 +18,21 @@ export type SwipeAction = 'left' | 'right' | 'up';
 export interface SwipeDeckProps {
     data: CardItem[];
     onSwiped?: (item: CardItem, action: SwipeAction) => void;
+    onMatch?: (match: any) => void;
 }
 
 const SWIPE_THRESHOLD_X = SCREEN_WIDTH * 0.25;
 const SWIPE_THRESHOLD_Y = SCREEN_HEIGHT * 0.18;
 const ACTION_BUTTON_LOGO_SIZE = 30;
 
-export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
+export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch }) => {
     const insets = useSafeAreaInsets();
     const current = data[0];
     const next = data[1];
     const third = data[2];
+    
+    // Initialize the user interaction hook
+    const { likeUser, dislikeUser, superlikeUser, isLoading, error } = useUserInteraction();
 
     // Keep last known secondary cards to avoid flicker during rapid swipes/fetch
     const lastNextRef = useRef<CardItem | null>(null);
@@ -59,8 +64,67 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
         nextTranslateY.value = withSpring(-22);
     };
 
+    const handleInteraction = async (action: SwipeAction) => {
+        if (!current) return;
+        
+        try {
+            const userId = current.user_id;
+            if (!userId) {
+                console.error('User ID not found');
+                return;
+            }
+
+            let response;
+            
+            switch (action) {
+                case 'right':
+                    response = await likeUser(userId);
+                    break;
+                case 'left':
+                    response = await dislikeUser(userId);
+                    break;
+                case 'up':
+                    response = await superlikeUser(userId);
+                    break;
+                default:
+                    return;
+            }
+
+            if (response.success) {
+                // Check if it's a match
+                if (response.isMatch && response.match) {
+                    console.log('🎉 It\'s a match!', response.match);
+                    // Show match alert
+                    Alert.alert(
+                        '🎉 It\'s a Match!',
+                        `You and ${current?.displayName} have liked each other!`,
+                        [
+                            {
+                                text: 'Continue',
+                                onPress: () => onMatch?.(response.match),
+                            }
+                        ]
+                    );
+                } else {
+                    console.log('Interaction recorded:', action);
+                }
+            } else {
+                console.error('Interaction failed:', response.message);
+                Alert.alert('Error', response.message || 'Failed to record interaction');
+            }
+        } catch (err) {
+            console.error('Error during interaction:', err);
+            Alert.alert('Error', 'Failed to record interaction');
+        }
+    };
+
     const advance = (action: SwipeAction) => {
         if (!current) return;
+        
+        // Handle the interaction with the backend
+        handleInteraction(action);
+        
+        // Call the original onSwiped callback
         onSwiped?.(current, action);
     };
 
@@ -104,7 +168,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped }) => {
         rotateZ.value = 0;
         nextScale.value = 0.96;
         nextTranslateY.value = -22;
-    }, [current?.id, current?._id]);
+    }, [current?.user_id]);
 
     const currentStyle = useAnimatedStyle(() => ({
         transform: [
