@@ -29,6 +29,12 @@ export default function index() {
     }
   }
 
+  const onMatch = (match: any) => {
+    console.log('🎉 New match received:', match)
+    // You can navigate to a match screen or show additional UI here
+    // For example: router.push('/matches')
+  }
+
   useEffect(() => {
     initializeProfiles()
   }, [idToken])
@@ -86,7 +92,7 @@ export default function index() {
             <ThemedText>Loading profiles...</ThemedText>
           </View>
           :
-          <SwipeDeck data={profiles} onSwiped={onSwiped} />
+          <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} />
         }
 
         <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 12, right: 12 }}>

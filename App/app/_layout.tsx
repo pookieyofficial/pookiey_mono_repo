@@ -46,7 +46,6 @@ export default function RootLayout() {
           <Stack initialRouteName='(auth)' screenOptions={{ headerShown: false }}>
             <Stack.Screen name='(auth)' />
           </Stack>
-          <StatusBar style="auto" backgroundColor='red' />
         </ThemeProvider>
       </PaperProvider>
     </GestureHandlerRootView>
