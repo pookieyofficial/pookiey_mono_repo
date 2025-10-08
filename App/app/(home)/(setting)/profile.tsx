@@ -37,7 +37,6 @@ const Profile = () => {
         <View style={styles.header}>
           
           <ThemedText style={styles.headerTitle}>Profile</ThemedText>
-          <View style={styles.headerSpacer} />
         </View>
 
         {/* Profile Image Section */}
