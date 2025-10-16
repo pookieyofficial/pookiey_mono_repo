@@ -39,6 +39,7 @@ export default function TabLayout() {
             <IconSymbol size={28} name={focused ? "gearshape.fill" : "gearshape"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}
       />
+
     </Tabs>
 
 

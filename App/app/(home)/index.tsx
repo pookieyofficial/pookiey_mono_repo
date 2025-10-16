@@ -31,8 +31,14 @@ export default function index() {
 
   const onMatch = (match: any) => {
     console.log('🎉 New match received:', match)
-    // You can navigate to a match screen or show additional UI here
-    // For example: router.push('/matches')
+    // Navigate to matching screen with match data
+    router.push({
+      pathname: '/matchingScreen',
+      params: { 
+        matchData: JSON.stringify(match),
+        matchedUser: JSON.stringify(match.matchedUser || match)
+      }
+    })
   }
 
   useEffect(() => {
