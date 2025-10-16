@@ -1,29 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from '../config/supabaseConfig';
 import { useUser } from '../hooks/useUser';
+import type { SupabaseUser, DBUser } from '../types';
 
-export interface SupabaseUser {
-  id: string;
-  email?: string;
-  phone?: string;
-  user_metadata?: {
-    phone?: string;
-    email?: string;
-    full_name?: string;
-    avatar_url?: string;
-  };
-  app_metadata?: {
-    provider?: string;
-  };
-}
+// Re-export types for convenience
+export type { SupabaseUser, DBUser };
 
 interface AuthState {
   user: SupabaseUser | null;
+  dbUser: DBUser | null; // ✅ NEW
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -37,6 +27,7 @@ interface AuthState {
 
 interface AuthActions {
   setUser: (user: SupabaseUser | null) => void;
+  setDBUser: (user: DBUser | null) => void; // ✅ NEW
   setSession: (session: Session | null) => void;
   login: (user: SupabaseUser) => void;
   logout: () => void;
@@ -49,11 +40,9 @@ interface AuthActions {
   getNotificationTokens: () => string[];
   setNotificationTokens: (tokens: string[]) => void;
 
-  // Supabase auth methods
   signInWithLink: (email: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<void>;
 
-  // Auth state management
   setupAuthListener: () => void;
   getInitialSession: () => Promise<void>;
   handleAuthSuccess: (supabaseUser: SupabaseUser, accessToken: string) => Promise<void>;
@@ -64,6 +53,7 @@ type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
   user: null,
+  dbUser: null, // ✅ NEW
   session: null,
   isAuthenticated: false,
   isLoading: true,
@@ -81,27 +71,27 @@ export const useAuthStore = create<AuthStore>()(
       ...initialState,
 
       setUser: (user: SupabaseUser | null) => {
-        set({
-          user,
-          isAuthenticated: !!user,
-        });
+        set({ user, isAuthenticated: !!user });
       },
 
-      setSession: (session: Session | null) => {
-        set({ session });
+      // ✅ NEW
+      setDBUser: (user: DBUser | null) => {
+        set({ dbUser: user });
       },
 
-      login: (user: SupabaseUser) => {
+      setSession: (session: Session | null) => set({ session }),
+
+      login: (user: SupabaseUser) =>
         set({
           user,
           isAuthenticated: true,
           isLoading: false,
-        });
-      },
+        }),
 
       logout: () => {
         set({
           user: null,
+          dbUser: null, // ✅ clear it
           session: null,
           isAuthenticated: false,
           isLoading: false,
@@ -110,22 +100,13 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
+      setLoading: (loading: boolean) => set({ isLoading: loading }),
 
-      initialize: () => {
-        set({ isInitialized: true, isLoading: false });
-      },
+      initialize: () => set({ isInitialized: true, isLoading: false }),
 
-      getIdToken: () => {
-        const { idToken } = get();
-        return idToken;
-      },
+      getIdToken: () => get().idToken,
 
-      setIdToken: (token: string | null) => {
-        set({ idToken: token });
-      },
+      setIdToken: (token: string | null) => set({ idToken: token }),
 
       addNotificationToken: (token: string) => {
         const { notificationTokens } = get();
@@ -139,21 +120,14 @@ export const useAuthStore = create<AuthStore>()(
         set({ notificationTokens: notificationTokens.filter(t => t !== token) });
       },
 
-      getNotificationTokens: () => {
-        const { notificationTokens } = get();
-        return notificationTokens;
-      },
+      getNotificationTokens: () => get().notificationTokens,
 
-      setNotificationTokens: (tokens: string[]) => {
-        set({ notificationTokens: tokens });
-      },
+      setNotificationTokens: (tokens: string[]) => set({ notificationTokens: tokens }),
 
       signInWithLink: async (email: string) => {
         try {
           set({ isLoading: true });
-          const { data, error } = await supabase.auth.signInWithOtp({
-            email: email,
-          });
+          const { data, error } = await supabase.auth.signInWithOtp({ email });
           if (error) throw error;
           return { data, error: null };
         } catch (error) {
@@ -169,8 +143,7 @@ export const useAuthStore = create<AuthStore>()(
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
           router.replace('/(auth)');
-          const { logout } = get();
-          logout();
+          get().logout();
         } catch (error) {
           console.error('Sign out error:', error);
         } finally {
@@ -178,7 +151,6 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      // Auth state management methods
       hideSplashScreen: async () => {
         const { splashHidden } = get();
         if (!splashHidden) {
@@ -194,44 +166,38 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       handleAuthSuccess: async (supabaseUser: SupabaseUser, accessToken: string) => {
-
         try {
           if (!supabaseUser?.id) {
             router.replace('/(auth)');
-            const { logout } = get();
-            logout();
-            const { hideSplashScreen } = get();
-            await hideSplashScreen();
+            get().logout();
+            await get().hideSplashScreen();
             return;
           }
 
-          console.log('🔄 --- ---  handleAuthSuccess - Calling getOrCreateUser...');
-
-          // Get the useUser hook instance
+          console.log('🔄 handleAuthSuccess - calling getOrCreateUser...');
           const { getOrCreateUser } = useUser();
-          const user = await getOrCreateUser(accessToken, supabaseUser);
 
+          const response = await getOrCreateUser(accessToken, supabaseUser);
+          const dbUser = response?.data?.user || response?.data; // adapt based on API
 
-          if (user?.data?.profile?.isOnboarded) {
+          // ✅ Save dbUser in global store
+          const { setDBUser, login, setIdToken } = get();
+          setDBUser(dbUser);
+          login(supabaseUser);
+          setIdToken(accessToken);
+
+          if (dbUser?.profile?.isOnboarded) {
             router.replace('/(home)');
           } else {
             router.replace('/(onboarding)/profile');
           }
 
-          const { login, setIdToken } = get();
-          login(supabaseUser);
-          setIdToken(accessToken);
-
-          const { hideSplashScreen } = get();
-          await hideSplashScreen();
-
-        } catch (error: any) {
+          await get().hideSplashScreen();
+        } catch (error) {
+          console.error('Auth success error:', error);
           router.replace('/(auth)');
-          const { logout } = get();
-          logout();
-
-          const { hideSplashScreen } = get();
-          await hideSplashScreen();
+          get().logout();
+          await get().hideSplashScreen();
         }
       },
 
@@ -251,35 +217,25 @@ export const useAuthStore = create<AuthStore>()(
             await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
           } else {
             set({ isLoading: false });
-            const { hideSplashScreen } = get();
-            await hideSplashScreen();
+            await get().hideSplashScreen();
           }
         } catch (error) {
           set({ isLoading: false });
-          const { hideSplashScreen } = get();
-          await hideSplashScreen();
+          await get().hideSplashScreen();
         }
       },
 
       setupAuthListener: () => {
         const { isAuthListenerSetup } = get();
-
-        // Prevent multiple listeners
-        if (isAuthListenerSetup) {
-          return;
-        }
+        if (isAuthListenerSetup) return;
 
         set({ isAuthListenerSetup: true });
 
-        // Handle the authentication state change globally in the app
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           const { lastAuthState, isInitialized, isLoading } = get();
           const isAuthenticated = !!session?.user;
 
-          // Prevent duplicate processing
-          if (lastAuthState === isAuthenticated) {
-            return;
-          }
+          if (lastAuthState === isAuthenticated) return;
 
           set({ lastAuthState: isAuthenticated });
 
@@ -287,7 +243,6 @@ export const useAuthStore = create<AuthStore>()(
             const { setSession, setUser, handleAuthSuccess } = get();
             setSession(session);
             setUser(session.user as SupabaseUser);
-            console.log("Session data: ", session)
             await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
           } else {
             const { setSession, setUser, logout, hideSplashScreen } = get();
@@ -302,10 +257,7 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           const { initialize } = get();
-          if (!isInitialized) {
-            initialize();
-          }
-
+          if (!isInitialized) initialize();
           set({ isLoading: false });
         });
       },
@@ -313,20 +265,19 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
-
       partialize: (state) => ({
         user: state.user,
+        dbUser: state.dbUser, // ✅ persist DB user
         session: state.session,
         isAuthenticated: state.isAuthenticated,
         idToken: state.idToken,
         notificationTokens: state.notificationTokens,
       }),
-
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isLoading = false;
           state.isInitialized = true;
-          console.log('Store: Rehydration complete - Phone:', state.user?.phone);
+          console.log('Store rehydrated - user:', state.user?.email);
         }
       },
     }

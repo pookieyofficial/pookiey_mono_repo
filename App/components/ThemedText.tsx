@@ -1,6 +1,5 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '@/constants/Colors';
 
 export type ThemedTextProps = TextProps & {
@@ -11,15 +10,13 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({
   style,
-  lightColor,
-  darkColor,
   type = 'default',
   ...rest
 }: ThemedTextProps) {
 
   return (
     <Text
-      selectable={true}
+      selectable={false}
       style={[
         { color: Colors.primaryBackgroundColor },
         type === 'default' ? styles.default : undefined,

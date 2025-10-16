@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { Dimensions, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, Extrapolation } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
@@ -30,7 +29,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
     const current = data[0];
     const next = data[1];
     const third = data[2];
-    
+
     // Initialize the user interaction hook
     const { likeUser, dislikeUser, superlikeUser, isLoading, error } = useUserInteraction();
 
@@ -66,7 +65,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
 
     const handleInteraction = async (action: SwipeAction) => {
         if (!current) return;
-        
+
         try {
             const userId = current.user_id;
             if (!userId) {
@@ -75,7 +74,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
             }
 
             let response;
-            
+
             switch (action) {
                 case 'right':
                     response = await likeUser(userId);
@@ -89,6 +88,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
                 default:
                     return;
             }
+            console.log(response)
 
             if (response.success) {
                 // Check if it's a match
@@ -108,9 +108,6 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
                 } else {
                     console.log('Interaction recorded:', action);
                 }
-            } else {
-                console.error('Interaction failed:', response.message);
-                Alert.alert('Error', response.message || 'Failed to record interaction');
             }
         } catch (err) {
             console.error('Error during interaction:', err);
@@ -120,10 +117,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
 
     const advance = (action: SwipeAction) => {
         if (!current) return;
-        
+
         // Handle the interaction with the backend
         handleInteraction(action);
-        
+
         // Call the original onSwiped callback
         onSwiped?.(current, action);
     };

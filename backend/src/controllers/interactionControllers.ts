@@ -32,7 +32,7 @@ export const interaction = async (req: Request, res: Response) => {
         let interaction = await Interaction.findOne({ fromUser, toUser }).session(session);
 
         if (interaction) {
-            res.status(400).json({ message: "Interaction already exists" });
+            res.json({ message: "Already interacted with this user" });
             return;
         }
 

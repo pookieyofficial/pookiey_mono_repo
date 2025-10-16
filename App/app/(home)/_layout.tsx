@@ -11,33 +11,36 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primaryBackgroundColor,
+        tabBarInactiveTintColor: Colors.text.tertiary,
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) =>
+            <IconSymbol size={28} name={focused ? "house.fill" : "house"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="chats"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Chats',
+          tabBarIcon: ({ color, focused }) =>
+            <IconSymbol size={28} name={focused ? "message.fill" : "message"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}
       />
       <Tabs.Screen
         name="(setting)"
         options={{
           title: 'Setting',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear.circle.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) =>
+            <IconSymbol size={28} name={focused ? "gearshape.fill" : "gearshape"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}
       />
     </Tabs>
 
-    
+
   );
 }
