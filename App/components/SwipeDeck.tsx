@@ -8,6 +8,7 @@ import { Colors } from '../constants/Colors';
 import { ThemedText } from './ThemedText';
 import { Heart, Star, Plus, } from 'react-native-feather';
 import { useUserInteraction } from '../hooks/userInteraction';
+import { useRouter } from 'expo-router';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export type CardItem = any
@@ -25,6 +26,11 @@ const SWIPE_THRESHOLD_Y = SCREEN_HEIGHT * 0.18;
 const ACTION_BUTTON_LOGO_SIZE = 30;
 
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch }) => {
+
+
+    const router = useRouter();
+
+
     const insets = useSafeAreaInsets();
     const current = data[0];
     const next = data[1];
@@ -73,7 +79,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
                 return;
             }
 
-            let response;
+            let response: any;
 
             switch (action) {
                 case 'right':
@@ -88,23 +94,24 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
                 default:
                     return;
             }
-            console.log(response)
+            console.log('Interaction response:', response)
 
             if (response.success) {
                 // Check if it's a match
                 if (response.isMatch && response.match) {
-                    console.log('🎉 It\'s a match!', response.match);
-                    // Show match alert
-                    Alert.alert(
-                        '🎉 It\'s a Match!',
-                        `You and ${current?.displayName} have liked each other!`,
-                        [
-                            {
-                                text: 'Continue',
-                                onPress: () => onMatch?.(response.match),
-                            }
-                        ]
-                    );
+                    console.log('🎉 Match detected!', response);
+                    
+                    // Pass match data and both users' info to matching screen
+                    const matchParams = {
+                        match: JSON.stringify(response.match),
+                        user1: JSON.stringify(response.user1 as any),
+                        user2: JSON.stringify(response.user2 as any)
+                    };
+                    
+                    router.push({
+                        pathname: '/matchingScreen',
+                        params: matchParams
+                    });
                 } else {
                     console.log('Interaction recorded:', action);
                 }

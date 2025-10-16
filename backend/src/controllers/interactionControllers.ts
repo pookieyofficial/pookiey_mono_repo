@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { Interaction } from "../models/Interactions";
 import { Matches } from "../models/Matches";
+import { User } from "../models";
 
 // This function is used to handle the interaction between two users and check if they are matched
 export const interaction = async (req: Request, res: Response) => {
@@ -43,7 +44,7 @@ export const interaction = async (req: Request, res: Response) => {
         const otherUserInteraction = await Interaction.findOne({ fromUser: toUser, toUser: fromUser }).session(session);
 
         // Create a match if both users have positive interactions (like or superlike)
-        if (otherUserInteraction && 
+        if (otherUserInteraction &&
             (otherUserInteraction.type === "like" || otherUserInteraction.type === "superlike") &&
             (type === "like" || type === "superlike")) {
 
@@ -51,8 +52,38 @@ export const interaction = async (req: Request, res: Response) => {
                 [{ user1Id: fromUser, user2Id: toUser, status: "matched", initiatedBy: fromUser }],
                 { session }
             );
+
+            // Fetch user details for both users
+            const [user1Details, user2Details] = await Promise.all([
+                User.findOne({ user_id: fromUser }).select('user_id displayName photoURL profile').session(session),
+                User.findOne({ user_id: toUser }).select('user_id displayName photoURL profile').session(session)
+            ]);
+
             await session.commitTransaction();
-            return res.json({ success: true, match: match[0], isMatch: true });
+            
+            return res.json({ 
+                success: true, 
+                match: match[0], 
+                isMatch: true,
+                user1: {
+                    user_id: user1Details?.user_id,
+                    displayName: user1Details?.displayName,
+                    photoURL: user1Details?.photoURL || user1Details?.profile?.photos?.[0]?.url,
+                    profile: {
+                        firstName: user1Details?.profile?.firstName,
+                        photos: user1Details?.profile?.photos
+                    }
+                },
+                user2: {
+                    user_id: user2Details?.user_id,
+                    displayName: user2Details?.displayName,
+                    photoURL: user2Details?.photoURL || user2Details?.profile?.photos?.[0]?.url,
+                    profile: {
+                        firstName: user2Details?.profile?.firstName,
+                        photos: user2Details?.profile?.photos
+                    }
+                }
+            });
         }
 
         await session.commitTransaction();

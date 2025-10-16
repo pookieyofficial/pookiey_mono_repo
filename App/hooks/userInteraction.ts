@@ -9,6 +9,24 @@ export interface InteractionResponse {
   match?: any;
   isMatch: boolean;
   message?: string;
+  user1?: {
+    user_id: string;
+    displayName?: string;
+    photoURL?: string;
+    profile?: {
+      firstName?: string;
+      photos?: Array<{ url: string; isPrimary?: boolean }>;
+    };
+  };
+  user2?: {
+    user_id: string;
+    displayName?: string;
+    photoURL?: string;
+    profile?: {
+      firstName?: string;
+      photos?: Array<{ url: string; isPrimary?: boolean }>;
+    };
+  };
 }
 
 export interface InteractionParams {

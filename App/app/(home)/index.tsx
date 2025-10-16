@@ -34,7 +34,7 @@ export default function index() {
     // Navigate to matching screen with match data
     router.push({
       pathname: '/matchingScreen',
-      params: { 
+      params: {
         matchData: JSON.stringify(match),
         matchedUser: JSON.stringify(match.matchedUser || match)
       }
@@ -101,11 +101,11 @@ export default function index() {
           <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} />
         }
 
-        <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 12, right: 12 }}>
-          <ThemedText>Refresh</ThemedText>
+        <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
+          <ThemedText>go to matching screen</ThemedText>
         </TouchableOpacity>
 
-        
+
 
         <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>

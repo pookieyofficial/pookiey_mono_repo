@@ -45,6 +45,8 @@ export default function RootLayout() {
         <ThemeProvider value={DefaultTheme}>
           <Stack initialRouteName='(auth)' screenOptions={{ headerShown: false }}>
             <Stack.Screen name='(auth)' />
+            <Stack.Screen name='(home)' />
+            <Stack.Screen name='matchingScreen'/>
           </Stack>
         </ThemeProvider>
       </PaperProvider>
