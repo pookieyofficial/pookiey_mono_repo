@@ -12,6 +12,7 @@ import { Colors } from '../../../constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/store/authStore'
+import { truncateText } from '@/utils/truncateTexts'
 
 const Settings = () => {
 
@@ -52,14 +53,29 @@ const Settings = () => {
               />
             </View>
 
-            {dbUser?.displayName && <View style={styles.profileInfo}>
-              <ThemedText type='bold' style={styles.profileName}>{dbUser?.displayName}</ThemedText>
-            </View>}
+            <View style={styles.profileInfo}>
+              {dbUser?.displayName && (
+                <ThemedText type='bold' style={styles.profileName}>
+                  {dbUser.displayName.length > 20
+                    ?
+                    dbUser.displayName.slice(0, 20) + "..."
+                    :
+                    dbUser.displayName}
+                </ThemedText>
+              )}
 
-            {dbUser?.profile?.bio && <View style={styles.profileInfo}>
-              <ThemedText style={styles.profileStatus}>{dbUser?.profile?.bio}</ThemedText>
-              <ThemedText style={styles.profileStatus}>{dbUser?.profile?.bio}</ThemedText>
-            </View>}
+              {dbUser?.profile?.bio ? (
+                <ThemedText style={styles.profileStatus}>
+                  {dbUser.profile.bio}
+                </ThemedText>
+              ) : (
+                dbUser?.email && (
+                  <ThemedText style={styles.profileStatus}>
+                    {truncateText(dbUser.email, 10)}
+                  </ThemedText>
+                )
+              )}
+            </View>
 
             <View style={styles.profileArrow}>
               <Ionicons name="chevron-forward" size={20} color={Colors.primary.red} />
@@ -80,7 +96,7 @@ const Settings = () => {
             </View>
 
             <ThemedText style={styles.settingText}>Dating Preference</ThemedText>
-             
+
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
 
@@ -168,8 +184,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   profileImage: {
-    width: 70,
-    height: 70,
+    width: 50,
+    height: 50,
     borderRadius: 40,
   },
   heartIcon: {
@@ -188,20 +204,24 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
     marginLeft: 16,
+    justifyContent: 'center',
+    gap: 4,
   },
   profileName: {
-    fontSize: 22,
+    fontSize: 20,
     color: Colors.titleColor,
-    marginBottom: 6,
+    lineHeight: 24,
   },
   profileStatus: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.text.secondary,
-    fontStyle: 'italic',
+    lineHeight: 18,
+    marginTop: 2,
   },
   profileArrow: {
-    padding: 8,
-    borderRadius: 20,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   settingsList: {
     paddingHorizontal: 16,

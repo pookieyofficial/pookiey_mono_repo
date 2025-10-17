@@ -4,6 +4,7 @@ export function useAuth() {
   const {
     // State
     user,
+    dbUser,
     session,
     isAuthenticated,
     isLoading,
@@ -13,6 +14,7 @@ export function useAuth() {
 
     // Actions
     setUser,
+    setDBUser,
     setSession,
     login,
     logout,
@@ -33,15 +35,18 @@ export function useAuth() {
   return {
     // State
     user,
+    dbUser,
     session,
     isAuthenticated,
     isLoading,
     isInitialized,
     idToken,
+    token: idToken, // Alias for convenience
     notificationTokens,
 
     // Actions
     setUser,
+    setDBUser,
     setSession,
     login,
     logout,

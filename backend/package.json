@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "@types/socket.io": "^3.0.1",
     "aws-sdk": "^2.1692.0",
     "cors": "^2.8.5",
     "dot-object": "^2.1.5",
@@ -39,6 +40,7 @@
     "helmet": "^8.1.0",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.1",
-    "request-ip": "^3.3.0"
+    "request-ip": "^3.3.0",
+    "socket.io": "^4.8.1"
   }
 }
