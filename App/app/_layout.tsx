@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useDeepLinking } from '@/hooks/useDeepLinking';
+import { Colors } from '@/constants/Colors';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,7 +41,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
       <PaperProvider>
         <ThemeProvider value={DefaultTheme}>
           <Stack initialRouteName='(auth)' screenOptions={{ headerShown: false }}>

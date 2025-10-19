@@ -114,18 +114,7 @@ export const getInbox = async (req: Request, res: Response) => {
                             { $ifNull: ["$matchedUser.profile.lastName", ""] }
                         ]
                     },
-                    avatar: { 
-                        $arrayElemAt: [
-                            {
-                                $filter: {
-                                    input: "$matchedUser.profile.photos",
-                                    as: "photo",
-                                    cond: { $eq: ["$$photo.isPrimary", true] }
-                                }
-                            },
-                            0
-                        ]
-                    },
+                    avatar: "$matchedUser.photoURL",
                     lastMessage: {
                         text: "$lastMessage.text",
                         createdAt: "$lastMessage.createdAt",

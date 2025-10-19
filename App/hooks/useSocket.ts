@@ -24,7 +24,7 @@ export interface InboxItem {
   matchId: string;
   userId: string;
   name: string;
-  avatar?: { url: string };
+  avatar?: string;
   lastMessage?: {
     text: string;
     createdAt: Date;

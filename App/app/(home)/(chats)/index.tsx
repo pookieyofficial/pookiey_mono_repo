@@ -5,6 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { ChatListItem } from '@/components/ChatListItem';
 import { useSocket, InboxItem } from '@/hooks/useSocket';
@@ -14,6 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { ThemedText } from '@/components/ThemedText';
+import CustomLoader from '@/components/CustomLoader';
 
 export default function ChatsScreen() {
   const { token } = useAuth();
@@ -32,7 +35,6 @@ export default function ChatsScreen() {
   // Listen for inbox updates
   useEffect(() => {
     const cleanup = onInboxUpdate((data) => {
-      // Update the inbox when a new message arrives
       loadInbox();
     });
 
@@ -42,7 +44,6 @@ export default function ChatsScreen() {
   // Listen for new messages to update unread counts
   useEffect(() => {
     const cleanup = onNewMessage((message) => {
-      // Refresh inbox to get updated unread counts
       loadInbox();
     });
 
@@ -74,7 +75,7 @@ export default function ChatsScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <ThemedText type="title"  style={styles.emptyTitle}>No Matches Yet</ThemedText>
+      <ThemedText type="title" style={styles.emptyTitle}>No Matches Yet</ThemedText>
       <ThemedText style={styles.emptyThemedText}>
         Start swiping to find matches and begin conversations!
       </ThemedText>
@@ -84,30 +85,47 @@ export default function ChatsScreen() {
   const renderHeader = () => (
     <View style={styles.header}>
       <ThemedText type="title" style={styles.headerTitle}>Messages</ThemedText>
-      </View>
+    </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: Colors.parentBackgroundColor
+      }}>
+        <CustomLoader messages={['Fetching chats...']} />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      {renderHeader()}
-      <FlatList
-        data={inbox}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.matchId}
-        contentContainerStyle={[
-          styles.listContainer,
-          inbox.length === 0 && styles.emptyListContainer,
-        ]}
-        ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#FF3B30"
-          />
-        }
-      />
-    </SafeAreaView>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 2 : 0} style={styles.container}>
+      <SafeAreaView style={styles.container}>
+        {renderHeader()}
+        <FlatList
+          data={inbox}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.matchId}
+          contentContainerStyle={[
+            styles.listContainer,
+            inbox.length === 0 && styles.emptyListContainer,
+          ]}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#FF3B30"
+            />
+          }
+        />
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

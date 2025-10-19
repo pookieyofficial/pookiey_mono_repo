@@ -32,10 +32,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
       params: {
         matchId: item.matchId,
         userName: item.name,
-        userAvatar: item.avatar?.url || '',
+        userAvatar: item.avatar || '',
         userId: item.userId,
       },
     });
+    console.log('item', item.avatar);
   };
 
   return (
@@ -45,9 +46,9 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
-        {item.avatar?.url ? (
+        {item.avatar ? (
           <Image
-            source={{ uri: item.avatar.url }}
+            source={{ uri: item.avatar }}
             style={styles.avatar}
             contentFit="cover"
           />
