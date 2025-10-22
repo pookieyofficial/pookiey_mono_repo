@@ -2,35 +2,20 @@ import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import AntDesign from '@expo/vector-icons/AntDesign';
-import Entypo from '@expo/vector-icons/Entypo';
 import { Colors } from '@/constants/Colors';
 import { Foundation } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
-import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import CustomLoader from '@/components/CustomLoader';
 import { useRouter } from 'expo-router';
+import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
 
 const { width } = Dimensions.get('window');
 
 export default function Page() {
   const router = useRouter()
-  const { loading: facebookLoading, signInWithFacebookMobile } = useFacebookAuth();
   const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
-
-  const LOGO_SIZE = 27;
-
-  const handleFacebookSignIn = async () => {
-    try {
-      const result = await signInWithFacebookMobile();
-      if (result.error) {
-        Alert.alert('Facebook Sign In Error', result.error.message);
-      } else {
-      }
-    } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred during Facebook sign in');
-    }
-  };
+  const isDeepLinkProcessing = useDeepLinkProcessing();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -43,10 +28,16 @@ export default function Page() {
     }
   };
 
-  if(googleLoading || facebookLoading)
-  return (
-    <CustomLoader messages={["Logging you in..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
-  )
+  if (googleLoading)
+    return (
+      <CustomLoader messages={["Logging you in..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
+    )
+
+  if (isDeepLinkProcessing) {
+    return (
+      <CustomLoader messages={["Just a moment.."]} />
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,59 +58,59 @@ export default function Page() {
           <ThemedText type='title' style={styles.mainHeading}>
             Discover True Bonds
           </ThemedText>
+          <ThemedText style={styles.subHeading}>
+            Sign in to start your journey
+          </ThemedText>
         </View>
 
         <View style={styles.buttonsContainer}>
-
-          {/* THIS IS NOW THE LOG IN WITH THE EMAIL AND OTP */}
-          <TouchableOpacity activeOpacity={0.8} style={styles.LogInEmailContainer}
-          onPress={() => router.push('/(auth)/loginwithEmail')}>
-            <View style={styles.emailIconContainer}>
-              <Foundation name='mail' size={LOGO_SIZE + 5} color={Colors.primaryBackgroundColor} />
+          {/* Primary Button - Google Sign In */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
+            <View style={styles.googleIconContainer}>
+              <AntDesign name="google" size={24} color={Colors.primaryBackgroundColor} />
             </View>
-            <View style={styles.logInwithEmailTextContainer}>
-              <ThemedText type='defaultSemiBold' style={styles.logInwithEmailText}>Login with Email</ThemedText>
+            <View style={styles.googleTextContainer}>
+              <ThemedText type='defaultSemiBold' style={styles.googleButtonText}>
+                Continue with Google
+              </ThemedText>
             </View>
-          </TouchableOpacity  >
+          </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
-            <ThemedText style={styles.dividerText}>or continue with</ThemedText>
+            <ThemedText style={styles.dividerText}>or</ThemedText>
             <View style={styles.divider} />
           </View>
 
-          <View style={styles.OauthbuttonsContainer}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleGoogleSignIn}
-              disabled={googleLoading || facebookLoading}
-            >
-              <View style={[styles.OauthLogocontainer]}>
-                <AntDesign name="google" size={LOGO_SIZE} color={"white"} />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleFacebookSignIn}
-              disabled={facebookLoading || googleLoading}
-            >
-              <View style={[styles.OauthLogocontainer]}>
-                <Entypo name="facebook" size={LOGO_SIZE} color={"white"} />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.8}>
-              <View style={styles.OauthLogocontainer}>
-                <AntDesign name="apple" size={LOGO_SIZE} color={"white"} />
-              </View>
-            </TouchableOpacity>
-          </View>
+          {/* Secondary Button - Email Sign In */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.emailButton}
+            onPress={() => router.push('/(auth)/loginwithEmail')}
+            disabled={googleLoading}
+          >
+            <View style={styles.emailIconContainer}>
+              <Foundation name='mail'
+                size={24} color={Colors.primaryBackgroundColor}
+              />
+            </View>
+            <View style={styles.emailTextContainer}>
+              <ThemedText type='defaultSemiBold' style={styles.emailButtonText}>
+                Continue with Email
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.footerContainer}>
-          <ThemedText style={styles.footerText}>want to continue with </ThemedText>
-          <TouchableOpacity activeOpacity={0.4}  >
-            <ThemedText type='link' style={styles.phoneNumberText}>Phone Number?</ThemedText>
-          </TouchableOpacity  >
+          <ThemedText style={styles.footerText}>
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </ThemedText>
         </View>
       </ScrollView>
       <StatusBar style="auto" />
@@ -137,126 +128,124 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   images: {
-    marginTop: 10, // Reduced top margin to give more space for the larger image
-    marginBottom: 20, // Reduced bottom margin
+    marginBottom: 30,
     justifyContent: "center",
-    paddingLeft: 15,
+    alignItems: "center",
   },
   image: {
-    width: width * 0.90, // Increased from 0.7 to 0.85 (larger image)
-    height: width * 0.90, // Increased from 0.5 to 0.65 (larger image)
+    width: width * 0.55,
+    height: width * 0.55,
   },
   headingContainer: {
-    marginBottom: 30, // Slightly reduced to accommodate larger image
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
   mainHeading: {
-    fontSize: 24,
+    fontSize: 26,
     textAlign: "center",
-    fontWeight: "700",
     color: Colors.titleColor,
+  },
+  subHeading: {
+    fontSize: 15,
+    textAlign: "center",
+    color: Colors.text?.secondary,
+    marginVertical: 20,
   },
   buttonsContainer: {
     width: '100%',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  LogInEmailContainer: {
+  // Primary Google Button
+  googleButton: {
     backgroundColor: Colors.primaryBackgroundColor,
-    height: 60,
-    width: '80%',
-    maxWidth: 350,
-    borderRadius: 30,
+    height: 56,
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 30,
-    shadowColor: Colors.primaryBackgroundColor,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: Colors.opacity.buttonShadow,
-    shadowRadius: 10,
-    elevation: 6,
-
+    paddingHorizontal: 16,
   },
-  emailIconContainer: {
-    backgroundColor: "white",
-    borderRadius: 50,
+  googleIconContainer: {
+    backgroundColor: Colors.primary.white,
+    borderRadius: 8,
     height: 40,
     width: 40,
-    color: "white",
-    fontWeight: 700,
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 40
   },
-  logInwithEmailTextContainer: {
+  googleTextContainer: {
     flex: 1,
     alignItems: "center",
   },
-  logInwithEmailText: {
-    fontSize: 18,
-    color: Colors.textColor,
+  googleButtonText: {
+    fontSize: 16,
+    color: Colors.primary.white,
     fontWeight: "600",
   },
+  // Divider
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 350,
-    marginBottom: 30,
+    maxWidth: 380,
+    marginVertical: 20,
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#DDD',
+    backgroundColor: '#e0e0e0',
   },
   dividerText: {
-    marginHorizontal: 10,
-    color: '#888',
+    marginHorizontal: 16,
+    color: '#999',
     fontSize: 14,
+    fontWeight: '500',
   },
-  OauthbuttonsContainer: {
-    backgroundColor: Colors.parentBackgroundColor,
-    height: 60,
+  // Secondary Email Button
+  emailButton: {
+    backgroundColor: Colors.primary.white,
+    height: 56,
     width: '100%',
-    maxWidth: 350,
-    borderRadius: 30,
+    maxWidth: 380,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 10,
-
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.primaryBackgroundColor,
+    justifyContent: "center",
   },
-  OauthButton: {
-    padding: 45,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  OauthLogocontainer: {
-    backgroundColor: Colors.primaryBackgroundColor,
-    borderRadius: "50%",
-    height: 55,
-    width: 55,
+  emailIconContainer: {
+    backgroundColor: Colors.primary.white,
+    borderRadius: 8,
+    height: 40,
+    width: 40,
     alignItems: "center",
     justifyContent: "center",
   },
+  emailTextContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  emailButtonText: {
+    fontSize: 16,
+    color: Colors.primaryBackgroundColor,
+    fontWeight: "600",
+  },
+  // Footer
   footerContainer: {
-    flexDirection: 'row',
-    marginTop: 30,
-    alignItems: 'center',
+    marginTop: 40,
+    paddingHorizontal: 40,
   },
   footerText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  phoneNumberText: {
-    color: Colors.primaryBackgroundColor,
-    fontSize: 14,
-    fontWeight: '600',
+    color: Colors.text?.secondary,
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 }); 

@@ -178,9 +178,8 @@ export const useAuthStore = create<AuthStore>()(
           const { getOrCreateUser } = useUser();
 
           const response = await getOrCreateUser(accessToken, supabaseUser);
-          const dbUser = response?.data?.user || response?.data; // adapt based on API
+          const dbUser = response?.data?.user || response?.data;
 
-          // ✅ Save dbUser in global store
           const { setDBUser, login, setIdToken } = get();
           setDBUser(dbUser);
           login(supabaseUser);

@@ -36,13 +36,13 @@ export default function LoginWithEmail() {
 
   if (isLoading) {
     return (
-      <CustomLoader messages={["Sending magic link..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
+      <CustomLoader messages={["Sending magic link.."]} />
     )
   }
 
   if (isDeepLinkProcessing) {
     return (
-      <CustomLoader messages={["Verifying magic link..", "Authenticating..", "Almost there..", "Setting up your account.."]} />
+      <CustomLoader messages={["Just a moment.."]} />
     )
   }
 
@@ -55,10 +55,10 @@ export default function LoginWithEmail() {
       >
         <View style={styles.content}>
           {/* Title */}
-          <ThemedText type="title">Sign In with Email</ThemedText>
+          <ThemedText type="title" style={styles.mainHeading}>Sign In with Email</ThemedText>
 
           {/* Subtitle */}
-          <ThemedText type="default" style={styles.subtitle}>
+          <ThemedText type="default" style={styles.subHeading}>
             We'll send you a secure link to sign in on this device.
           </ThemedText>
 
@@ -116,7 +116,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
-  subtitle: {
+  mainHeading: {
+    fontSize: 26,
+    color: Colors.titleColor,
+  },
+  subHeading: {
     fontSize: 16,
     color: Colors.text?.secondary,
     marginTop: 8,

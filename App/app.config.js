@@ -7,7 +7,7 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "pookiey",
+    scheme: "https://pookiey.com",
     userInterfaceStyle: "light",
     newArchEnabled: true,
 
@@ -78,16 +78,16 @@ export default {
       [
         "expo-contacts",
         {
-          contactsPermission: "Allow The Dating App to access your contacts.",
+          contactsPermission: "Allow Pookiey to access your contacts.",
         },
       ],
       [
         "expo-image-picker",
         {
           photosPermission:
-            "The Dating App requires access to your photos to upload profile pictures.",
+            "Pookiey requires access to your photos to upload profile pictures.",
           cameraPermission:
-            "The Dating App requires access to your camera to take profile pictures.",
+            "Pookiey requires access to your camera to take profile pictures.",
         },
       ],
       "expo-font",
