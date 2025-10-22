@@ -6,7 +6,7 @@ import { isValidLocation } from "../utils/validateCoordinates";
 export const getMe = async (req: Request, res: Response) => {
     try {
         console.info("getMe controller");
-        const user = (req.user as any)?.user;
+        const user = req.user;
         console.log({ user })
 
         if (!user) {

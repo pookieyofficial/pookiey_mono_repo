@@ -10,20 +10,30 @@ export const verifyUser = async (req: Request, res: Response, next: NextFunction
         }
 
         const supabaseUser = await verifySupabaseToken(token);
+
         if (!supabaseUser) {
             return res.status(401).json({ message: "Unauthorized - Invalid token" });
         }
 
         const user = await User.findOne({ user_id: supabaseUser.id });
+
         if (!user) {
-            return res.status(401).json({ message: "Unauthorized - User not found" });
+            return res.status(401).json({ message: "Unauthorized - Account not found" });
         }
 
+        const userStatuses = ["banned", "deleted", "suspended"];
+
+        if (userStatuses.includes(user.status)) {
+            return res.status(403).json({ message: `Unauthorized - Account is ${user.status}` });
+        }
+
+
         req.user = user as any;
+        console.log("User verified", user);
         next();
     }
     catch (error) {
-        return res.status(401).json({ message: "Unauthorized", error: error });
+        return res.status(401).json({ message: "Unauthorized" });
     }
 };
 
