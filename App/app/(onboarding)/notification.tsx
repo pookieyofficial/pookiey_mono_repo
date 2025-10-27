@@ -23,15 +23,6 @@ export default function NotificationScreen() {
     const [showErrorDialog, setShowErrorDialog] = useState(false);
     const { addNotificationToken } = useAuthStore();
 
-    useEffect(() => {
-        checkPermission();
-    }, []);
-
-    const checkPermission = async () => {
-        const { status } = await Notifications.getPermissionsAsync();
-        setHasPermission(status === 'granted');
-    };
-
     const requestNotificationPermission = async () => {
         setIsLoading(true);
         try {
@@ -51,9 +42,15 @@ export default function NotificationScreen() {
                 });
 
                 if (Platform.OS === 'android') {
-                    await Notifications.setNotificationChannelAsync('default', {
-                        name: 'default',
-                        importance: Notifications.AndroidImportance.MAX,
+                    Notifications.setNotificationChannelAsync('messages', {
+                        name: 'messages',
+                        importance: Notifications.AndroidImportance.HIGH,
+                        vibrationPattern: [0, 250, 250, 250],
+                        lightColor: '#FF231F7C',
+                        sound: 'default',
+                        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+                        showBadge: true,
+        
                     });
                 }
 

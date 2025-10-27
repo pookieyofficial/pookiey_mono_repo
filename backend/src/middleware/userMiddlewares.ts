@@ -18,7 +18,8 @@ export const verifyUser = async (req: Request, res: Response, next: NextFunction
         const user = await User.findOne({ user_id: supabaseUser.id });
 
         if (!user) {
-            return res.status(401).json({ message: "Unauthorized - Account not found" });
+            // Return 404 so clients can create the user when the token is valid but account doesn't exist
+            return res.status(404).json({ message: "User not found" });
         }
 
         const userStatuses = ["banned", "deleted", "suspended"];

@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { InboxItem } from '@/hooks/useSocket';
 import { useRouter } from 'expo-router';
+import { ThemedText } from './ThemedText';
+import { Colors } from '@/constants/Colors';
 
 interface ChatListItemProps {
   item: InboxItem;
@@ -54,34 +56,34 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
           />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarText}>
+            <ThemedText>
               {item.name.charAt(0).toUpperCase()}
-            </Text>
+            </ThemedText>
           </View>
         )}
         {item.unreadCount > 0 && (
           <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>
+            <ThemedText style={styles.unreadThemedText}>
               {item.unreadCount > 99 ? '99+' : item.unreadCount}
-            </Text>
+            </ThemedText>
           </View>
         )}
       </View>
 
       <View style={styles.contentContainer}>
         <View style={styles.headerRow}>
-          <Text style={styles.name} numberOfLines={1}>
+          <ThemedText style={styles.name} numberOfLines={1}>
             {item.name}
-          </Text>
+          </ThemedText>
           {item.lastMessage?.createdAt && (
-            <Text style={styles.time}>
+            <ThemedText style={styles.time}>
               {formatTime(item.lastMessage.createdAt)}
-            </Text>
+            </ThemedText>
           )}
         </View>
 
         <View style={styles.messageRow}>
-          <Text
+          <ThemedText
             style={[
               styles.lastMessage,
               item.unreadCount > 0 && styles.unreadMessage,
@@ -89,7 +91,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
             numberOfLines={2}
           >
             {item.lastMessage?.text || 'Start a conversation'}
-          </Text>
+          </ThemedText>
         </View>
       </View>
     </TouchableOpacity>
@@ -99,10 +101,10 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    padding: 16,
+    padding: 13,
+    margin: 10,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderRadius: 10,
   },
   avatarContainer: {
     position: 'relative',
@@ -118,11 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#666',
-  },
   unreadBadge: {
     position: 'absolute',
     top: -4,
@@ -137,7 +134,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
-  unreadText: {
+  unreadThemedText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
@@ -154,8 +151,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+    color: Colors.titleColor,
     flex: 1,
     marginRight: 8,
   },

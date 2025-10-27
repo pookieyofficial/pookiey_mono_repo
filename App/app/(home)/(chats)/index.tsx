@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -9,9 +9,8 @@ import {
   Platform,
 } from 'react-native';
 import { ChatListItem } from '@/components/ChatListItem';
-import { useSocket, InboxItem } from '@/hooks/useSocket';
-import { messageAPI } from '@/APIs/messageAPIs';
-import { useAuth } from '@/hooks/useAuth';
+import { InboxItem } from '@/hooks/useSocket';
+import { useMessagingStore } from '@/store/messagingStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
@@ -19,54 +18,27 @@ import { ThemedText } from '@/components/ThemedText';
 import CustomLoader from '@/components/CustomLoader';
 
 export default function ChatsScreen() {
-  const { token } = useAuth();
-  const { isConnected, onInboxUpdate, onNewMessage } = useSocket();
-  const [inbox, setInbox] = useState<InboxItem[]>([]);
+  const { inbox, isSocketConnected, triggerReload } = useMessagingStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load inbox on mount and when screen is focused
   useFocusEffect(
     useCallback(() => {
-      loadInbox();
-    }, [])
+      const { inbox } = useMessagingStore.getState();
+      if (inbox.length === 0 && isSocketConnected) {
+        setLoading(false);
+      } else if (inbox.length > 0) {
+        setLoading(false);
+      }
+    }, [isSocketConnected])
   );
 
-  // Listen for inbox updates
-  useEffect(() => {
-    const cleanup = onInboxUpdate((data) => {
-      loadInbox();
-    });
-
-    return cleanup;
-  }, []);
-
-  // Listen for new messages to update unread counts
-  useEffect(() => {
-    const cleanup = onNewMessage((message) => {
-      loadInbox();
-    });
-
-    return cleanup;
-  }, []);
-
-  const loadInbox = async () => {
-    try {
-      if (token) {
-        const data = await messageAPI.getInbox(token);
-        setInbox(data);
-      }
-    } catch (error) {
-      console.error('Error loading inbox:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    loadInbox();
+    triggerReload();
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 500);
   };
 
   const renderItem = ({ item }: { item: InboxItem }) => (
@@ -88,7 +60,7 @@ export default function ChatsScreen() {
     </View>
   );
 
-  if (loading) {
+  if (loading && inbox.length === 0) {
     return (
       <SafeAreaView style={{
         flex: 1,
@@ -142,6 +114,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: Colors.parentBackgroundColor,
   },
   headerTitle: {
     color: Colors.titleColor,
@@ -162,6 +135,8 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flexGrow: 1,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   emptyListContainer: {
     flex: 1,

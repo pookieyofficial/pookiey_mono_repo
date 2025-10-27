@@ -10,7 +10,7 @@ export default {
     scheme: "https://pookiey.com",
     userInterfaceStyle: "light",
     newArchEnabled: true,
-
+    platforms: ["ios", "android"],
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.pookiey.pookiey",
@@ -45,12 +45,6 @@ export default {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         },
       },
-    },
-
-    web: {
-      bundler: "metro",
-      output: "static",
-      favicon: "./assets/images/favicon.png",
     },
 
     plugins: [

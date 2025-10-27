@@ -10,7 +10,7 @@ import {
   Linking,
   Keyboard,
 } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useSocket, Message } from '@/hooks/useSocket';
@@ -63,7 +63,7 @@ export default function ChatRoom() {
       headerLeft: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             style={{ padding: 8, marginRight: 4 }}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />

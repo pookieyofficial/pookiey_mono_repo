@@ -1,113 +1,285 @@
-import React, { useState } from 'react'
-import { 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
+import React, { useState, useEffect } from 'react'
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
   StyleSheet,
   Dimensions
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
-import { Colors } from '../../../constants/Colors'
+import { Colors } from '@/constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
+import { useAuthStore } from '@/store/authStore'
+import { LogBox } from 'react-native';
+LogBox.ignoreAllLogs(false);
 
-const { width } = Dimensions.get('window')
 
 const Profile = () => {
-  const [isEditing, setIsEditing] = useState(false)
+  const { dbUser } = useAuthStore()
 
-  const handleEdit = () => {
-    setIsEditing(!isEditing)
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: Date | string | undefined): number | string => {
+    if (!dateOfBirth) return 'N/A'
+    const dob = new Date(dateOfBirth)
+    const today = new Date()
+    let age = today.getFullYear() - dob.getFullYear()
+    const monthDiff = today.getMonth() - dob.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--
+    }
+    return age
   }
 
-  
+  // Get primary photo or first photo
+  const getPrimaryPhoto = (): string => {
+    return dbUser?.photoURL || ''
+  }
+
+  // Get full name
+  const getFullName = (): string => {
+    if (dbUser?.profile?.firstName || dbUser?.profile?.lastName) {
+      return `${dbUser.profile.firstName || ''} ${dbUser.profile.lastName || ''}`.trim()
+    }
+    return dbUser?.displayName || 'User'
+  }
+
+  // Get interests count
+  const getInterestsCount = (): number => {
+    return dbUser?.profile?.interests?.length || 0
+  }
+
+  const getInterestTags = (): string[] => {
+    return dbUser?.profile?.interests?.slice(0, 3) || []
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-        <CustomBackButton  />
-      <ScrollView 
-        style={styles.scrollView} 
+      <CustomBackButton />
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          
-          <ThemedText style={styles.headerTitle}>Profile</ThemedText>
-        </View>
+        {/* Profile Card */}
 
-        {/* Profile Image Section */}
-        <View style={styles.profileImageSection}>
-          <View style={styles.profileImageContainer}>
-            <Image 
-              source={{ uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face" }}
-              style={styles.profileImage}
-            />
-            <TouchableOpacity style={styles.editIconButton} onPress={handleEdit}>
-              <Ionicons name="pencil" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
+        <View style={styles.profileCard}>
+          {/* Profile Image Section */}
+          <View style={styles.profileImageSection}>
+            <View style={styles.profileImageContainer}>
+              <Image
+                source={{ uri: getPrimaryPhoto() }}
+                style={styles.profileImage}
+              />
+            </View>
+          </View>
+
+          {/* Name and Age */}
+          <View style={styles.nameSection}>
+            <ThemedText style={styles.userName}>{getFullName()}</ThemedText>
+            <ThemedText style={styles.userAge}>
+              {typeof calculateAge(dbUser?.profile?.dateOfBirth) === 'number'
+                ? `${calculateAge(dbUser?.profile?.dateOfBirth)} years old`
+                : 'Age not set'}
+            </ThemedText>
+          </View>
+
+          {/* Bio */}
+          {dbUser?.profile?.bio && (
+            <View style={styles.bioSection}>
+              <ThemedText style={styles.bioText}>{dbUser.profile.bio}</ThemedText>
+            </View>
+          )}
+
+          {/* Quick Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statNumber}>{getInterestsCount()}</ThemedText>
+              <ThemedText style={styles.statLabel}>Interests</ThemedText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statNumber}>{dbUser?.profile?.photos?.length || 0}</ThemedText>
+              <ThemedText style={styles.statLabel}>Photos</ThemedText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statNumber}>
+                {dbUser?.profile?.occupation ? '1' : '0'}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Occupation</ThemedText>
+            </View>
           </View>
         </View>
 
-        {/* Profile Information Sections */}
-        <View style={styles.sectionsContainer}>
-          {/* Name Section */}
+        {/* Interests Section */}
+        {getInterestsCount() > 0 && (
           <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>Name</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>Piyush</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
-            </TouchableOpacity>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="heart-outline" size={20} color={Colors.primaryBackgroundColor} />
+              <ThemedText style={styles.sectionTitle}>Interests</ThemedText>
+            </View>
+            <View style={styles.tagsContainer}>
+              {getInterestTags().map((interest, index) => (
+                <View key={index} style={styles.tag}>
+                  <ThemedText style={styles.tagText}>{interest}</ThemedText>
+                </View>
+              ))}
+              {getInterestsCount() > 3 && (
+                <View style={styles.tag}>
+                  <ThemedText style={styles.tagText}>+{getInterestsCount() - 3}</ThemedText>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Details Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="information-circle-outline" size={20} color={Colors.primaryBackgroundColor} />
+            <ThemedText style={styles.sectionTitle}>Details</ThemedText>
           </View>
 
-          {/* About Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>About</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>Sometimes you gotta believe..</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+          {/* Gender */}
+          {dbUser?.profile?.gender && typeof dbUser.profile.gender === 'string' && (
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="people-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Gender</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>
+                {dbUser.profile.gender.charAt(0).toUpperCase() + dbUser.profile.gender.slice(1)}
+              </ThemedText>
             </TouchableOpacity>
-          </View>
+          )}
 
-          {/* Interests Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>Interests</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>Technology, Travel, Coffee</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+          {/* Location */}
+          {dbUser?.profile?.location?.city && (
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="location-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Location</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>{dbUser.profile.location.city}</ThemedText>
             </TouchableOpacity>
-          </View>
+          )}
 
-          {/* Photos Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>Photos</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>4 photos</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+          {/* Occupation */}
+          {dbUser?.profile?.occupation && (
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="briefcase-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Occupation</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>{dbUser.profile.occupation}</ThemedText>
             </TouchableOpacity>
-          </View>
+          )}
 
-          {/* Dating Preferences Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>Dating Preferences</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>Serious relationship</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+          {/* Education */}
+          {dbUser?.profile?.education && (
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="school-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Education</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>{dbUser.profile.education}</ThemedText>
             </TouchableOpacity>
-          </View>
+          )}
 
-          {/* Profile Stats Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>Profile Stats</ThemedText>
-            <TouchableOpacity style={styles.sectionField} activeOpacity={0.7}>
-              <ThemedText style={styles.fieldText}>156 views, 23 likes</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+          {/* Height */}
+          {typeof dbUser?.profile?.height === 'number' && dbUser.profile.height > 0 && (
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="resize-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Height</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>
+                {`${dbUser.profile.height} cm`}
+              </ThemedText>
             </TouchableOpacity>
-          </View>
+          )}
+
         </View>
+
+        {/* Photos Section */}
+        {dbUser?.profile?.photos && dbUser.profile.photos.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="images-outline" size={20} color={Colors.primaryBackgroundColor} />
+              <ThemedText style={styles.sectionTitle}>Photos</ThemedText>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.photosScroll}
+              contentContainerStyle={styles.photosContainer}
+            >
+              {dbUser?.profile?.photos?.slice(0, 5).map((photo, index) => (
+                <TouchableOpacity key={index} style={styles.photoItem} activeOpacity={0.8}>
+                  <Image source={{ uri: photo?.url }} style={styles.photoImage} />
+                  {photo?.isPrimary && (
+                    <View style={styles.primaryBadge}>
+                      <ThemedText style={styles.primaryBadgeText}>Primary</ThemedText>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Preferences Section */}
+        {dbUser?.preferences && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="settings-outline" size={20} color={Colors.primaryBackgroundColor} />
+              <ThemedText style={styles.sectionTitle}>Dating Preferences</ThemedText>
+            </View>
+
+            <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+              <View style={styles.detailLeft}>
+                <Ionicons name="navigate-outline" size={20} color="#666" />
+                <ThemedText style={styles.detailLabel}>Max Distance</ThemedText>
+              </View>
+              <ThemedText style={styles.detailValue}>
+                {dbUser?.preferences?.distanceMaxKm} km
+              </ThemedText>
+            </TouchableOpacity>
+
+            {dbUser?.preferences?.ageRange && (
+              <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+                <View style={styles.detailLeft}>
+                  <Ionicons name="time-outline" size={20} color="#666" />
+                  <ThemedText style={styles.detailLabel}>Age Range</ThemedText>
+                </View>
+                <ThemedText style={styles.detailValue}>
+                  {`${dbUser.preferences.ageRange?.[0]} - ${dbUser.preferences.ageRange?.[1]} years`}
+                </ThemedText>
+
+              </TouchableOpacity>
+            )}
+
+            {dbUser.preferences.showMe && dbUser.preferences.showMe.length > 0 && (
+              <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
+                <View style={styles.detailLeft}>
+                  <Ionicons name="eye-outline" size={20} color="#666" />
+                  <ThemedText style={styles.detailLabel}>Show Me</ThemedText>
+                </View>
+                <ThemedText style={styles.detailValue}>
+                  {dbUser.preferences.showMe.join(', ')}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Edit Button */}
+        <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+          <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+          <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   )
@@ -116,107 +288,194 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.parentBackgroundColor,
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  profileCard: {
     backgroundColor: '#FFFFFF',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 20,
+    padding: 24,
   },
   profileImageSection: {
     alignItems: 'center',
-    paddingVertical: 20,
-    backgroundColor: '#FFFFFF',
+    marginBottom: 20,
   },
   profileImageContainer: {
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
   },
   profileImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 4,
-    borderColor: '#E53E3E',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
-  editIconButton: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E53E3E',
-    justifyContent: 'center',
+  nameSection: {
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    marginBottom: 16,
   },
-  sectionsContainer: {
-    paddingHorizontal: 20,
+  userName: {
+    color: Colors.titleColor,
+  },
+  userAge: {
+    color: Colors.text.secondary,
+  },
+  bioSection: {
+    marginBottom: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  bioText: {
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 10,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.primaryBackgroundColor,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   section: {
-    marginBottom: 24,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 20,
+    padding: 20,
   },
-  sectionLabel: {
-    fontSize: 16,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    color: '#1A1A1A',
+    marginLeft: 8,
+    flex: 1,
+  },
+  photoCount: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  tagText: {
+    fontSize: 14,
+    color: '#333',
     fontWeight: '500',
-    color: '#000000',
-    marginBottom: 8,
   },
-  sectionField: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
   },
-  fieldText: {
-    fontSize: 16,
-    color: '#000000',
+  detailLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  detailLabel: {
+    fontSize: 15,
+    color: '#666',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  photosScroll: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  photosContainer: {
+    gap: 12,
+  },
+  photoItem: {
+    width: 120,
+    height: 160,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  primaryBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(75, 22, 76, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  primaryBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  editButton: {
+    backgroundColor: Colors.primaryBackgroundColor,
+    marginHorizontal: 20,
+    marginTop: 24,
+    paddingVertical: 16,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
   },
 })
 

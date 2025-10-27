@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
-import { Messages, Matches } from "../models";
+import { Messages, Matches, User } from "../models";
+import { sendMessageNotification } from "../services/notificationService";
 import mongoose from "mongoose";
 
 interface AuthenticatedSocket extends Socket {
@@ -114,6 +115,41 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                     lastMessage: message
                 });
 
+                // Send push notification to receiver (if they have tokens)
+                try {
+                    const [senderUser, receiverUser] = await Promise.all([
+                        User.findOne({ user_id: userId }).lean(),
+                        User.findOne({ user_id: receiverId }).lean(),
+                    ]);
+
+                    const senderName = senderUser?.profile
+                        ? `${senderUser.profile.firstName || ""} ${senderUser.profile.lastName || ""}`.trim() || senderUser.displayName || senderUser.email?.split("@")[0]
+                        : senderUser?.displayName || senderUser?.email?.split("@")[0] || "";
+
+                    const senderAvatar = senderUser?.photoURL
+                        || senderUser?.profile?.photos?.find((p: any) => p.isPrimary)?.url
+                        || senderUser?.profile?.photos?.[0]?.url
+                        || "";
+
+                    const receiverTokens = Array.isArray((receiverUser as any)?.notificationTokens)
+                        ? (receiverUser as any).notificationTokens as string[]
+                        : [];
+
+                    if (receiverTokens.length > 0) {
+                        await sendMessageNotification({
+                            matchId: String(matchId),
+                            userName: senderName || "New message",
+                            userAvatar: senderAvatar,
+                            otherUserId: receiverId,
+                            expo_tokens: receiverTokens,
+                            messageText: text,
+                            messageType: type,
+                        });
+                    }
+                } catch (notifyError) {
+                    console.error("Error sending push notification:", notifyError);
+                }
+
             } catch (error) {
                 console.error("Error sending message:", error);
                 socket.emit("error", { message: "Failed to send message" });
@@ -167,6 +203,11 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 io.to(`user:${senderId}`).emit("messages_read", { 
                     matchId,
                     count: result.modifiedCount 
+                });
+
+                // Emit inbox_update to the user who read the messages to update their local inbox
+                io.to(`user:${userId}`).emit("inbox_update", {
+                    matchId
                 });
 
             } catch (error) {

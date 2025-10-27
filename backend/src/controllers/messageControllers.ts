@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { Messages } from "../models";
+import { User } from "../models";
 import { Matches } from "../models/Matches";
 import mongoose from "mongoose";
+import { sendMessageNotification } from "../services/notificationService";
 
 // Get inbox with latest messages for all matches
 export const getInbox = async (req: Request, res: Response) => {
@@ -95,8 +97,8 @@ export const getInbox = async (req: Request, res: Response) => {
             {
                 $addFields: {
                     sortTime: { $ifNull: ["$lastMessage.createdAt", "$createdAt"] },
-                    unreadCount: { 
-                        $ifNull: [{ $arrayElemAt: ["$unreadCount.count", 0] }, 0] 
+                    unreadCount: {
+                        $ifNull: [{ $arrayElemAt: ["$unreadCount.count", 0] }, 0]
                     }
                 }
             },
@@ -115,6 +117,7 @@ export const getInbox = async (req: Request, res: Response) => {
                         ]
                     },
                     avatar: "$matchedUser.photoURL",
+                    notificationTokens: "$matchedUser.notificationTokens",
                     lastMessage: {
                         text: "$lastMessage.text",
                         createdAt: "$lastMessage.createdAt",
@@ -138,7 +141,7 @@ export const getInbox = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error fetching inbox:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to fetch inbox",
             details: error instanceof Error ? error.message : "Unknown error"
         });
@@ -163,7 +166,7 @@ export const getMessages = async (req: Request, res: Response) => {
         }
 
         const query: any = { matchId: new mongoose.Types.ObjectId(matchId) };
-        
+
         if (before) {
             query.createdAt = { $lt: new Date(before as string) };
         }
@@ -180,7 +183,7 @@ export const getMessages = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error fetching messages:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to fetch messages",
             details: error instanceof Error ? error.message : "Unknown error"
         });
@@ -221,6 +224,37 @@ export const sendMessage = async (req: Request, res: Response) => {
 
         await message.save();
 
+        // Fetch sender and receiver details for notification
+        const [senderUser, receiverUser] = await Promise.all([
+            User.findOne({ user_id: userId }).lean(),
+            User.findOne({ user_id: receiverId }).lean(),
+        ]);
+
+        const senderName = senderUser?.profile
+            ? `${senderUser.profile.firstName || ""} ${senderUser.profile.lastName || ""}`.trim() || senderUser.displayName || senderUser.email?.split("@")[0]
+            : senderUser?.displayName || senderUser?.email?.split("@")[0] || "";
+
+        const senderAvatar = senderUser?.photoURL
+            || senderUser?.profile?.photos?.find((p: any) => p.isPrimary)?.url
+            || senderUser?.profile?.photos?.[0]?.url
+            || "";
+
+        const receiverTokens = Array.isArray(receiverUser?.notificationTokens)
+            ? receiverUser!.notificationTokens
+            : [];
+
+        console.log("receiverTokens", receiverTokens);
+
+        if (receiverTokens.length > 0) {
+            await sendMessageNotification({
+                matchId: String(matchId),
+                userName: senderName || "New message",
+                userAvatar: senderAvatar,
+                otherUserId: receiverId,
+                expo_tokens: receiverTokens,
+            });
+        }
+
         // Update match's lastInteractionAt
         await Matches.findByIdAndUpdate(matchId, {
             lastInteractionAt: new Date()
@@ -233,7 +267,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error sending message:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to send message",
             details: error instanceof Error ? error.message : "Unknown error"
         });
@@ -279,7 +313,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error marking messages as read:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to mark messages as read",
             details: error instanceof Error ? error.message : "Unknown error"
         });
@@ -297,7 +331,7 @@ export const deleteMessage = async (req: Request, res: Response) => {
         }
 
         const message = await Messages.findById(messageId);
-        
+
         if (!message) {
             return res.status(404).json({ error: "Message not found" });
         }
@@ -315,7 +349,7 @@ export const deleteMessage = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error deleting message:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Failed to delete message",
             details: error instanceof Error ? error.message : "Unknown error"
         });

@@ -66,7 +66,7 @@ export const Colors = {
   secondaryForegroundColor:"#",
   buttonBackgroundColor:"#",
   buttonForegroundColor:"#",
-  parentBackgroundColor:"#fff",
+  parentBackgroundColor:"#F8F9FA", // Light grey background for showing white cards
   iconsColor:"#4B164C",
   titleColor:"#000",
   textColor:"#fff"

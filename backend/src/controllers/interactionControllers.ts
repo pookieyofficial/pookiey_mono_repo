@@ -13,11 +13,8 @@ export const interaction = async (req: Request, res: Response) => {
         const toUser = req.query.toUser as string;
         const type = req.query.type as string;
 
-        if (!fromUser) {
-            return res.status(400).json({ message: "User not found" });
-        }
-        if (!toUser || !type) {
-            return res.status(400).json({ message: "To user and type are required" });
+        if (!fromUser || !toUser || !type) {
+            return res.status(400).json({ message: "Either fromUser or toUser or interaction type is not provided" });
         }
         if (toUser === fromUser) {
             return res.status(400).json({ message: "You cannot interact with yourself" });
@@ -29,7 +26,7 @@ export const interaction = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid interaction type" });
         }
 
-        // Check if interaction already exists (fromUser → toUser)
+        // Check if interaction already exists (fromUser -> toUser)
         let interaction = await Interaction.findOne({ fromUser, toUser }).session(session);
 
         if (interaction) {
@@ -53,7 +50,6 @@ export const interaction = async (req: Request, res: Response) => {
                 { session }
             );
 
-            // Fetch user details for both users
             const [user1Details, user2Details] = await Promise.all([
                 User.findOne({ user_id: fromUser }).select('user_id displayName photoURL profile').session(session),
                 User.findOne({ user_id: toUser }).select('user_id displayName photoURL profile').session(session)
@@ -65,6 +61,7 @@ export const interaction = async (req: Request, res: Response) => {
                 success: true, 
                 match: match[0], 
                 isMatch: true,
+                matchId: match[0]._id,
                 user1: {
                     user_id: user1Details?.user_id,
                     displayName: user1Details?.displayName,

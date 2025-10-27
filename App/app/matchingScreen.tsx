@@ -12,34 +12,35 @@ import {
     Dimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams } from 'expo-router'
-import { RecommendedUser } from '@/types/User'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 const MatchingScreen = () => {
     const params = useLocalSearchParams()
-    
+    const router = useRouter()
     // Parse the match data and users from params
     const match = params.match ? JSON.parse(params.match as string) : null
     const user1 = params.user1 ? JSON.parse(params.user1 as string) : null
     const user2 = params.user2 ? JSON.parse(params.user2 as string) : null
-    
+    const userName = params.userName as string
+    const userAvatar = params.userAvatar as string
+
     console.log('Match screen params:', { match, user1, user2 })
-    
+
     // Default data fallback (for development/testing)
     const defaultMatchData = {
         displayName: 'Jake Smith',
         firstName: 'Jake',
         photo: 'https://plus.unsplash.com/premium_photo-1673734625279-2738ecf66fa1?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     }
-    
+
     const defaultUserData = {
         displayName: 'Emma Johnson',
         firstName: 'Emma',
         photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     }
-    
+
     // Use actual data from backend (user2 is the matched person, user1 is current user)
     const displayMatchName = user2?.displayName || user2?.profile?.firstName || defaultMatchData.displayName
     const displayMatchPhoto = user2?.photoURL || user2?.profile?.photos?.[0]?.url || defaultMatchData.photo
@@ -48,7 +49,6 @@ const MatchingScreen = () => {
     const rightCardAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // Animate cards when component mounts
         Animated.parallel([
             Animated.spring(leftCardAnim, {
                 toValue: 1,
@@ -61,7 +61,7 @@ const MatchingScreen = () => {
                 tension: 50,
                 friction: 7,
                 useNativeDriver: true,
-                delay: 100, // slight delay for staggered effect
+                delay: 100,
             })
         ]).start();
     }, [leftCardAnim, rightCardAnim]);
@@ -69,48 +69,47 @@ const MatchingScreen = () => {
     const handleSayHello = () => {
         console.log('User said hello to:', displayMatchName)
         console.log('Match details:', { match, user1, user2 })
-        // TODO: Navigate to chat screen with the matched user
-        // router.push(`/chat/${user2?.user_id}`)
+        router.replace({
+            pathname: '/(home)/(chats)',
+            params: {
+                matchId: match?._id,
+                user1: user1?._id,
+                user2: user2?._id,
+                userName: user2?.profile?.firstName || displayMatchName,
+                userAvatar: user2?.photoURL || user2?.profile?.photos?.[0]?.url
+            }
+        })
     }
 
-    const handleKeepSwiping = () => {
-        console.log('User chose to keep swiping')
-        // TODO: Navigate back to swipe deck
-        // router.back()
+    const handleContinueSwiping = () => {
+        router.replace('/(home)')
     }
 
-    // Interpolate animation values for left card (coming from left)
     const leftCardTranslateX = leftCardAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [-SCREEN_WIDTH * 0.8, 0] // Start from left off-screen (responsive)
+        outputRange: [-SCREEN_WIDTH * 0.8, 0]
     });
 
     const leftCardRotate = leftCardAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: ['-15deg', '-8deg'] // Start with more rotation
+        outputRange: ['-15deg', '-8deg']
     });
 
-    // Interpolate animation values for right card (coming from right)
     const rightCardTranslateX = rightCardAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [SCREEN_WIDTH * 0.8, 0] // Start from right off-screen (responsive)
+        outputRange: [SCREEN_WIDTH * 0.8, 0]
     });
 
     const rightCardRotate = rightCardAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: ['15deg', '8deg'] // Start with more rotation
+        outputRange: ['15deg', '8deg']
     });
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <CustomBackButton />
-
-            {/* Main Content */}
             <View style={styles.content}>
-                {/* Profile Cards Section - Centered */}
                 <View style={styles.profileCardsContainer}>
-                    {/* Left Profile Card (Behind) */}
-                    <Animated.View 
+                    <Animated.View
                         style={[
                             styles.leftCard,
                             {
@@ -131,8 +130,7 @@ const MatchingScreen = () => {
                         </View>
                     </Animated.View>
 
-                    {/* Right Profile Card (Front) */}
-                    <Animated.View 
+                    <Animated.View
                         style={[
                             styles.rightCard,
                             {
@@ -154,7 +152,6 @@ const MatchingScreen = () => {
                     </Animated.View>
                 </View>
 
-                {/* Match Message Section */}
                 <View style={styles.messageContainer}>
                     <ThemedText style={styles.matchTitle}>
                         It's a match, {user2?.profile?.firstName || displayMatchName}!
@@ -164,12 +161,11 @@ const MatchingScreen = () => {
                     </ThemedText>
                 </View>
 
-                {/* Spacer to push button to bottom */}
                 <View style={styles.spacer} />
 
-                {/* Action Button - At Bottom */}
                 <View style={styles.buttonContainer}>
                     <MainButton title='Say hello' onPress={handleSayHello} />
+                    <MainButton title='Continue Swiping' type='secondary' onPress={handleContinueSwiping} />
                 </View>
             </View>
         </SafeAreaView>
@@ -302,6 +298,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         paddingBottom: 20,
         paddingTop: 10,
+        flexDirection: 'column',
     },
 })
 

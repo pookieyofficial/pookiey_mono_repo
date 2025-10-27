@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { deepLinkState } from '@/utils/deepLinkState';
 
 
 export default function LocationScreen() {
@@ -76,7 +77,15 @@ export default function LocationScreen() {
 
             setLocation(address);
 
-            router.replace('/(home)');
+            // Check for pending deeplink after onboarding
+            const pendingDeeplink = deepLinkState.getPendingDeeplink();
+            if (pendingDeeplink) {
+                console.log('🔗 Routing to pending deeplink after onboarding:', pendingDeeplink);
+                deepLinkState.clearPendingDeeplink();
+                router.replace(pendingDeeplink as any);
+            } else {
+                router.replace('/(home)');
+            }
         } catch (error) {
             console.error('Error saving user data:', error);
         } finally {

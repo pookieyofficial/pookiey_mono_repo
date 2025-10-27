@@ -2,19 +2,19 @@ import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-nat
 import { Colors } from "@/constants/Colors";
 import { ThemedText } from "./ThemedText";
 
-export default function MainButton(props: { title: string, onPress: () => void, disabled?: boolean }) {
+export default function MainButton(props: { title: string, onPress: () => void, disabled?: boolean, type?: 'primary' | 'secondary' }) {
     return (
         <View style={styles.buttonContainer}>
             <TouchableOpacity
                 activeOpacity={0.8}
-                style={styles.confirmButton}
+                style={props.type === 'secondary' ? styles.secondaryButton : styles.confirmButton}
                 onPress={props.onPress}
                 disabled={props.disabled}>
                 {props.disabled
                     ?
-                    <ActivityIndicator size="small" color="#ffffff" />
+                    <ActivityIndicator size="small" color={props.type === 'secondary' ? Colors.primaryBackgroundColor : Colors.primary.white} />
                     :
-                    <ThemedText type='defaultSemiBold' style={{ color: '#ffffff' }}>
+                    <ThemedText type='defaultSemiBold' style={props.type === 'secondary' ? styles.secondaryButtonText : styles.confirmButtonText}>
                         {props.title}
                     </ThemedText>}
             </TouchableOpacity>
@@ -24,7 +24,20 @@ export default function MainButton(props: { title: string, onPress: () => void, 
 
 const styles = StyleSheet.create({
     buttonContainer: {
-        paddingBottom: 40,
+        paddingBottom: 20,
+    },
+    secondaryButton: {
+        backgroundColor: Colors.primary.white,
+        borderRadius: 16,
+        paddingVertical: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    secondaryButtonText: {
+        color: Colors.primaryBackgroundColor,
+    },
+    confirmButtonText: {
+        color: Colors.primary.white,
     },
     confirmButton: {
         backgroundColor: Colors.primaryBackgroundColor,
@@ -32,7 +45,7 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#E53E3E',
+        shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
             height: 4,

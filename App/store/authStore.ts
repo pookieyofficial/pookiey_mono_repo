@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from '../config/supabaseConfig';
 import { useUser } from '../hooks/useUser';
 import type { SupabaseUser, DBUser } from '../types';
+import { deepLinkState } from '../utils/deepLinkState';
 
 // Re-export types for convenience
 export type { SupabaseUser, DBUser };
@@ -98,6 +99,8 @@ export const useAuthStore = create<AuthStore>()(
           idToken: null,
           notificationTokens: [],
         });
+        // Clear pending deeplink on logout
+        deepLinkState.clearPendingDeeplink();
       },
 
       setLoading: (loading: boolean) => set({ isLoading: loading }),
@@ -185,12 +188,29 @@ export const useAuthStore = create<AuthStore>()(
           login(supabaseUser);
           setIdToken(accessToken);
 
+          // Check for pending deeplink
+          const pendingDeeplink = deepLinkState.getPendingDeeplink();
+          console.log('🔗 Pending deeplink:', pendingDeeplink);
+
+          // Determine the target route
+          let targetRoute: string;
+          
           if (dbUser?.profile?.isOnboarded) {
-            router.replace('/(home)');
+            // User is onboarded - check for deeplink or go to home
+            if (pendingDeeplink) {
+              targetRoute = pendingDeeplink;
+              // Clear the pending deeplink after extracting it
+              deepLinkState.clearPendingDeeplink();
+            } else {
+              targetRoute = '/(home)';
+            }
           } else {
-            router.replace('/(onboarding)/profile');
+            // User is not onboarded - must go through onboarding first
+            targetRoute = '/(onboarding)/profile';
           }
 
+          console.log('🎯 Routing to:', targetRoute);
+          router.replace(targetRoute as any);
           await get().hideSplashScreen();
         } catch (error) {
           console.error('Auth success error:', error);
@@ -206,6 +226,7 @@ export const useAuthStore = create<AuthStore>()(
 
           if (error) {
             set({ isLoading: false });
+            await get().hideSplashScreen();
             return;
           }
 
@@ -213,6 +234,7 @@ export const useAuthStore = create<AuthStore>()(
             const { setSession, setUser, handleAuthSuccess } = get();
             setSession(session);
             setUser(session.user as SupabaseUser);
+            
             await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
           } else {
             set({ isLoading: false });
@@ -234,7 +256,13 @@ export const useAuthStore = create<AuthStore>()(
           const { lastAuthState, isInitialized, isLoading } = get();
           const isAuthenticated = !!session?.user;
 
-          if (lastAuthState === isAuthenticated) return;
+          console.log('🔔 Auth state change event:', event, 'From:', lastAuthState, 'To:', isAuthenticated);
+
+          // Don't do anything if auth state hasn't changed, except on explicit SIGNED_IN
+          if (event !== 'SIGNED_IN' && lastAuthState === isAuthenticated) {
+            console.log('⏭️ Auth state unchanged, skipping');
+            return;
+          }
 
           set({ lastAuthState: isAuthenticated });
 
@@ -242,9 +270,28 @@ export const useAuthStore = create<AuthStore>()(
             const { setSession, setUser, handleAuthSuccess } = get();
             setSession(session);
             setUser(session.user as SupabaseUser);
-            await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
+            
+            const shouldTriggerAuthSuccess = event === 'SIGNED_IN' || !lastAuthState || !isInitialized;
+            
+            if (shouldTriggerAuthSuccess) {
+              console.log('✅ Triggering handleAuthSuccess - new login or initial session');
+              await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
+            } else {
+              console.log('⏭️ User already authenticated, skipping handleAuthSuccess to prevent duplicate routing');
+              // Just update the session and user, don't route again
+              const { initialize, hideSplashScreen } = get();
+              
+              // Clear any stale pending deeplink since we're not routing
+              deepLinkState.clearPendingDeeplink();
+              
+              if (!isInitialized) {
+                initialize();
+              }
+              set({ isLoading: false });
+              await hideSplashScreen();
+            }
           } else {
-            const { setSession, setUser, logout, hideSplashScreen } = get();
+            const { setSession, setUser, logout, hideSplashScreen, initialize } = get();
             setSession(null);
             setUser(null);
 
@@ -252,12 +299,13 @@ export const useAuthStore = create<AuthStore>()(
               router.replace('/(auth)');
               logout();
             }
+            
+            if (!isInitialized) {
+              initialize();
+            }
+            set({ isLoading: false });
             await hideSplashScreen();
           }
-
-          const { initialize } = get();
-          if (!isInitialized) initialize();
-          set({ isLoading: false });
         });
       },
     }),

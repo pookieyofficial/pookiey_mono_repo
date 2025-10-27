@@ -4,6 +4,7 @@ export interface IMessage extends Document {
     matchId: mongoose.Types.ObjectId;
     senderId: string;
     receiverId: string;
+    receiverNotificationToken?: string[];
     text: string;
     type: "text" | "image" | "gif";
     mediaUrl?: string;
@@ -15,29 +16,30 @@ export interface IMessage extends Document {
 
 const MessageSchema = new Schema<IMessage>(
     {
-        matchId: { 
-            type: Schema.Types.ObjectId, 
-            ref: "Matches", 
+        matchId: {
+            type: Schema.Types.ObjectId,
+            ref: "Matches",
             required: true,
-            index: true 
+            index: true
         },
-        senderId: { 
-            type: String, 
-            ref: "Users", 
+        senderId: {
+            type: String,
+            ref: "Users",
             required: true,
-            index: true 
+            index: true
         },
-        receiverId: { 
-            type: String, 
-            ref: "Users", 
+        receiverId: {
+            type: String,
+            ref: "Users",
             required: true,
-            index: true 
+            index: true
         },
+        receiverNotificationToken: { type: [String] },
         text: { type: String, required: true },
-        type: { 
-            type: String, 
-            enum: ["text", "image", "gif"], 
-            default: "text" 
+        type: {
+            type: String,
+            enum: ["text", "image", "gif"],
+            default: "text"
         },
         mediaUrl: { type: String },
         isRead: { type: Boolean, default: false },

@@ -29,15 +29,14 @@ const Settings = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Settings Header */}
+      <View style={styles.headerSection}>
+        <ThemedText type='title' style={styles.headerTitle}>Settings</ThemedText>
+      </View>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
       >
-        {/* Settings Header */}
-        <View style={styles.headerSection}>
-          <ThemedText type='title' style={styles.headerTitle}>Settings</ThemedText>
-        </View>
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
@@ -155,14 +154,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 20,
-  },
   headerSection: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 20,
+    marginBottom: 20,
   },
   headerTitle: {
     color: Colors.titleColor,
@@ -177,8 +172,6 @@ const styles = StyleSheet.create({
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.text.light,
   },
   profileImageContainer: {
     position: 'relative',
@@ -187,19 +180,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 40,
-  },
-  heartIcon: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primary.red,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary.white,
   },
   profileInfo: {
     flex: 1,
@@ -232,9 +212,6 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    borderWidth: 1,
-    borderColor: Colors.text.light,
   },
   settingIconContainer: {
     width: 40,
@@ -247,13 +224,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: Colors.titleColor,
-    fontWeight: '500',
     marginLeft: 12,
   },
   decorativeBorder: {
     height: 0,
     backgroundColor: Colors.primary.red,
-    marginVertical: 8,
+    marginVertical: 4,
     marginHorizontal: 20,
     borderRadius: 0.5,
     opacity: 0.3,

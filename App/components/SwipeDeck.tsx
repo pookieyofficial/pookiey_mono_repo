@@ -108,9 +108,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
                         user2: JSON.stringify(response.user2 as any)
                     };
                     
-                    router.push({
+                    router.replace({
                         pathname: '/matchingScreen',
-                        params: matchParams
+                        params: {
+                            match: JSON.stringify(response.match),
+                            user1: JSON.stringify(response.user1 as any),
+                            user2: JSON.stringify(response.user2 as any),
+                            userName: response.user2?.profile?.firstName || response.user2?.displayName,
+                            userAvatar: response.user2?.photoURL || response.user2?.profile?.photos?.[0]?.url
+                        }
                     });
                 } else {
                     console.log('Interaction recorded:', action);

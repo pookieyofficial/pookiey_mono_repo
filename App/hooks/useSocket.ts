@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
 
-// Extract base URL from the API URL (remove /api/v1 if present)
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_API_URL || 'http://localhost:6969/api/v1';
 const SOCKET_URL = API_URL.replace('/api/v1', '');
 
@@ -25,6 +24,7 @@ export interface InboxItem {
   userId: string;
   name: string;
   avatar?: string;
+  receiverNotificationToken?: string[];
   lastMessage?: {
     text: string;
     createdAt: Date;
@@ -47,7 +47,6 @@ export const useSocket = () => {
 
     console.log('Connecting to socket:', SOCKET_URL);
 
-    // Initialize socket connection
     const socket = io(SOCKET_URL, {
       auth: {
         userId: dbUser.user_id,
