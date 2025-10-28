@@ -20,7 +20,11 @@ const Settings = () => {
 
   const handleButtonPress = (buttonName: string) => {
     console.log(`${buttonName} pressed`)
-    // Add navigation logic here
+    
+    if (buttonName === 'Dating Preference') {
+      router.push('/(home)/(setting)/datingPreferences')
+    }
+    // Add navigation logic for other buttons here
   }
 
   const handleProfilePress = () => {

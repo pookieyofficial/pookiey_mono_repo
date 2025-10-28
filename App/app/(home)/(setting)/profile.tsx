@@ -13,6 +13,7 @@ import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
 import { useAuthStore } from '@/store/authStore'
+import { router } from 'expo-router'
 import { LogBox } from 'react-native';
 LogBox.ignoreAllLogs(false);
 
@@ -276,7 +277,11 @@ const Profile = () => {
         )}
 
         {/* Edit Button */}
-        <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+        <TouchableOpacity 
+          style={styles.editButton} 
+          activeOpacity={0.8}
+          onPress={() => router.push('/(home)/(setting)/editProfile')}
+        >
           <Ionicons name="create-outline" size={20} color="#FFFFFF" />
           <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
         </TouchableOpacity>
