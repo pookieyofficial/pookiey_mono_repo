@@ -143,11 +143,9 @@ const DatingPreferences = () => {
         <View style={styles.content}>
           {/* Header */}
           <ThemedText type="title" style={styles.title}>
-            Dating Preferences
+            Preferences
           </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Set your preferences to find better matches
-          </ThemedText>
+          
 
           {/* Age Range Section */}
           <View style={styles.section}>
@@ -299,7 +297,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   title: {
     fontSize: 32,
