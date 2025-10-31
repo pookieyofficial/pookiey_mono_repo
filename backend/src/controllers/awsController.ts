@@ -63,6 +63,7 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
                     Key: key,
                     Expires: 120,
                     ContentType: `image/${safeExt}`,
+                    ACL: 'public-read',
                 };
 
                 const uploadUrl = await s3.getSignedUrlPromise('putObject', params);

@@ -20,6 +20,7 @@ import { useUser } from '@/hooks/useUser'
 import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { LogBox } from 'react-native';
+import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3'
 LogBox.ignoreAllLogs(false);
 
 const { width } = Dimensions.get('window')
@@ -39,6 +40,7 @@ const EditProfile = () => {
   const [interests, setInterests] = useState<string[]>([])
   const [newInterest, setNewInterest] = useState('')
   const [photos, setPhotos] = useState<any[]>([])
+  const [photoMimeTypes, setPhotoMimeTypes] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Initialize form with current user data
@@ -52,7 +54,10 @@ const EditProfile = () => {
       setEducation(dbUser.profile.education || '')
       setHeight(dbUser.profile.height?.toString() || '')
       setInterests(dbUser.profile.interests || [])
-      setPhotos(dbUser.profile.photos || [])
+      const existingPhotos = dbUser.profile.photos || []
+      setPhotos(existingPhotos)
+      // Set default mime types for existing S3 URLs
+      setPhotoMimeTypes(existingPhotos.map(() => 'image/jpeg'))
     }
   }, [dbUser])
 
@@ -71,6 +76,24 @@ const EditProfile = () => {
     setInterests(interests.filter(interest => interest !== interestToRemove))
   }
 
+  // Check if URL is a local file path (not an S3 URL)
+  const isLocalPath = (url: string) => {
+    return url && (url.startsWith('file://') || url.startsWith('content://') || url.startsWith('ph://'))
+  }
+
+  // Check for duplicate images
+  const isDuplicateImage = (newUri: string, existingPhotos: any[]) => {
+    return existingPhotos.some(photo => {
+      const photoUrl = typeof photo === 'string' ? photo : photo.url
+      // For local paths, compare the full URI
+      if (isLocalPath(photoUrl) && isLocalPath(newUri)) {
+        return photoUrl === newUri
+      }
+      // For S3 URLs, we can't easily detect duplicates, so skip
+      return false
+    })
+  }
+
   // Pick image from gallery
   const pickImage = async () => {
     if (photos.length >= 6) {
@@ -83,26 +106,49 @@ const EditProfile = () => {
       allowsEditing: true,
       aspect: [3, 4],
       quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: 6 - photos.length,
     })
 
-    if (!result.canceled && result.assets[0]) {
-      const newPhoto = {
-        url: result.assets[0].uri,
-        isPrimary: photos.length === 0,
-        uploadedAt: new Date().toISOString()
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newPhotos: any[] = []
+      const newMimeTypes: string[] = []
+      
+      for (const asset of result.assets) {
+        const localUri = asset.uri
+        
+        // Check for duplicates
+        if (isDuplicateImage(localUri, photos)) {
+          Alert.alert('Duplicate Image', 'This image has already been selected.')
+          continue
+        }
+
+        const newPhoto = {
+          url: localUri,
+          isPrimary: photos.length === 0 && newPhotos.length === 0,
+          uploadedAt: new Date().toISOString()
+        }
+        newPhotos.push(newPhoto)
+        newMimeTypes.push(asset.mimeType || 'image/jpeg')
       }
-      setPhotos([...photos, newPhoto])
+
+      if (newPhotos.length > 0) {
+        setPhotos([...photos, ...newPhotos])
+        setPhotoMimeTypes([...photoMimeTypes, ...newMimeTypes])
+      }
     }
   }
 
   // Remove photo
   const removePhoto = (index: number) => {
     const newPhotos = photos.filter((_, i) => i !== index)
+    const newMimeTypes = photoMimeTypes.filter((_, i) => i !== index)
     // If we removed the primary photo, make the first remaining photo primary
     if (photos[index]?.isPrimary && newPhotos.length > 0) {
       newPhotos[0].isPrimary = true
     }
     setPhotos(newPhotos)
+    setPhotoMimeTypes(newMimeTypes)
   }
 
   // Save profile
@@ -117,14 +163,98 @@ const EditProfile = () => {
       return
     }
 
-    // Validate height if provided
-    if (height && (isNaN(parseInt(height)) || parseInt(height) < 100 || parseInt(height) > 250)) {
-      Alert.alert('Error', 'Please enter a valid height between 100-250 cm')
+    // Validate minimum 2 images
+    if (photos.length < 2) {
+      Alert.alert('Error', 'Please upload at least 2 photos')
       return
     }
 
     setIsLoading(true)
     try {
+      // Separate existing S3 URLs from new local images
+      const existingS3Photos: any[] = []
+      const newLocalPhotos: { photo: any; mimeType: string; index: number }[] = []
+      
+      photos.forEach((photo, index) => {
+        const photoUrl = typeof photo === 'string' ? photo : photo.url
+        if (isLocalPath(photoUrl)) {
+          newLocalPhotos.push({
+            photo,
+            mimeType: photoMimeTypes[index] || 'image/jpeg',
+            index
+          })
+        } else {
+          // It's already an S3 URL, keep it as is
+          existingS3Photos.push(photo)
+        }
+      })
+
+      let finalPhotos: any[] = [...existingS3Photos]
+
+      // Upload new local images to S3
+      if (newLocalPhotos.length > 0) {
+        // Get MIME types for new images
+        const mimeTypes = newLocalPhotos.map(item => item.mimeType)
+        
+        // Request presigned URLs
+        const presignedUrls = await requestPresignedURl(mimeTypes)
+        
+        if (!presignedUrls || presignedUrls.length !== newLocalPhotos.length) {
+          Alert.alert('Error', 'Failed to get upload URLs. Please try again.')
+          setIsLoading(false)
+          return
+        }
+
+        // Prepare files for upload
+        const filesToUpload = newLocalPhotos.map((item, i) => ({
+          LocalUrl: typeof item.photo === 'string' ? item.photo : item.photo.url,
+          PresignedUrl: presignedUrls[i].uploadUrl,
+          MimeType: item.mimeType
+        }))
+
+        // Upload to S3
+        const uploadResults = await uploadMultipleTos3(filesToUpload)
+        
+        // Check if all uploads succeeded
+        const allSucceeded = uploadResults.every(result => 
+          result && (result.status === 200 || result.status === 204)
+        )
+
+        if (!allSucceeded) {
+          Alert.alert('Error', 'Some images failed to upload. Please try again.')
+          setIsLoading(false)
+          return
+        }
+
+        // Map new local photos to their S3 URLs, preserving structure
+        const newS3Photos = newLocalPhotos.map((item, i) => {
+          const s3Url = presignedUrls[i].fileURL
+          // If photo is an object, preserve its structure
+          if (typeof item.photo === 'object' && item.photo !== null) {
+            return {
+              ...item.photo,
+              url: s3Url
+            }
+          }
+          // Otherwise, just return the S3 URL
+          return s3Url
+        })
+
+        finalPhotos = [...existingS3Photos, ...newS3Photos]
+      }
+
+      // Ensure at least one photo is marked as primary
+      if (finalPhotos.length > 0) {
+        const hasPrimary = finalPhotos.some(photo => 
+          typeof photo === 'object' && photo?.isPrimary
+        )
+        if (!hasPrimary) {
+          if (typeof finalPhotos[0] === 'object') {
+            finalPhotos[0].isPrimary = true
+          }
+        }
+      }
+
       const profileData = {
         profile: {
           firstName: firstName.trim(),
@@ -135,7 +265,7 @@ const EditProfile = () => {
           education: education.trim() || undefined,
           height: height ? parseInt(height) : undefined,
           interests: interests.length > 0 ? interests : undefined,
-          photos: photos.length > 0 ? photos : undefined
+          photos: finalPhotos
         }
       }
 
@@ -335,6 +465,11 @@ const EditProfile = () => {
             <Ionicons name="images-outline" size={20} color={Colors.primaryBackgroundColor} />
             <ThemedText style={styles.sectionTitle}>Photos</ThemedText>
           </View>
+          <View style={styles.photoCountContainer}>
+            <ThemedText style={styles.photoCountText}>
+              {photos.length}/6 photos (Minimum 2 required)
+            </ThemedText>
+          </View>
 
           <TouchableOpacity style={styles.addPhotoButton} onPress={pickImage}>
             <Ionicons name="camera-outline" size={24} color={Colors.primaryBackgroundColor} />
@@ -348,17 +483,20 @@ const EditProfile = () => {
               style={styles.photosScroll}
               contentContainerStyle={styles.photosContainer}
             >
-              {photos.map((photo, index) => (
-                <View key={index} style={styles.photoItem}>
-                  <Image source={{ uri: photo.url }} style={styles.photoImage} />
-                  <TouchableOpacity
-                    style={styles.removePhotoButton}
-                    onPress={() => removePhoto(index)}
-                  >
-                    <Ionicons name="close-circle" size={24} color="#FF4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
+              {photos.map((photo, index) => {
+                const photoUrl = typeof photo === 'string' ? photo : photo.url
+                return (
+                  <View key={index} style={styles.photoItem}>
+                    <Image source={{ uri: photoUrl }} style={styles.photoImage} />
+                    <TouchableOpacity
+                      style={styles.removePhotoButton}
+                      onPress={() => removePhoto(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#FF4444" />
+                    </TouchableOpacity>
+                  </View>
+                )
+              })}
             </ScrollView>
           )}
         </View>
@@ -567,6 +705,14 @@ const styles = StyleSheet.create({
   saveButtonContainer: {
     paddingHorizontal: 20,
     marginTop: 24,
+  },
+  photoCountContainer: {
+    marginBottom: 12,
+  },
+  photoCountText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
 })
 

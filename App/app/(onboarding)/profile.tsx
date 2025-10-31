@@ -1,8 +1,9 @@
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
 import { useOnboardingStore } from '@/store/onboardingStore';
+import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -46,10 +47,55 @@ const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture } = useOnboardingStore();
+  const { dbUser } = useAuthStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(birthday ? new Date(birthday) : new Date());
-  const [firstName, setFirstName] = useState(fullName.split(' ')[0] || '');
-  const [lastName, setLastName] = useState(fullName.split(' ').slice(1).join(' ') || '');
+  
+  // Initialize name from provider if available, otherwise from store
+  const getInitialFirstName = () => {
+    if (dbUser?.displayName) {
+      return dbUser.displayName.split(' ')[0] || '';
+    }
+    return fullName.split(' ')[0] || '';
+  };
+
+  const getInitialLastName = () => {
+    if (dbUser?.displayName) {
+      const parts = dbUser.displayName.split(' ');
+      return parts.slice(1).join(' ') || '';
+    }
+    return fullName.split(' ').slice(1).join(' ') || '';
+  };
+
+  const [firstName, setFirstName] = useState(getInitialFirstName());
+  const [lastName, setLastName] = useState(getInitialLastName());
+
+  // Initialize profile picture from provider if available (only once)
+  useEffect(() => {
+    if (dbUser?.photoURL && !profilePicture) {
+      setProfilePicture(dbUser.photoURL);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbUser?.photoURL]);
+
+  // Initialize name from provider on mount
+  useEffect(() => {
+    if (dbUser?.displayName) {
+      const nameParts = dbUser.displayName.split(' ');
+      setFirstName(nameParts[0] || '');
+      setLastName(nameParts.slice(1).join(' ') || '');
+    }
+  }, [dbUser?.displayName]);
+
+  const calculateAge = (dateOfBirth: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - dateOfBirth.getFullYear();
+    const monthDiff = today.getMonth() - dateOfBirth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   const handleConfirm = () => {
     if (!firstName.trim() || !lastName.trim()) {
@@ -59,6 +105,18 @@ export default function ProfileScreen() {
 
     if (!birthday) {
       Alert.alert('Missing Information', 'Please select your birthday');
+      return;
+    }
+
+    // Validate age (must be 18+)
+    const birthdayDate = new Date(birthday);
+    const age = calculateAge(birthdayDate);
+    
+    if (age < 18) {
+      Alert.alert(
+        'Age Restriction',
+        'You must be at least 18 years old to use this app. Please select a valid birthday.',
+      );
       return;
     }
 
@@ -175,13 +233,16 @@ export default function ProfileScreen() {
             <View style={styles.profilePictureContainer}>
               <TouchableOpacity onPress={showImagePickerOptions} style={styles.profilePictureButton}>
                 <View style={styles.profilePicture}>
-                  <Image
-                    source={profilePicture ?
-                      { uri: profilePicture } :
-                      { uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' }
-                    }
-                    style={styles.profileImage}
-                  />
+                  {profilePicture ? (
+                    <Image
+                      source={{ uri: profilePicture }}
+                      style={styles.profileImage}
+                    />
+                  ) : (
+                    <View style={styles.profileImagePlaceholder}>
+                      <Ionicons name="person" size={60} color={Colors.secondaryForegroundColor} />
+                    </View>
+                  )}
                   <View style={styles.cameraIcon}>
                     <Ionicons name="camera" size={20} color={Colors.textColor} />
                   </View>
@@ -326,6 +387,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondaryBackgroundColor,
     borderWidth: 3,
     borderColor: Colors.secondaryBackgroundColor,
+  },
+  profileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.secondaryBackgroundColor,
+    borderWidth: 3,
+    borderColor: Colors.secondaryBackgroundColor,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraIcon: {
     position: 'absolute',

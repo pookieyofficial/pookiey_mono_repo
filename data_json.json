@@ -1,0 +1,243 @@
+[
+  {
+    "_id": { "$oid": "6906011b52027d73f68df114" },
+    "user_id": "cd7b1f2a-3b12-4a2f-bab1-217e2a52d91c",
+    "email": "riyaagarwal@gmail.com",
+    "displayName": "Riya Agarwal",
+    "photoURL": "",
+    "provider": "google",
+    "isEmailVerified": true,
+    "isPhoneVerified": false,
+    "status": "active",
+    "profile": {
+      "location": {
+        "type": "Point",
+        "city": "Bakhtiyarpur, Bihar",
+        "coordinates": [85.5324, 25.4642]
+      },
+      "bio": "Simple and happy soul who loves painting and helping others grow.",
+      "interests": ["Art", "Painting", "Cooking", "Self Growth"],
+      "height": 160,
+      "education": "BBA",
+      "occupation": "HR Associate",
+      "company": "ICICI Bank",
+      "school": "Patna Women's College",
+      "isOnboarded": true,
+      "photos": [
+        {
+          "url": "",
+          "isPrimary": true,
+          "uploadedAt": { "$date": "2025-10-31T19:22:10.000Z" },
+          "_id": { "$oid": "6906011b52027d73f68df115" }
+        }
+      ],
+      "dateOfBirth": { "$date": "1999-04-28T00:00:00.000Z" },
+      "firstName": "Riya",
+      "gender": "female",
+      "lastName": "Agarwal"
+    },
+    "preferences": {
+      "distanceMaxKm": 50,
+      "ageRange": [20, 35],
+      "showMe": []
+    },
+    "notificationTokens": [],
+    "createdAt": { "$date": "2025-10-31T19:22:10.000Z" },
+    "updatedAt": { "$date": "2025-10-31T19:22:10.000Z" },
+    "lastLoginAt": { "$date": "2025-10-31T19:22:10.000Z" },
+    "__v": 0
+  },
+  {
+    "_id": { "$oid": "6906011b52027d73f68df116" },
+    "user_id": "f59be47b-f86c-4a3e-80eb-ccde21a0c43a",
+    "email": "tanishasinha@gmail.com",
+    "displayName": "Tanisha Sinha",
+    "photoURL": "",
+    "provider": "google",
+    "isEmailVerified": true,
+    "isPhoneVerified": true,
+    "status": "active",
+    "profile": {
+      "location": {
+        "type": "Point",
+        "city": "Maner, Bihar",
+        "coordinates": [84.8849, 25.6388]
+      },
+      "bio": "Love capturing sunsets and road trips. A little adventurous, a lot curious.",
+      "interests": ["Travel", "Photography", "Adventure", "Cooking"],
+      "height": 165,
+      "education": "BA (Journalism)",
+      "occupation": "Content Creator",
+      "company": "YouTube",
+      "school": "Delhi University",
+      "isOnboarded": true,
+      "photos": [
+        {
+          "url": "",
+          "isPrimary": true,
+          "uploadedAt": { "$date": "2025-10-31T19:23:20.000Z" },
+          "_id": { "$oid": "6906011b52027d73f68df117" }
+        }
+      ],
+      "dateOfBirth": { "$date": "1998-10-03T00:00:00.000Z" },
+      "firstName": "Tanisha",
+      "gender": "female",
+      "lastName": "Sinha"
+    },
+    "preferences": {
+      "distanceMaxKm": 50,
+      "ageRange": [20, 35],
+      "showMe": []
+    },
+    "notificationTokens": [],
+    "createdAt": { "$date": "2025-10-31T19:23:20.000Z" },
+    "updatedAt": { "$date": "2025-10-31T19:23:20.000Z" },
+    "lastLoginAt": { "$date": "2025-10-31T19:23:20.000Z" },
+    "__v": 0
+  },
+  {
+    "_id": { "$oid": "6906011b52027d73f68df118" },
+    "user_id": "c84c2f63-45f3-4dbe-b963-fcfb3a826541",
+    "email": "aishwaryarai@gmail.com",
+    "displayName": "Aishwarya Rai",
+    "photoURL": "",
+    "provider": "google",
+    "isEmailVerified": true,
+    "isPhoneVerified": false,
+    "status": "active",
+    "profile": {
+      "location": {
+        "type": "Point",
+        "city": "Didarganj, Bihar",
+        "coordinates": [85.3169, 25.5951]
+      },
+      "bio": "Law student who loves debates and coffee. Calm mind, fierce heart.",
+      "interests": ["Debate", "Coffee", "Law", "Books"],
+      "height": 170,
+      "education": "LLB",
+      "occupation": "Law Student",
+      "company": "Chanakya National Law University",
+      "school": "CNLU Patna",
+      "isOnboarded": true,
+      "photos": [
+        {
+          "url": "",
+          "isPrimary": true,
+          "uploadedAt": { "$date": "2025-10-31T19:24:00.000Z" },
+          "_id": { "$oid": "6906011b52027d73f68df119" }
+        }
+      ],
+      "dateOfBirth": { "$date": "1997-08-22T00:00:00.000Z" },
+      "firstName": "Aishwarya",
+      "gender": "female",
+      "lastName": "Rai"
+    },
+    "preferences": {
+      "distanceMaxKm": 50,
+      "ageRange": [20, 35],
+      "showMe": []
+    },
+    "notificationTokens": [],
+    "createdAt": { "$date": "2025-10-31T19:24:00.000Z" },
+    "updatedAt": { "$date": "2025-10-31T19:24:00.000Z" },
+    "lastLoginAt": { "$date": "2025-10-31T19:24:00.000Z" },
+    "__v": 0
+  },
+  {
+    "_id": { "$oid": "6906011b52027d73f68df11a" },
+    "user_id": "bdf3b028-50b3-4c3b-b61d-66cf4b5ef1f4",
+    "email": "meghakapoor@gmail.com",
+    "displayName": "Megha Kapoor",
+    "photoURL": "",
+    "provider": "google",
+    "isEmailVerified": true,
+    "isPhoneVerified": true,
+    "status": "active",
+    "profile": {
+      "location": {
+        "type": "Point",
+        "city": "Punpun, Bihar",
+        "coordinates": [85.0755, 25.4911]
+      },
+      "bio": "Music and movies keep me sane. I enjoy simple things and real connections.",
+      "interests": ["Music", "Movies", "Cooking", "Friends"],
+      "height": 163,
+      "education": "B.Sc (Computer Science)",
+      "occupation": "Software Engineer",
+      "company": "TCS",
+      "school": "MIT Muzaffarpur",
+      "isOnboarded": true,
+      "photos": [
+        {
+          "url": "",
+          "isPrimary": true,
+          "uploadedAt": { "$date": "2025-10-31T19:25:00.000Z" },
+          "_id": { "$oid": "6906011b52027d73f68df11b" }
+        }
+      ],
+      "dateOfBirth": { "$date": "1999-05-14T00:00:00.000Z" },
+      "firstName": "Megha",
+      "gender": "female",
+      "lastName": "Kapoor"
+    },
+    "preferences": {
+      "distanceMaxKm": 50,
+      "ageRange": [20, 35],
+      "showMe": []
+    },
+    "notificationTokens": [],
+    "createdAt": { "$date": "2025-10-31T19:25:00.000Z" },
+    "updatedAt": { "$date": "2025-10-31T19:25:00.000Z" },
+    "lastLoginAt": { "$date": "2025-10-31T19:25:00.000Z" },
+    "__v": 0
+  },
+  {
+    "_id": { "$oid": "6906011b52027d73f68df11c" },
+    "user_id": "af50eae3-2c9a-47f5-8b16-bd122ed79f6d",
+    "email": "divyajain@gmail.com",
+    "displayName": "Divya Jain",
+    "photoURL": "",
+    "provider": "google",
+    "isEmailVerified": true,
+    "isPhoneVerified": false,
+    "status": "active",
+    "profile": {
+      "location": {
+        "type": "Point",
+        "city": "Naubatpur, Bihar",
+        "coordinates": [84.9711, 25.5412]
+      },
+      "bio": "Curious about everything creative. Love photography, books, and long drives.",
+      "interests": ["Photography", "Books", "Long Drives", "Art"],
+      "height": 166,
+      "education": "BA (Mass Comm)",
+      "occupation": "Photographer",
+      "company": "Freelance",
+      "school": "Patna Women's College",
+      "isOnboarded": true,
+      "photos": [
+        {
+          "url": "",
+          "isPrimary": true,
+          "uploadedAt": { "$date": "2025-10-31T19:25:45.000Z" },
+          "_id": { "$oid": "6906011b52027d73f68df11d" }
+        }
+      ],
+      "dateOfBirth": { "$date": "1998-03-27T00:00:00.000Z" },
+      "firstName": "Divya",
+      "gender": "female",
+      "lastName": "Jain"
+    },
+    "preferences": {
+      "distanceMaxKm": 50,
+      "ageRange": [20, 35],
+      "showMe": []
+    },
+    "notificationTokens": [],
+    "createdAt": { "$date": "2025-10-31T19:25:45.000Z" },
+    "updatedAt": { "$date": "2025-10-31T19:25:45.000Z" },
+    "lastLoginAt": { "$date": "2025-10-31T19:25:45.000Z" },
+    "__v": 0
+  }
+  
+]

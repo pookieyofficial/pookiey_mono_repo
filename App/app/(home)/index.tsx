@@ -101,15 +101,15 @@ export default function index() {
           <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} />
         }
 
-        <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
+        {/* <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
           <ThemedText>go to matching screen</ThemedText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
 
 
-        <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
+        {/* <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
           <ThemedText>Sign Out</ThemedText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
       </View>
     </SafeAreaView>
