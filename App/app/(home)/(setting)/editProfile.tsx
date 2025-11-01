@@ -485,16 +485,35 @@ const EditProfile = () => {
             >
               {photos.map((photo, index) => {
                 const photoUrl = typeof photo === 'string' ? photo : photo.url
+                const allPhotos = photos.map(p => typeof p === 'string' ? p : p.url).filter(url => url)
                 return (
-                  <View key={index} style={styles.photoItem}>
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.photoItem}
+                    onPress={() => {
+                      if (allPhotos.length > 0) {
+                        router.push({
+                          pathname: '/imageGallery',
+                          params: {
+                            photos: JSON.stringify(allPhotos),
+                            initialIndex: index.toString()
+                          }
+                        })
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
                     <Image source={{ uri: photoUrl }} style={styles.photoImage} />
                     <TouchableOpacity
                       style={styles.removePhotoButton}
-                      onPress={() => removePhoto(index)}
+                      onPress={(e) => {
+                        e.stopPropagation()
+                        removePhoto(index)
+                      }}
                     >
                       <Ionicons name="close-circle" size={24} color="#FF4444" />
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 )
               })}
             </ScrollView>
