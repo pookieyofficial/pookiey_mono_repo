@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
@@ -14,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'expo-router'
+import { useAuth } from '@/hooks/useAuth'
 import { LogBox } from 'react-native'
 LogBox.ignoreAllLogs(false);
 
@@ -21,6 +23,7 @@ LogBox.ignoreAllLogs(false);
 const Profile = () => {
   const { dbUser } = useAuthStore()
   const navigationRouter = useRouter()
+  const { signOut } = useAuth()
   
   // Get all photos as array of URLs
   const getAllPhotos = (): string[] => {
@@ -68,9 +71,37 @@ const Profile = () => {
     return dbUser?.profile?.interests?.slice(0, 3) || []
   }
 
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => signOut()
+        }
+      ]
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <CustomBackButton />
+      <View style={styles.headerContainer}>
+        <CustomBackButton />
+        <TouchableOpacity 
+          style={styles.signOutButton} 
+          onPress={handleSignOut}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={20} color={Colors.primaryBackgroundColor} />
+          <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
+        </TouchableOpacity>
+      </View>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -340,6 +371,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.parentBackgroundColor,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    backgroundColor: 'white',
+    marginRight: 10,
+    gap: 6,
+  },
+  signOutText: {
+    fontSize: 14,
+    color: Colors.primaryBackgroundColor,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
