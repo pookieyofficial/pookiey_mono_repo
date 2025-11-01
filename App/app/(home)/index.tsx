@@ -41,6 +41,16 @@ export default function index() {
     })
   }
 
+  const onCardPress = (user: RecommendedUser) => {
+    // Navigate to user profile view screen
+    router.push({
+      pathname: '/userProfile' as any,
+      params: {
+        userData: JSON.stringify(user)
+      }
+    })
+  }
+
   useEffect(() => {
     initializeProfiles()
   }, [idToken])
@@ -65,7 +75,7 @@ export default function index() {
     try {
       const recommendedUsers = await getRecommendedUsers(idToken as string, {
         maxDistance: 1000,
-        limit: 10,
+        limit: 100,
         offset: 0
       })
 
@@ -98,7 +108,7 @@ export default function index() {
             <ThemedText>Loading profiles...</ThemedText>
           </View>
           :
-          <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} />
+          <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
         }
 
         {/* <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>

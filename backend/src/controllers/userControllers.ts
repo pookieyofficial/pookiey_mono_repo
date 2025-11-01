@@ -144,7 +144,7 @@ export const getUsers = async (req: Request, res: Response) => {
         const userLocation = [longitude, latitude];
         const radius = parseFloat(req.query.radius as string) || 5000;
         const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = parseInt(req.query.limit as string) || 100;
         const minAge = parseInt(req.query.minAge as string) || 18;
         const maxAge = parseInt(req.query.maxAge as string) || 30;
         const interests = (req.query.interests as string)?.split(",") || [];

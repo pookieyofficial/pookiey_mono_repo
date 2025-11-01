@@ -19,13 +19,14 @@ export interface SwipeDeckProps {
     data: CardItem[];
     onSwiped?: (item: CardItem, action: SwipeAction) => void;
     onMatch?: (match: any) => void;
+    onCardPress?: (item: CardItem) => void;
 }
 
 const SWIPE_THRESHOLD_X = SCREEN_WIDTH * 0.25;
 const SWIPE_THRESHOLD_Y = SCREEN_HEIGHT * 0.18;
 const ACTION_BUTTON_LOGO_SIZE = 30;
 
-export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch }) => {
+export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch, onCardPress }) => {
 
 
     const router = useRouter();
@@ -334,9 +335,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch })
 
                         <View style={styles.footer}>
 
-                            <ThemedText type='bold' style={styles.name}>
-                                {current?.displayName}, {calculateAge(current?.profile?.dateOfBirth)}
-                            </ThemedText>
+                            <TouchableOpacity 
+                                onPress={() => onCardPress?.(current)}
+                                activeOpacity={0.8}
+                            >
+                                <ThemedText type='bold' style={styles.name}>
+                                    {current?.displayName}, {calculateAge(current?.profile?.dateOfBirth)}
+                                </ThemedText>
+                            </TouchableOpacity>
 
                             {current?.profile?.occupation
                                 ?

@@ -13,13 +13,25 @@ import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
 import { useAuthStore } from '@/store/authStore'
-import { router } from 'expo-router'
-import { LogBox } from 'react-native';
+import { useRouter } from 'expo-router'
+import { LogBox } from 'react-native'
 LogBox.ignoreAllLogs(false);
 
 
 const Profile = () => {
   const { dbUser } = useAuthStore()
+  const navigationRouter = useRouter()
+  
+  // Get all photos as array of URLs
+  const getAllPhotos = (): string[] => {
+    const photos = dbUser?.profile?.photos || []
+    const photoURLs = photos.map(p => p?.url || '').filter(url => url)
+    // Include photoURL if it exists and not already in photos
+    if (dbUser?.photoURL && !photoURLs.includes(dbUser.photoURL)) {
+      return [dbUser.photoURL, ...photoURLs]
+    }
+    return photoURLs
+  }
 
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth: Date | string | undefined): number | string => {
@@ -68,12 +80,27 @@ const Profile = () => {
         <View style={styles.profileCard}>
           {/* Profile Image Section */}
           <View style={styles.profileImageSection}>
-            <View style={styles.profileImageContainer}>
+            <TouchableOpacity
+              style={styles.profileImageContainer}
+              onPress={() => {
+                const allPhotos = getAllPhotos()
+                if (allPhotos.length > 0) {
+                  navigationRouter.push({
+                    pathname: '/imageGallery',
+                    params: {
+                      photos: JSON.stringify(allPhotos),
+                      initialIndex: '0'
+                    }
+                  })
+                }
+              }}
+              activeOpacity={0.8}
+            >
               <Image
                 source={{ uri: getPrimaryPhoto() }}
                 style={styles.profileImage}
               />
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Name and Age */}
@@ -217,16 +244,35 @@ const Profile = () => {
               style={styles.photosScroll}
               contentContainerStyle={styles.photosContainer}
             >
-              {dbUser?.profile?.photos?.slice(0, 5).map((photo, index) => (
-                <TouchableOpacity key={index} style={styles.photoItem} activeOpacity={0.8}>
-                  <Image source={{ uri: photo?.url }} style={styles.photoImage} />
-                  {photo?.isPrimary && (
-                    <View style={styles.primaryBadge}>
-                      <ThemedText style={styles.primaryBadgeText}>Primary</ThemedText>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+              {dbUser?.profile?.photos?.slice(0, 5).map((photo, index) => {
+                const allPhotos = getAllPhotos()
+                const photoIndex = allPhotos.findIndex(p => p === photo?.url)
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.photoItem}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (allPhotos.length > 0) {
+                        navigationRouter.push({
+                          pathname: '/imageGallery',
+                          params: {
+                            photos: JSON.stringify(allPhotos),
+                            initialIndex: (photoIndex >= 0 ? photoIndex : index).toString()
+                          }
+                        })
+                      }
+                    }}
+                  >
+                    <Image source={{ uri: photo?.url }} style={styles.photoImage} />
+                    {photo?.isPrimary && (
+                      <View style={styles.primaryBadge}>
+                        <ThemedText style={styles.primaryBadgeText}>Primary</ThemedText>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
             </ScrollView>
           </View>
         )}
@@ -280,7 +326,7 @@ const Profile = () => {
         <TouchableOpacity 
           style={styles.editButton} 
           activeOpacity={0.8}
-          onPress={() => router.push('/(home)/(setting)/editProfile')}
+          onPress={() => navigationRouter.push('/(home)/(setting)/editProfile')}
         >
           <Ionicons name="create-outline" size={20} color="#FFFFFF" />
           <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
