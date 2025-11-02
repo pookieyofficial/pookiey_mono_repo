@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, Alert, Text } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { Colors } from '@/constants/Colors'
 import ImageGalleryViewer from '@/components/ImageGalleryViewer'
