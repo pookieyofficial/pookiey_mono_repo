@@ -24,6 +24,7 @@ interface OnboardingActions {
     setBio: (bio: string) => void;
     setProfilePicture: (profilePicture: string) => void;
     setPhotos: (photos: string[]) => void;
+    clearOnboarding: () => void;
 }
 
 type OnboardingStore = OnboardingState & OnboardingActions;
@@ -53,6 +54,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
             setBio: (bio: string) => set({ bio }),
             setProfilePicture: (profilePicture: string) => set({ profilePicture }),
             setPhotos: (photos: string[]) => set({ photos }),
+            clearOnboarding: () => set(initialState),
             }),
         {
             name: 'onboarding-storage',
