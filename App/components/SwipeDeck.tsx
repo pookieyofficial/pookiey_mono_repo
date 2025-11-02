@@ -331,7 +331,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch, o
                         {/* Action color overlay */}
                         <Animated.View pointerEvents="none" style={[styles.overlayFill, overlayColorStyle]} />
 
-                        <BlurView intensity={30} tint="dark" style={styles.gradient} />
+                        <BlurView intensity={90} tint="dark" style={styles.gradient} />
 
                         <View style={styles.footer}>
 

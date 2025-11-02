@@ -8,7 +8,10 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  Modal,
+  Pressable,
+  Animated
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -17,6 +20,10 @@ import { ThemedText } from './ThemedText'
 import { DBUser } from '@/types/Auth'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
+import { useMessagingStore } from '@/store/messagingStore'
+import { useAuth } from '@/hooks/useAuth'
+import { useUserInteraction } from '@/hooks/userInteraction'
+import { messageAPI } from '@/APIs/messageAPIs'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -65,9 +72,135 @@ interface UserProfileViewProps {
 const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) => {
   const router = useRouter()
   const [isBioExpanded, setIsBioExpanded] = useState(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' })
   const { dbUser: currentUser } = useAuthStore()
+  const { inbox, setInbox } = useMessagingStore()
+  const { token } = useAuth()
+  const { likeUser } = useUserInteraction()
   
   const displayUser = user || DEFAULT_MOCK_USER
+
+  const findOrCreateMatch = async (otherUserId: string): Promise<string | null> => {
+    try {
+      // First, check if match exists in inbox
+      let existingMatch = inbox.find(item => item.userId === otherUserId)
+      if (existingMatch) {
+        return existingMatch.matchId
+      }
+
+      // Refresh inbox from backend to get latest matches
+      if (token) {
+        try {
+          const updatedInbox = await messageAPI.getInbox(token)
+          setInbox(updatedInbox)
+          
+          // Check again after refresh
+          existingMatch = updatedInbox.find(item => item.userId === otherUserId)
+          if (existingMatch) {
+            return existingMatch.matchId
+          }
+        } catch (error) {
+          console.error('Error refreshing inbox:', error)
+        }
+      }
+
+      // If no match found, try to create one by liking the user
+      // This will create a match if the other user already liked you
+      if (token && currentUser?.user_id) {
+        try {
+          const interactionResult = await likeUser(otherUserId)
+          
+          // If interaction created a match, use the match ID
+          // The backend response may include matchId directly or in match._id
+          if (interactionResult.isMatch) {
+            const matchId = (interactionResult as any).matchId || interactionResult.match?._id
+            if (matchId) {
+              return matchId
+            }
+          }
+
+          // Even if not a match, refresh inbox in case one was created
+          if (token) {
+            try {
+              const updatedInbox = await messageAPI.getInbox(token)
+              setInbox(updatedInbox)
+              
+              const newMatch = updatedInbox.find(item => item.userId === otherUserId)
+              if (newMatch) {
+                return newMatch.matchId
+              }
+            } catch (error) {
+              console.error('Error refreshing inbox after interaction:', error)
+            }
+          }
+        } catch (error) {
+          console.error('Error creating interaction:', error)
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error('Error finding/creating match:', error)
+      return null
+    }
+  }
+
+  const handleChatPress = async () => {
+    if (!displayUser?.user_id) {
+      setAlertMessage({
+        title: '⚠️ Error',
+        message: 'User information is not available. Please try again later.'
+      })
+      setShowAlert(true)
+      return
+    }
+
+    if (!currentUser?.user_id) {
+      setAlertMessage({
+        title: '⚠️ Error',
+        message: 'You must be logged in to chat with other users.'
+      })
+      setShowAlert(true)
+      return
+    }
+
+    if (!token) {
+      setAlertMessage({
+        title: '⚠️ Error',
+        message: 'Authentication token not available. Please log in again.'
+      })
+      setShowAlert(true)
+      return
+    }
+
+    // Try to find or create a match
+    const matchId = await findOrCreateMatch(displayUser.user_id)
+    
+    if (!matchId) {
+      const userName = displayUser.profile?.firstName || displayUser.displayName || 'this user'
+      setAlertMessage({
+        title: '💬 Start a Conversation',
+        message: `${userName} needs to interact with you (like you back) before you can start chatting. Send them a like and wait for them to like you back! 💕`
+      })
+      setShowAlert(true)
+      return
+    }
+
+    // Navigate to chat room
+    const userName = displayUser.profile?.firstName || displayUser.displayName || 'User'
+    const userAvatar = displayUser.profile?.photos?.[0]?.url || displayUser.photoURL || ''
+
+    router.push({
+      pathname: '/(home)/(chats)/chatRoom',
+      params: {
+        matchId,
+        userName,
+        userAvatar,
+        userId: displayUser.user_id,
+      },
+    })
+  }
 
   const getAge = () => {
     if (!displayUser?.profile?.dateOfBirth) return null
@@ -174,14 +307,22 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                 )}
               </View>
 
-              {onMessage && (
+              <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity 
-                  style={styles.messageButton}
-                  onPress={onMessage}
+                  style={styles.chatButton}
+                  onPress={handleChatPress}
                 >
-                  <Ionicons name="paper-plane" size={20} color={Colors.primary.white} />
+                  <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary.white} />
                 </TouchableOpacity>
-              )}
+                {onMessage && (
+                  <TouchableOpacity 
+                    style={styles.messageButton}
+                    onPress={onMessage}
+                  >
+                    <Ionicons name="paper-plane" size={20} color={Colors.primary.white} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
@@ -290,6 +431,39 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           )}
         </View>
       </ScrollView>
+
+      {/* Custom Alert Modal */}
+      <Modal
+        visible={showAlert}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAlert(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowAlert(false)}
+        >
+          <Pressable style={styles.alertContainer} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.alertHeader}>
+              <ThemedText style={styles.alertTitle}>{alertMessage.title}</ThemedText>
+            </View>
+            
+            <View style={styles.alertContent}>
+              <ThemedText style={styles.alertMessage}>{alertMessage.message}</ThemedText>
+            </View>
+
+            <View style={styles.alertActions}>
+              <TouchableOpacity
+                style={styles.alertButton}
+                onPress={() => setShowAlert(false)}
+                activeOpacity={0.8}
+              >
+                <ThemedText style={styles.alertButtonText}>Got it</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   )
 }
@@ -375,6 +549,18 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chatButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.primaryBackgroundColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   messageButton: {
     width: 44,
     height: 44,
@@ -382,7 +568,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryBackgroundColor,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
   },
 
   contentSection: {
@@ -507,6 +693,75 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.text.light,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  alertContainer: {
+    backgroundColor: Colors.primary.white,
+    borderRadius: 24,
+    width: '100%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  alertHeader: {
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    alignItems: 'center',
+  },
+  alertTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.titleColor,
+    textAlign: 'center',
+  },
+  alertContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  alertMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+  },
+  alertActions: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    paddingTop: 8,
+  },
+  alertButton: {
+    backgroundColor: Colors.primaryBackgroundColor,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primaryBackgroundColor,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  alertButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.primary.white,
   },
 })
 
