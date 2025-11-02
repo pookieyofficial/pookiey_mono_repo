@@ -43,6 +43,7 @@ export default function ChatRoom() {
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const navigation = useNavigation();
@@ -171,16 +172,24 @@ export default function ChatRoom() {
 
   // Scroll on keyboard open and track keyboard visibility
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      setIsKeyboardVisible(true);
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    });
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
 
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setIsKeyboardVisible(false);
-    });
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
 
     return () => {
       keyboardDidShowListener.remove();
@@ -333,64 +342,66 @@ export default function ChatRoom() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 0 : 0}
+    >
       {/* Main Chat Area */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : (isKeyboardVisible ? 'height' : undefined)}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={groupedMessages}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id || item.id}
-          contentContainerStyle={styles.messagesList}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: false })
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyThemedText}>
-                Start your conversation with {userName}
-              </ThemedText>
-            </View>
-          }
-        />
+      <FlatList
+        ref={flatListRef}
+        data={groupedMessages}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id || item.id}
+        contentContainerStyle={styles.messagesList}
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: false })
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyThemedText}>
+              Start your conversation with {userName}
+            </ThemedText>
+          </View>
+        }
+      />
 
-        {/* Input Area */}
-        <View
+      {/* Input Area */}
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            paddingBottom: Platform.OS === 'ios' 
+              ? insets.bottom + (isKeyboardVisible ? 0 : 0)
+              : insets.bottom + (isKeyboardVisible ? keyboardHeight : 0) + 6,
+          },
+        ]}
+      >
+        <TextInput
+          style={styles.input}
+          value={inputThemedText}
+          onChangeText={handleTyping}
+          placeholder="Type a message..."
+          placeholderTextColor="#999"
+          multiline
+          maxLength={1000}
+        />
+        <TouchableOpacity
           style={[
-            styles.inputContainer,
-            { paddingBottom: Platform.OS === 'ios' ? insets.bottom : insets.bottom + 6 },
+            styles.sendButton,
+            !inputThemedText.trim() && styles.sendButtonDisabled,
           ]}
+          onPress={handleSend}
+          disabled={!inputThemedText.trim()}
         >
-          <TextInput
-            style={styles.input}
-            value={inputThemedText}
-            onChangeText={handleTyping}
-            placeholder="Type a message..."
-            placeholderTextColor="#999"
-            multiline
-            maxLength={1000}
+          <Ionicons
+            name="send"
+            size={24}
+            color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
           />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputThemedText.trim() && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!inputThemedText.trim()}
-          >
-            <Ionicons
-              name="send"
-              size={24}
-              color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
-            />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

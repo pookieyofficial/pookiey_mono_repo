@@ -31,9 +31,9 @@ export default function LocationScreen() {
     } = useLocation();
 
     const [showErrorDialog, setShowErrorDialog] = useState(false);
-    const { idToken, getNotificationTokens } = useAuthStore();
-    const { updateUser } = useUser();
-    const { setLocation } = useOnboardingStore();
+    const { idToken, getNotificationTokens, setDBUser } = useAuthStore();
+    const { updateUser, getUser } = useUser();
+    const { clearOnboarding } = useOnboardingStore();
     const [updatingUser, setUpdatingUser] = useState(false);
 
     const handleContinue = async () => {
@@ -75,7 +75,25 @@ export default function LocationScreen() {
 
             await updateUser(idToken as string, profileData);
 
-            setLocation(address);
+            // Fetch the updated user data and store it locally
+            try {
+                console.log('Fetching updated user data...');
+                const updatedUserResponse = await getUser(idToken as string);
+                const updatedDBUser = updatedUserResponse?.data?.user || updatedUserResponse?.data;
+                if (updatedDBUser) {
+                    setDBUser(updatedDBUser);
+                    console.log('✅ Updated user data stored locally');
+                } else {
+                    console.warn('⚠️ No user data returned from getUser');
+                }
+            } catch (fetchError) {
+                console.error('Error fetching updated user data:', fetchError);
+                // Don't block navigation if fetch fails, but log the error
+            }
+
+            // Clear onboarding state after successful completion
+            clearOnboarding();
+            console.log('✅ Onboarding state cleared');
 
             // Check for pending deeplink after onboarding
             const pendingDeeplink = deepLinkState.getPendingDeeplink();
