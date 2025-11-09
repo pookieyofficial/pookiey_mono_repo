@@ -194,7 +194,7 @@ export const useAuthStore = create<AuthStore>()(
 
           // Determine the target route
           let targetRoute: string;
-          
+
           if (dbUser?.profile?.isOnboarded) {
             // User is onboarded - check for deeplink or go to home
             if (pendingDeeplink) {
@@ -202,7 +202,7 @@ export const useAuthStore = create<AuthStore>()(
               // Clear the pending deeplink after extracting it
               deepLinkState.clearPendingDeeplink();
             } else {
-              targetRoute = '/(home)';
+              targetRoute = '/(home)/(tabs)';
             }
           } else {
             // User is not onboarded - must go through onboarding first
@@ -234,7 +234,7 @@ export const useAuthStore = create<AuthStore>()(
             const { setSession, setUser, handleAuthSuccess } = get();
             setSession(session);
             setUser(session.user as SupabaseUser);
-            
+
             await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
           } else {
             set({ isLoading: false });
@@ -270,9 +270,9 @@ export const useAuthStore = create<AuthStore>()(
             const { setSession, setUser, handleAuthSuccess } = get();
             setSession(session);
             setUser(session.user as SupabaseUser);
-            
+
             const shouldTriggerAuthSuccess = event === 'SIGNED_IN' || !lastAuthState || !isInitialized;
-            
+
             if (shouldTriggerAuthSuccess) {
               console.log('✅ Triggering handleAuthSuccess - new login or initial session');
               await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
@@ -280,10 +280,10 @@ export const useAuthStore = create<AuthStore>()(
               console.log('⏭️ User already authenticated, skipping handleAuthSuccess to prevent duplicate routing');
               // Just update the session and user, don't route again
               const { initialize, hideSplashScreen } = get();
-              
+
               // Clear any stale pending deeplink since we're not routing
               deepLinkState.clearPendingDeeplink();
-              
+
               if (!isInitialized) {
                 initialize();
               }
@@ -299,7 +299,7 @@ export const useAuthStore = create<AuthStore>()(
               router.replace('/(auth)');
               logout();
             }
-            
+
             if (!isInitialized) {
               initialize();
             }

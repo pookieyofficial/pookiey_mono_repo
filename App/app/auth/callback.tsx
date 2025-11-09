@@ -17,7 +17,7 @@ export default function AuthCallback() {
                 }
 
                 if (data.session) {
-                    router.replace('/(home)');
+                    router.replace('/(home)/(tabs)');
                 } else {
                     router.replace('/(auth)');
                 }

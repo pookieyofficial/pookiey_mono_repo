@@ -357,7 +357,7 @@ const Profile = () => {
         <TouchableOpacity 
           style={styles.editButton} 
           activeOpacity={0.8}
-          onPress={() => navigationRouter.push('/(home)/(setting)/editProfile')}
+          onPress={() => navigationRouter.push('/(home)/(tabs)(setting)/editProfile')}
         >
           <Ionicons name="create-outline" size={20} color="#FFFFFF" />
           <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>

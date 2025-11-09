@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  ActivityIndicator,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,

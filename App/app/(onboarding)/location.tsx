@@ -102,7 +102,7 @@ export default function LocationScreen() {
                 deepLinkState.clearPendingDeeplink();
                 router.replace(pendingDeeplink as any);
             } else {
-                router.replace('/(home)');
+                router.replace('/(home)/(tabs)');
             }
         } catch (error) {
             console.error('Error saving user data:', error);

@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { Colors } from '../../../constants/Colors'
+import { Colors } from '../../../../constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/store/authStore'
@@ -22,13 +22,13 @@ const Settings = () => {
     console.log(`${buttonName} pressed`)
     
     if (buttonName === 'Dating Preference') {
-      router.push('/(home)/(setting)/datingPreferences')
+      router.push('/(home)/(tabs)/(setting)/datingPreferences')
     }
     // Add navigation logic for other buttons here
   }
 
   const handleProfilePress = () => {
-    router.push('/(home)/(setting)/profile')
+    router.push('/(home)/(tabs)/(setting)/profile')
   }
 
   return (

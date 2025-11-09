@@ -30,7 +30,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
 
   const handlePress = () => {
     router.push({
-      pathname: '/(home)/(chats)/chatRoom',
+      pathname: '/(home)/(tabs)/(chats)/chatRoom',
       params: {
         matchId: item.matchId,
         userName: item.name,

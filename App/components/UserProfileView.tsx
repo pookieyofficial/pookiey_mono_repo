@@ -192,7 +192,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     const userAvatar = displayUser.profile?.photos?.[0]?.url || displayUser.photoURL || ''
 
     router.push({
-      pathname: '/(home)/(chats)/chatRoom',
+      pathname: '/(home)/(tabs)(chats)/chatRoom',
       params: {
         matchId,
         userName,
