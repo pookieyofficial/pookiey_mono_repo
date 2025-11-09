@@ -42,9 +42,9 @@ const MatchingScreen = () => {
     }
 
     // Use actual data from backend (user2 is the matched person, user1 is current user)
-    const displayMatchName = user2?.displayName || user2?.profile?.firstName || defaultMatchData.displayName
-    const displayMatchPhoto = user2?.photoURL || user2?.profile?.photos?.[0]?.url || defaultMatchData.photo
-    const displayUserPhoto = user1?.photoURL || user1?.profile?.photos?.[0]?.url || defaultUserData.photo
+    const displayMatchName = user2?.profile?.firstName || defaultMatchData.displayName
+    const displayMatchPhoto = user2?.profile?.photos?.[0]?.url
+    const displayUserPhoto = user1?.profile?.photos?.[0]?.url
     const leftCardAnim = useRef(new Animated.Value(0)).current;
     const rightCardAnim = useRef(new Animated.Value(0)).current;
 
@@ -154,7 +154,7 @@ const MatchingScreen = () => {
 
                 <View style={styles.messageContainer}>
                     <ThemedText style={styles.matchTitle}>
-                        It's a match, {user2?.profile?.firstName || displayMatchName}!
+                        It's a match, {user1?.profile?.firstName || displayMatchName}!
                     </ThemedText>
                     <ThemedText type='defaultSemiBold' style={styles.matchSubtitle}>
                         Start a conversation now with each other

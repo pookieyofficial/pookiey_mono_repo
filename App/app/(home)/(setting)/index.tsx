@@ -59,11 +59,7 @@ const Settings = () => {
             <View style={styles.profileInfo}>
               {dbUser?.displayName && (
                 <ThemedText type='bold' style={styles.profileName}>
-                  {dbUser.displayName.length > 20
-                    ?
-                    dbUser.displayName.slice(0, 20) + "..."
-                    :
-                    dbUser.displayName}
+                  {dbUser?.profile?.firstName} {dbUser?.profile?.lastName}
                 </ThemedText>
               )}
 

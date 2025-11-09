@@ -275,7 +275,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch, o
 
                         <View style={styles.footer}>
                             <ThemedText type='bold' style={styles.name}>
-                                {third?.displayName}, {calculateAge(third?.profile?.dateOfBirth)}
+                                {third?.profile?.firstName} {third?.profile?.lastName}, {calculateAge(third?.profile?.dateOfBirth)}
                             </ThemedText>
                             {third?.profile?.occupation ? (
                                 <ThemedText type='default' style={styles.job}>
@@ -301,7 +301,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch, o
                         <View style={styles.footer}>
 
                             <ThemedText type='bold' style={styles.name}>
-                                {visualNext?.displayName}, {calculateAge(visualNext?.profile?.dateOfBirth)}
+                                {visualNext?.profile?.firstName} {visualNext?.profile?.lastName}, {calculateAge(visualNext?.profile?.dateOfBirth)}
                             </ThemedText>
 
                             {visualNext?.profile?.occupation
@@ -340,7 +340,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({ data, onSwiped, onMatch, o
                                 activeOpacity={0.8}
                             >
                                 <ThemedText type='bold' style={styles.name}>
-                                    {current?.displayName}, {calculateAge(current?.profile?.dateOfBirth)}
+                                    {current?.profile?.firstName} {current?.profile?.lastName}, {calculateAge(current?.profile?.dateOfBirth)}
                                 </ThemedText>
                             </TouchableOpacity>
 
