@@ -7,6 +7,7 @@ import { RootAPIResponse } from "./utils/rootAPIResponse";
 import interactionRouter from "./routes/interactionRoutes";
 import awsRouter from "./routes/awsRoutes";
 import messageRouter from "./routes/messageRoutes";
+import storyRouter from "./routes/storyRoutes";
 import requestIp from "request-ip";
 import { initializeSocket } from "./socket/socketHandler";
 import cors from "cors";
@@ -36,6 +37,7 @@ app.use('/api/v1/user', userRouter);
 app.use('/api/v1/interaction', interactionRouter);
 app.use('/api/v1/aws', awsRouter);
 app.use('/api/v1/messages', messageRouter);
+app.use('/api/v1/stories', storyRouter);
 
 httpServer.listen(PORT as number, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
