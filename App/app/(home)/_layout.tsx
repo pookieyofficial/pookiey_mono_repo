@@ -116,6 +116,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="(story)"
+        options={{
+          title: 'Stories',
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name={focused ? "house.fill" : "house"} color={color} weight={focused ? 'bold' : 'regular'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="(setting)"
         options={{
           title: 'Setting',
