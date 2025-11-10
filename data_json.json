@@ -3,7 +3,7 @@
     "_id": { "$oid": "6724fa3b52027d73f68df105" },
     "user_id": "b13d9c5f-31ef-4a8b-8022-dbbde5a54d21",
     "email": "rohanmehta@gmail.com",
-    "displayName": "Rohan Mehta",
+    "displayName": "Rohan Mehta - chaneg",
     "photoURL": "https://pookiey-dating-app.s3.ap-south-1.amazonaws.com/users/others_for_testing/deepak-mahajan-XMIWLhHsjr0-unsplash.jpg",
     "provider": "custom",
     "isEmailVerified": false,
