@@ -18,15 +18,16 @@ export default function index() {
   const { signOut } = useAuth()
 
   const [profiles, setProfiles] = useState<RecommendedUser[]>([])
+  const [consumed, setConsumed] = useState(0)
+  const [deckKey, setDeckKey] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   const onSwiped = async (item: RecommendedUser, action: SwipeAction) => {
     console.log(`Swiped ${action} on`, item)
-    const nextProfiles = profiles.filter(profile => profile._id !== item._id)
-    setProfiles(nextProfiles)
-    if (nextProfiles.length <= 5) {
-      await loadMoreProfiles()
-    }
+    const nextConsumed = consumed + 1
+    setConsumed(nextConsumed)
+    const remaining = profiles.length - nextConsumed
+    if (remaining <= 5) await loadMoreProfiles()
   }
 
   const onMatch = (match: any) => {
@@ -63,7 +64,10 @@ export default function index() {
         limit: 10,
         offset: 0
       })
-      setProfiles(recommendedUsers?.data || [])
+      const initial = recommendedUsers?.data || []
+      setProfiles(initial)
+      setConsumed(0)
+      setDeckKey(k => k + 1) // reset deck to first card on full refresh
     } catch (error) {
       console.error('Error initializing profiles:', error)
     } finally {
@@ -108,12 +112,12 @@ export default function index() {
             <ThemedText>Loading profiles...</ThemedText>
           </View>
           :
-          <SwipeDeck data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
+          <SwipeDeck key={deckKey} data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
         }
 
-        {/* <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
+        <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
           <ThemedText>go to matching screen</ThemedText>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
 
 

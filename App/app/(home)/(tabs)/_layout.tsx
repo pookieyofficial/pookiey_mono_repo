@@ -120,7 +120,7 @@ export default function TabLayout() {
         options={{
           title: 'Stories',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name={focused ? "house.fill" : "house"} color={color} weight={focused ? 'bold' : 'regular'} />
+            <IconSymbol size={28} name={focused ? "camera.fill" : "camera"} color={color} weight={focused ? 'bold' : 'regular'} />
           ),
         }}
       />

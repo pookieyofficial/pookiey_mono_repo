@@ -70,7 +70,7 @@ const MatchingScreen = () => {
         console.log('User said hello to:', displayMatchName)
         console.log('Match details:', { match, user1, user2 })
         router.replace({
-            pathname: '/(home)/(tabs)/(chats)/index',
+            pathname: '/(home)/(tabs)/(chats)/chatRoom',
             params: {
                 matchId: match?._id,
                 user1: user1?._id,
@@ -82,7 +82,7 @@ const MatchingScreen = () => {
     }
 
     const handleContinueSwiping = () => {
-        router.replace('/(home)/(tabs)/index')
+        router.back();
     }
 
     const leftCardTranslateX = leftCardAnim.interpolate({

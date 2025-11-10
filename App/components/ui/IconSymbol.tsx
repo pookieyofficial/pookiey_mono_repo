@@ -24,6 +24,8 @@ const MAPPING = {
   'heart.fill': 'favorite' as MaterialIconName,
   'chevron.left.forwardslash.chevron.right': 'code' as MaterialIconName,
   'chevron.right': 'chevron-right' as MaterialIconName,
+  'camera.fill': 'camera' as MaterialIconName,
+  'camera': 'camera' as MaterialIconName,
 } as const;
 
 type IconSymbolName = keyof typeof MAPPING;
