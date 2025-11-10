@@ -83,7 +83,7 @@
     "_id": { "$oid": "6724fa3b52027d73f68df107" },
     "user_id": "e871f048-c163-40f3-9939-34a0dbb72825",
     "email": "arunkumar@gmail.com",
-    "displayName": "Arun Kumar",
+    "displayName": "Arun Kumar choudhary",
     "photoURL": "https://pookiey-dating-app.s3.ap-south-1.amazonaws.com/users/others_for_testing/mohamad-khosravi-RinR0ItYKWY-unsplash.jpg",
     "provider": "custom",
     "isEmailVerified": false,
