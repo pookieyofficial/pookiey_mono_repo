@@ -124,6 +124,29 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 };
 
+export const getUserById = async (req: Request, res: Response) => {
+    try {
+        console.info("getUserById controller");
+        const { userId } = req.params;
+        const currentUserId = (req.user as any)?.user_id;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "User ID is required" });
+        }
+
+        const user = await User.findOne({ user_id: userId }).select('-__v');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.json({ success: true, data: user });
+    } catch (error) {
+        console.error("getUserById error:", error);
+        res.status(400).json({ success: false, message: "Get user failed" });
+    }
+};
+
 export const getUsers = async (req: Request, res: Response) => {
     try {
         console.info("getUsers controller");

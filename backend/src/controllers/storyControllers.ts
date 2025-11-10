@@ -39,7 +39,7 @@ export const getStories = async (req: Request, res: Response) => {
                 return {
                     id: user.user_id,
                     username: user.displayName || `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || "User",
-                    avatar: user.photoURL || user.profile?.photos?.[0]?.url || "",
+                    avatar: user.profile?.photos?.[0]?.url || user.photoURL || "",
                     stories: userStories.map((story: IStory) => ({
                         id: (story._id as any)?.toString() || "",
                         type: story.type,

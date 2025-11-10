@@ -18,15 +18,26 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { storyAPI } from '@/APIs/storyAPIs';
 import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
+import { useStoryStore, StoryItem } from '@/store/storyStore';
+import { useAuthStore } from '@/store/authStore';
+import * as FileSystem from 'expo-file-system';
+import { Video, ResizeMode } from 'expo-av';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function CreateStoryScreen() {
   const router = useRouter();
   const { token } = useAuth();
+  const { setStories, setLoading } = useStoryStore();
+  const { dbUser } = useAuthStore();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // File size limits
+  const MAX_IMAGE_SIZE = 7 * 1024 * 1024; // 7 MB in bytes
+  const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30 MB in bytes
+  const MAX_VIDEO_DURATION = 30; // 30 seconds
 
   const pickImage = async () => {
     try {
@@ -44,7 +55,28 @@ export default function CreateStoryScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedMedia(result.assets[0].uri);
+        const asset = result.assets[0];
+        
+        // Check file size
+        if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE) {
+          Alert.alert('File too large', `Image size must be less than 7 MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`);
+          return;
+        }
+        
+        // If fileSize is not available, try to get it from FileSystem
+        if (!asset.fileSize) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_IMAGE_SIZE) {
+              Alert.alert('File too large', `Image size must be less than 7 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
+              return;
+            }
+          } catch (error) {
+            console.error('Error checking file size:', error);
+          }
+        }
+        
+        setSelectedMedia(asset.uri);
         setMediaType('image');
       }
     } catch (error) {
@@ -65,21 +97,41 @@ export default function CreateStoryScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 1,
-        videoMaxDuration: 30,
+        videoMaxDuration: MAX_VIDEO_DURATION,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const videoUri = result.assets[0].uri;
-        const duration = result.assets[0].duration;
+        const asset = result.assets[0];
+        const videoUri = asset.uri;
+        const duration = asset.duration;
         
-        // Duration might be in milliseconds, so check both
+        // Check video duration
         if (duration !== undefined && duration !== null) {
-          // If duration is greater than 100, assume it's in milliseconds
-          const durationInSeconds = duration > 100 ? duration / 1000 : duration;
+          // Duration is in milliseconds
+          const durationInSeconds = duration / 1000;
           
-          if (durationInSeconds > 30) {
-            Alert.alert('Video too long', 'Video must be 30 seconds or less');
+          if (durationInSeconds > MAX_VIDEO_DURATION) {
+            Alert.alert('Video too long', `Video must be ${MAX_VIDEO_DURATION} seconds or less. Current duration: ${durationInSeconds.toFixed(1)} seconds`);
             return;
+          }
+        }
+
+        // Check file size
+        if (asset.fileSize && asset.fileSize > MAX_VIDEO_SIZE) {
+          Alert.alert('File too large', `Video size must be less than 30 MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`);
+          return;
+        }
+        
+        // If fileSize is not available, try to get it from FileSystem
+        if (!asset.fileSize) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(videoUri);
+            if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_VIDEO_SIZE) {
+              Alert.alert('File too large', `Video size must be less than 30 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
+              return;
+            }
+          } catch (error) {
+            console.error('Error checking file size:', error);
           }
         }
 
@@ -107,7 +159,28 @@ export default function CreateStoryScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedMedia(result.assets[0].uri);
+        const asset = result.assets[0];
+        
+        // Check file size
+        if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE) {
+          Alert.alert('File too large', `Image size must be less than 7 MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`);
+          return;
+        }
+        
+        // If fileSize is not available, try to get it from FileSystem
+        if (!asset.fileSize) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_IMAGE_SIZE) {
+              Alert.alert('File too large', `Image size must be less than 7 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
+              return;
+            }
+          } catch (error) {
+            console.error('Error checking file size:', error);
+          }
+        }
+        
+        setSelectedMedia(asset.uri);
         setMediaType('image');
       }
     } catch (error) {
@@ -128,21 +201,41 @@ export default function CreateStoryScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 1,
-        videoMaxDuration: 30,
+        videoMaxDuration: MAX_VIDEO_DURATION,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const videoUri = result.assets[0].uri;
-        const duration = result.assets[0].duration;
+        const asset = result.assets[0];
+        const videoUri = asset.uri;
+        const duration = asset.duration;
         
-        // Duration might be in milliseconds, so check both
+        // Check video duration
         if (duration !== undefined && duration !== null) {
-          // If duration is greater than 100, assume it's in milliseconds
-          const durationInSeconds = duration > 100 ? duration / 1000 : duration;
+          // Duration is in milliseconds
+          const durationInSeconds = duration / 1000;
           
-          if (durationInSeconds > 30) {
-            Alert.alert('Video too long', 'Video must be 30 seconds or less');
+          if (durationInSeconds > MAX_VIDEO_DURATION) {
+            Alert.alert('Video too long', `Video must be ${MAX_VIDEO_DURATION} seconds or less. Current duration: ${durationInSeconds.toFixed(1)} seconds`);
             return;
+          }
+        }
+
+        // Check file size
+        if (asset.fileSize && asset.fileSize > MAX_VIDEO_SIZE) {
+          Alert.alert('File too large', `Video size must be less than 30 MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`);
+          return;
+        }
+        
+        // If fileSize is not available, try to get it from FileSystem
+        if (!asset.fileSize) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(videoUri);
+            if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_VIDEO_SIZE) {
+              Alert.alert('File too large', `Video size must be less than 30 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
+              return;
+            }
+          } catch (error) {
+            console.error('Error checking file size:', error);
           }
         }
 
@@ -186,11 +279,50 @@ export default function CreateStoryScreen() {
       // Create story
       await storyAPI.createStory(
         {
-          type: mediaType,
+          type: mediaType as 'image' | 'video',
           mediaUrl: fileURL,
         },
         token
       );
+
+      // Refresh stories in store
+      try {
+        setLoading(true);
+        const data = await storyAPI.getStories(token);
+        
+        // Ensure "Your Story" always appears first, even if empty
+        let storiesList: StoryItem[] = data || []
+        
+        // Check if "Your Story" exists
+        const myStoryIndex = storiesList.findIndex(item => item.isMe)
+        
+        // Get current user info
+        const currentUserId = dbUser?.user_id
+        const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
+        const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
+        
+        if (myStoryIndex === -1 && currentUserId) {
+          // "Your Story" doesn't exist, create a placeholder
+          const myStory: StoryItem = {
+            id: currentUserId,
+            username: currentUserName,
+            avatar: currentUserAvatar,
+            stories: [],
+            isMe: true
+          }
+          storiesList = [myStory, ...storiesList]
+        } else if (myStoryIndex > 0) {
+          // "Your Story" exists but not first, move it to first
+          const myStory = storiesList[myStoryIndex]
+          storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
+        }
+        
+        setStories(storiesList);
+      } catch (refreshError) {
+        console.error('Error refreshing stories:', refreshError);
+      } finally {
+        setLoading(false);
+      }
 
       Alert.alert('Success', 'Story published!', [
         {
@@ -232,10 +364,13 @@ export default function CreateStoryScreen() {
             {mediaType === 'image' ? (
               <Image source={{ uri: selectedMedia }} style={styles.mediaImage} resizeMode="contain" />
             ) : (
-              <View style={styles.videoPlaceholder}>
-                <Ionicons name="videocam" size={64} color={Colors.text.tertiary} />
-                <Text style={styles.videoText}>Video Selected</Text>
-              </View>
+              <Video
+                source={{ uri: selectedMedia }}
+                style={styles.mediaImage}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={false}
+                useNativeControls={true}
+              />
             )}
             <TouchableOpacity
               style={styles.removeButton}
@@ -335,17 +470,6 @@ const styles = StyleSheet.create({
   mediaImage: {
     width: '100%',
     height: '100%',
-  },
-  videoPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-  },
-  videoText: {
-    color: Colors.primary.white,
-    marginTop: 12,
-    fontSize: 16,
   },
   removeButton: {
     position: 'absolute',
