@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/Colors'
 import { ThemedText } from './ThemedText'
 import { DBUser } from '@/types/Auth'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { useMessagingStore } from '@/store/messagingStore'
 import { useAuth } from '@/hooks/useAuth'
@@ -71,6 +71,7 @@ interface UserProfileViewProps {
 
 const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) => {
   const router = useRouter()
+  const { returnToStory } = useLocalSearchParams<{ returnToStory?: string }>()
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' })
@@ -288,7 +289,14 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {/* Simple Back Button at top */}
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              // Check if we came from story viewer
+              if (returnToStory === 'true') {
+                router.push('/(home)/(tabs)/(story)/' as any);
+              } else {
+                router.back();
+              }
+            }}
           >
             <Ionicons name="chevron-back" size={24} color={Colors.primary.red} />
           </TouchableOpacity>

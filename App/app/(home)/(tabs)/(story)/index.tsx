@@ -11,10 +11,13 @@ import {
   Dimensions,
   Animated,
   PanResponder,
+  StatusBar,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -26,6 +29,16 @@ import { useAuthStore } from '@/store/authStore';
 import { getUserByIdAPI } from '@/APIs/userAPIs';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Calculate responsive story item size
+const LIST_PADDING = 12 * 2; // left + right padding
+const ITEM_PADDING = 4 * 2; // left + right padding per item
+const NUM_COLUMNS = 4;
+const AVAILABLE_WIDTH = SCREEN_WIDTH - LIST_PADDING;
+const ITEM_WIDTH = (AVAILABLE_WIDTH - (ITEM_PADDING * NUM_COLUMNS)) / NUM_COLUMNS;
+const STORY_CIRCLE_SIZE = Math.min(ITEM_WIDTH - 8, 140); // Max 140px (increased for bigger profiles), but responsive
+const STORY_CIRCLE_INNER = STORY_CIRCLE_SIZE - 6; // Account for border padding
+const STORY_AVATAR_SIZE = STORY_CIRCLE_INNER - 6; // Account for inner padding
 const STORY_DURATION = 5000; // 5 seconds per story
 
 export default function StoriesScreen() {
@@ -40,6 +53,9 @@ export default function StoriesScreen() {
   const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [viewedStoryIds, setViewedStoryIds] = useState<Set<string>>(new Set());
+  const [showMenu, setShowMenu] = useState(false);
+  const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null);
+  const [wasViewingStory, setWasViewingStory] = useState<number | null>(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const storyTimer = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<Video>(null);
@@ -57,6 +73,7 @@ export default function StoriesScreen() {
       console.log('Stories refreshed:', data);
       
       // Ensure "Your Story" always appears first, even if empty
+      // Backend already sorts by latest story date, so we just need to ensure "Your Story" is first
       let storiesList: StoryItem[] = data || []
       
       // Check if "Your Story" exists
@@ -83,7 +100,27 @@ export default function StoriesScreen() {
         storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
       }
       
-      setStories(storiesList);
+      // Additional sorting by latest story date (backend should already do this, but ensure it)
+      // Sort other stories (not "Your Story") by latest story date
+      const myStory = storiesList.find(item => item.isMe);
+      const otherStories = storiesList.filter(item => !item.isMe);
+      
+      otherStories.sort((a, b) => {
+        const aLatest = a.stories.length > 0 
+          ? new Date(a.stories[0].createdAt).getTime() 
+          : 0;
+        const bLatest = b.stories.length > 0 
+          ? new Date(b.stories[0].createdAt).getTime() 
+          : 0;
+        return bLatest - aLatest; // Descending order (newest first)
+      });
+      
+      // Combine: "Your Story" first, then others sorted by latest
+      const finalStoriesList = myStory 
+        ? [myStory, ...otherStories]
+        : otherStories;
+      
+      setStories(finalStoriesList);
     } catch (error: any) {
       console.error('Error loading stories:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load stories';
@@ -99,7 +136,7 @@ export default function StoriesScreen() {
         }
         setStories([myStory]);
       } else {
-        setStories([]);
+      setStories([]);
       }
     } finally {
       setLoading(false);
@@ -143,10 +180,81 @@ export default function StoriesScreen() {
     setCurrentUserIndex(0);
     setCurrentStoryIndex(0);
     setViewedStoryIds(new Set());
-    // Ensure we're on the story tab - navigate explicitly to story index
-    router.push('/(home)/(tabs)/(story)/' as any);
+    setShowMenu(false);
+    // No need to navigate - setting selectedStoryIndex to null will show the list view
     // Refresh stories to update view status
     loadStories();
+  };
+
+  const handleDeleteStory = async () => {
+    const current = getCurrentStory();
+    if (!current || !current.user.isMe) {
+      return;
+    }
+
+    const storyId = current.story.id;
+    setShowMenu(false);
+
+    Alert.alert(
+      'Delete Story',
+      'Are you sure you want to delete this story?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeletingStoryId(storyId);
+              if (!token) {
+                Alert.alert('Error', 'Please log in to delete stories');
+                return;
+              }
+
+              await storyAPI.deleteStory(storyId, token);
+              
+              // Refresh stories first
+              await loadStories();
+              
+              // Get updated stories after refresh
+              const updatedStories = getAllStories();
+              if (updatedStories.length === 0 || currentUserIndex >= updatedStories.length) {
+                handleCloseStory();
+                return;
+              }
+              
+              const updatedUser = updatedStories[currentUserIndex];
+              
+              // If this was the last story for this user, move to next user or close
+              if (updatedUser.stories.length === 0) {
+                if (currentUserIndex < updatedStories.length - 1) {
+                  // Move to next user
+                  setCurrentUserIndex(currentUserIndex + 1);
+                  setCurrentStoryIndex(0);
+                } else {
+                  // No more stories, close viewer
+                  handleCloseStory();
+                }
+              } else {
+                // Adjust current story index if needed
+                if (currentStoryIndex >= updatedUser.stories.length) {
+                  setCurrentStoryIndex(updatedUser.stories.length - 1);
+                }
+                // Stay on current story (index may have shifted)
+              }
+            } catch (error: any) {
+              console.error('Error deleting story:', error);
+              Alert.alert('Error', error?.response?.data?.message || 'Failed to delete story');
+            } finally {
+              setDeletingStoryId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleStorySeen = useCallback(async (storyId: string) => {
@@ -177,14 +285,11 @@ export default function StoriesScreen() {
     }
   }, [token, loadStories, viewedStoryIds, updateStoryViewStatus]);
 
-  // Get all stories in order (selected first, then others)
+  // Get stories starting from selected user onwards (don't show previous users)
   const getAllStories = useCallback(() => {
     if (selectedStoryIndex === null) return [];
-    const reorderedStories = [
-      stories[selectedStoryIndex],
-      ...stories.filter((_, idx) => idx !== selectedStoryIndex)
-    ];
-    return reorderedStories;
+    // Show stories from selected index onwards (including selected)
+    return stories.slice(selectedStoryIndex);
   }, [stories, selectedStoryIndex]);
 
   // Get current story data
@@ -297,8 +402,39 @@ export default function StoriesScreen() {
       setCurrentUserIndex(0);
       setCurrentStoryIndex(0);
       progressAnim.setValue(0);
+      setWasViewingStory(null); // Clear the flag when starting a new story
     }
   }, [selectedStoryIndex, progressAnim]);
+
+  // Handle screen focus - resume story if we were viewing one
+  useFocusEffect(
+    useCallback(() => {
+      // When screen comes into focus, check if we were viewing a story
+      if (wasViewingStory !== null && selectedStoryIndex === null) {
+        // Small delay to ensure navigation is complete
+        setTimeout(() => {
+          // Resume the story viewer
+          setSelectedStoryIndex(wasViewingStory);
+          setWasViewingStory(null);
+        }, 100);
+      }
+      
+      // Cleanup when screen loses focus
+      return () => {
+        // Pause story when navigating away
+        if (selectedStoryIndex !== null) {
+          if (storyTimer.current) {
+            clearTimeout(storyTimer.current);
+            storyTimer.current = null;
+          }
+          if (videoRef.current) {
+            videoRef.current.pauseAsync().catch(() => {});
+          }
+          progressAnim.stopAnimation();
+        }
+      };
+    }, [wasViewingStory, selectedStoryIndex, progressAnim])
+  );
 
   // Start progress when story changes
   useEffect(() => {
@@ -364,8 +500,19 @@ export default function StoriesScreen() {
 
   const renderStoryItem = ({ item, index }: { item: StoryItem; index: number }) => {
     const hasUnviewed = item.stories.some(story => !story.isSeen && !item.isMe);
-    // Count only unviewed stories (don't count own stories)
-    const unviewedCount = item.stories.filter(story => !story.isSeen && !item.isMe).length;
+    
+    // Extract first name from username
+    // Username can be: "FirstName LastName", "DisplayName", or "You"
+    const getFirstName = () => {
+      if (item.isMe) {
+        return 'Your Story';
+      }
+      // Split by space and take the first part
+      const nameParts = item.username.trim().split(/\s+/);
+      return nameParts[0] || item.username;
+    };
+    
+    const displayName = getFirstName();
 
     return (
       <View style={styles.storyItem}>
@@ -417,21 +564,16 @@ export default function StoriesScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.addIcon}>
-                <Ionicons name="add" size={20} color={Colors.primary.white} />
+                <Ionicons name="add" size={Math.max(20, STORY_CIRCLE_SIZE * 0.22)} color={Colors.primary.white} />
               </View>
             </TouchableOpacity>
           )}
 
-          {/* Story count badge - show only unviewed stories count */}
-          {unviewedCount > 0 && (
-            <View style={styles.storyCountBadge}>
-              <ThemedText style={styles.storyCountText}>{unviewedCount}</ThemedText>
-            </View>
-          )}
         </TouchableOpacity>
-
+        
+        {/* Display first name below the story profile */}
         <ThemedText style={styles.storyName} numberOfLines={1}>
-          {item.isMe ? 'Your Story' : item.username}
+          {displayName}
         </ThemedText>
       </View>
     );
@@ -448,6 +590,7 @@ export default function StoriesScreen() {
     }
 
     const { user, story } = current;
+    const insets = useSafeAreaInsets();
     const progressWidth = progressAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ['0%', '100%'],
@@ -455,9 +598,28 @@ export default function StoriesScreen() {
 
     // Handle profile click - navigate to user profile
     const handleProfilePress = async () => {
+      // Pause story playback before navigating
+      if (storyTimer.current) {
+        clearTimeout(storyTimer.current);
+        storyTimer.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.pauseAsync();
+      }
+      progressAnim.stopAnimation();
+      
+      // Store the current story index to resume later
+      setWasViewingStory(selectedStoryIndex);
+      
       if (user.isMe) {
         // Navigate to settings/profile for own profile
-        router.push('/(home)/(tabs)/(setting)/profile' as any);
+        // Store that we're coming from story viewer so we can return
+        router.push({
+          pathname: '/(home)/(tabs)/(setting)/profile' as any,
+          params: {
+            returnToStory: 'true'
+          }
+        });
         return;
       }
       
@@ -473,7 +635,8 @@ export default function StoriesScreen() {
           router.push({
             pathname: '/userProfile' as any,
             params: {
-              userData: JSON.stringify(response.data)
+              userData: JSON.stringify(response.data),
+              returnToStory: 'true' // Flag to indicate we should return to story tab
             }
           });
         } else {
@@ -487,6 +650,8 @@ export default function StoriesScreen() {
 
     return (
       <View style={styles.storyViewerContainer} {...panResponder.panHandlers}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        
         {/* Story Media (Image or Video) */}
         {story.type === 'video' ? (
           <Video
@@ -514,25 +679,24 @@ export default function StoriesScreen() {
           />
         )}
 
-        {/* Header with Progress Bars and Profile */}
-        <View style={styles.storyHeader}>
-          {/* Progress Bars - moved to header */}
-          <View style={styles.progressContainer}>
-            {user.stories.map((_, index) => (
-              <View key={index} style={styles.progressBarBackground}>
-                {index === currentStoryIndex && (
-                  <Animated.View
-                    style={[
-                      styles.progressBarFill,
-                      { width: progressWidth }
-                    ]}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
+        {/* Progress Bars - at the very top, just below status bar */}
+        <View style={[styles.progressContainer, { top: insets.top }]}>
+          {user.stories.map((_, index) => (
+            <View key={index} style={styles.progressBarBackground}>
+              {index === currentStoryIndex && (
+                <Animated.View
+                  style={[
+                    styles.progressBarFill,
+                    { width: progressWidth }
+                  ]}
+                />
+              )}
+            </View>
+          ))}
+        </View>
 
-          {/* Profile and Close Button Row */}
+        {/* Header with Profile and Close/Menu Button */}
+        <View style={[styles.storyHeader, { top: insets.top + 3 }]}>
           <View style={styles.storyHeaderRow}>
             <TouchableOpacity 
               style={styles.storyHeaderLeft}
@@ -542,11 +706,56 @@ export default function StoriesScreen() {
               <Image source={{ uri: user.avatar }} style={styles.storyHeaderAvatar} />
               <ThemedText style={styles.storyHeaderName}>{user.username}</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleCloseStory} style={styles.storyCloseButton}>
-              <Ionicons name="close" size={28} color={Colors.primary.white} />
-            </TouchableOpacity>
+            {user.isMe ? (
+              <TouchableOpacity 
+                onPress={() => setShowMenu(true)} 
+                style={styles.storyMenuButton}
+              >
+                <Ionicons name="ellipsis-vertical" size={24} color={Colors.primary.white} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={handleCloseStory} style={styles.storyCloseButton}>
+                <Ionicons name="close" size={28} color={Colors.primary.white} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
+
+        {/* Menu Modal for Own Stories */}
+        <Modal
+          visible={showMenu}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowMenu(false)}
+        >
+          <Pressable 
+            style={styles.menuOverlay}
+            onPress={() => setShowMenu(false)}
+          >
+            <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleDeleteStory}
+                disabled={deletingStoryId === story.id}
+              >
+                {deletingStoryId === story.id ? (
+                  <ActivityIndicator size="small" color={Colors.primary.red} />
+                ) : (
+                  <Ionicons name="trash-outline" size={20} color={Colors.primary.red} />
+                )}
+                <ThemedText style={[styles.menuItemText, { color: Colors.primary.red }]}>
+                  Delete Story
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => setShowMenu(false)}
+              >
+                <ThemedText style={styles.menuItemText}>Cancel</ThemedText>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Tap Areas for Navigation */}
         <View style={styles.tapContainer}>
@@ -639,7 +848,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   storyItem: {
-    width: '25%',
+    width: ITEM_WIDTH,
     alignItems: 'center',
     marginBottom: 16,
     paddingHorizontal: 4,
@@ -649,63 +858,68 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   gradientBorder: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: STORY_CIRCLE_SIZE,
+    height: STORY_CIRCLE_SIZE,
+    borderRadius: STORY_CIRCLE_SIZE / 2,
     padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },
   storyCircleInner: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
+    width: STORY_CIRCLE_INNER,
+    height: STORY_CIRCLE_INNER,
+    borderRadius: STORY_CIRCLE_INNER / 2,
     overflow: 'hidden',
     backgroundColor: Colors.primary.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
   storyAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: STORY_AVATAR_SIZE,
+    height: STORY_AVATAR_SIZE,
+    borderRadius: STORY_AVATAR_SIZE / 2,
   },
   addIconContainer: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: Colors.primaryBackgroundColor,
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: Math.max(14, STORY_CIRCLE_SIZE * 0.15),
+    width: Math.max(28, STORY_CIRCLE_SIZE * 0.31),
+    height: Math.max(28, STORY_CIRCLE_SIZE * 0.31),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: Colors.primary.white,
   },
   addIcon: {
-    width: 20,
-    height: 20,
+    width: Math.max(20, STORY_CIRCLE_SIZE * 0.22),
+    height: Math.max(20, STORY_CIRCLE_SIZE * 0.22),
     justifyContent: 'center',
     alignItems: 'center',
   },
   storyCountBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: 8,
+    right: 8,
     backgroundColor: Colors.primaryBackgroundColor,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: Math.max(12, STORY_CIRCLE_SIZE * 0.12),
+    minWidth: Math.max(24, STORY_CIRCLE_SIZE * 0.25),
+    height: Math.max(24, STORY_CIRCLE_SIZE * 0.25),
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     borderWidth: 2,
     borderColor: Colors.primary.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
   },
   storyCountText: {
     color: Colors.primary.white,
-    fontSize: 10,
+    fontSize: Math.max(11, STORY_CIRCLE_SIZE * 0.12),
     fontWeight: 'bold',
   },
   storyName: {
@@ -757,11 +971,14 @@ const styles = StyleSheet.create({
     left: 0,
   },
   progressContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 4,
+    paddingTop: 0,
+    paddingBottom: 0,
+    gap: 5,
     zIndex: 10,
   },
   progressBarBackground: {
@@ -776,7 +993,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.white,
   },
   storyHeader: {
-    paddingTop: 50,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 0,
     paddingBottom: 16,
     zIndex: 10,
   },
@@ -785,7 +1006,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 8,
+    marginTop: 5,
   },
   storyHeaderLeft: {
     flexDirection: 'row',
@@ -793,21 +1014,50 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   storyHeaderAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: Colors.primary.white,
   },
   storyHeaderName: {
     color: Colors.primary.white,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
   storyCloseButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  storyMenuButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: Colors.primary.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text.light,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    fontWeight: '500',
   },
   tapContainer: {
     position: 'absolute',

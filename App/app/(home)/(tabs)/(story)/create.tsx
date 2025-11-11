@@ -291,6 +291,7 @@ export default function CreateStoryScreen() {
         const data = await storyAPI.getStories(token);
         
         // Ensure "Your Story" always appears first, even if empty
+        // Backend already sorts by latest story date, so we just need to ensure "Your Story" is first
         let storiesList: StoryItem[] = data || []
         
         // Check if "Your Story" exists
@@ -317,7 +318,27 @@ export default function CreateStoryScreen() {
           storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
         }
         
-        setStories(storiesList);
+        // Additional sorting by latest story date (backend should already do this, but ensure it)
+        // Sort other stories (not "Your Story") by latest story date
+        const myStory = storiesList.find(item => item.isMe);
+        const otherStories = storiesList.filter(item => !item.isMe);
+        
+        otherStories.sort((a, b) => {
+          const aLatest = a.stories.length > 0 
+            ? new Date(a.stories[0].createdAt).getTime() 
+            : 0;
+          const bLatest = b.stories.length > 0 
+            ? new Date(b.stories[0].createdAt).getTime() 
+            : 0;
+          return bLatest - aLatest; // Descending order (newest first)
+        });
+        
+        // Combine: "Your Story" first, then others sorted by latest
+        const finalStoriesList = myStory 
+          ? [myStory, ...otherStories]
+          : otherStories;
+        
+        setStories(finalStoriesList);
       } catch (refreshError) {
         console.error('Error refreshing stories:', refreshError);
       } finally {

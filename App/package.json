@@ -53,6 +53,7 @@
     "react-async-hook": "^4.0.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.4",
+    "react-native-compressor": "^1.13.0",
     "react-native-country-picker-modal": "^2.0.0",
     "react-native-deck-swiper": "^2.0.19",
     "react-native-feather": "^1.1.2",

@@ -64,7 +64,7 @@ export default function ChatRoom() {
       headerLeft: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => navigation.goBack()}
             style={{ padding: 8, marginRight: 4 }}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />

@@ -31,10 +31,10 @@ export const getStories = async (req: Request, res: Response) => {
 
                 if (userStories.length === 0) return null;
 
-                // Check if current user has viewed all stories
-                const allViewed = userStories.every(story => 
-                    story.views.includes(currentUserId)
-                );
+                const isMe = userId === currentUserId;
+
+                // Get the latest story creation date for sorting
+                const latestStoryDate = userStories[0]?.createdAt || new Date(0);
 
                 return {
                     id: user.user_id,
@@ -48,23 +48,30 @@ export const getStories = async (req: Request, res: Response) => {
                         isSeen: story.views.includes(currentUserId),
                         createdAt: story.createdAt
                     })),
-                    isMe: userId === currentUserId
+                    isMe: isMe,
+                    latestStoryDate: latestStoryDate // Used for sorting
                 };
             })
         );
 
         const filteredStories = storiesByUser.filter(item => item !== null);
 
-        // Sort: my story first, then others
+        // Sort: my story first, then others by latest story date (newest first)
         filteredStories.sort((a, b) => {
             if (a?.isMe) return -1;
             if (b?.isMe) return 1;
-            return 0;
+            // Sort by latest story date (newest first)
+            const dateA = a?.latestStoryDate ? new Date(a.latestStoryDate).getTime() : 0;
+            const dateB = b?.latestStoryDate ? new Date(b.latestStoryDate).getTime() : 0;
+            return dateB - dateA; // Descending order (newest first)
         });
+
+        // Remove latestStoryDate from response (it was only used for sorting)
+        const cleanedStories = filteredStories.map(({ latestStoryDate, ...rest }) => rest);
 
         res.json({
             success: true,
-            data: filteredStories
+            data: cleanedStories
         });
     } catch (error) {
         console.error("getStories error:", error);
