@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { View, ActivityIndicator, Alert, StyleSheet } from 'react-native'
+import { View, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
-import CustomBackButton from '@/components/CustomBackButton'
 import UserProfileView from '@/components/UserProfileView'
 import { DBUser } from '@/types/Auth'
 
 const UserProfile = () => {
-  const { userData } = useLocalSearchParams<{ userData?: string }>()
+  const { userData, returnToStory } = useLocalSearchParams<{ userData?: string; returnToStory?: string }>()
+  const router = useRouter()
   
   const [user, setUser] = useState<DBUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,10 +42,18 @@ const UserProfile = () => {
     loadUserData()
   }, [userData])
 
+  const handleBack = () => {
+    if (returnToStory === 'true') {
+      // Navigate to story tab if we came from story viewer
+      router.push('/(home)/(tabs)/(story)/' as any);
+    } else {
+      router.back();
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <CustomBackButton />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
           <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
@@ -55,7 +64,6 @@ const UserProfile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* <CustomBackButton /> */}
       <UserProfileView user={user} />
     </SafeAreaView>
   )

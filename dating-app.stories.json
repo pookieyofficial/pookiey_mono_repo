@@ -1,0 +1,22 @@
+[{
+  "_id": {
+    "$oid": "690a18839f69ac7a761bc77b"
+  },
+  "userId": "69074927158aa67acff4830a",
+  "user_id": "f5928e19-98bd-4537-9538-fbc4563cf991",
+  "mediaUrl": "https://pookiey-dating-app.s3.ap-south-1.amazonaws.com/users/f5928e19-98bd-4537-9538-fbc4563cf991/40cb7736-bacc-4e63-98da-3eecfd3cc1c7.jpg",
+  "mediaType": "image",
+  "thumbnailUrl": "https://pookiey-dating-app.s3.ap-south-1.amazonaws.com/users/f5928e19-98bd-4537-9538-fbc4563cf991/40cb7736-bacc-4e63-98da-3eecfd3cc1c7.jpg",
+  "expiresAt": {
+    "$date": "2025-11-05T15:15:15.724Z"
+  },
+  "isActive": true,
+  "views": [],
+  "createdAt": {
+    "$date": "2025-11-04T15:15:15.736Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-04T15:15:15.736Z"
+  },
+  "__v": 0
+}]

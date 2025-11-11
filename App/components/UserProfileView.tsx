@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/Colors'
 import { ThemedText } from './ThemedText'
 import { DBUser } from '@/types/Auth'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { useMessagingStore } from '@/store/messagingStore'
 import { useAuth } from '@/hooks/useAuth'
@@ -71,6 +71,7 @@ interface UserProfileViewProps {
 
 const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) => {
   const router = useRouter()
+  const { returnToStory } = useLocalSearchParams<{ returnToStory?: string }>()
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' })
@@ -178,10 +179,10 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     const matchId = await findOrCreateMatch(displayUser.user_id)
     
     if (!matchId) {
-      const userName = displayUser.profile?.firstName || displayUser.displayName || 'this user'
+      const userName = displayUser.profile?.firstName || displayUser.displayName || displayUser.user_id || 'this user'
       setAlertMessage({
-        title: '💬 Start a Conversation',
-        message: `${userName} needs to interact with you (like you back) before you can start chatting. Send them a like and wait for them to like you back! 💕`
+        title: '💬 Chat Unavailable',
+        message: `You must be a matched user to chat with ${userName}. Like them and wait for them to like you back to start chatting! 💕`
       })
       setShowAlert(true)
       return
@@ -192,7 +193,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     const userAvatar = displayUser.profile?.photos?.[0]?.url || displayUser.photoURL || ''
 
     router.push({
-      pathname: '/(home)/(tabs)(chats)/chatRoom',
+      pathname: '/(home)/(tabs)/(chats)/chatRoom' as any,
       params: {
         matchId,
         userName,
@@ -288,7 +289,14 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {/* Simple Back Button at top */}
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              // Check if we came from story viewer
+              if (returnToStory === 'true') {
+                router.push('/(home)/(tabs)/(story)/' as any);
+              } else {
+                router.back();
+              }
+            }}
           >
             <Ionicons name="chevron-back" size={24} color={Colors.primary.red} />
           </TouchableOpacity>
