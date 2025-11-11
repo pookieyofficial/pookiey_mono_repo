@@ -13,7 +13,7 @@ export async function sendMessageNotification({
   otherUserId: string;
   expo_tokens: string[];
   messageText?: string;
-  messageType?: 'text' | 'image' | 'gif';
+  messageType?: 'text' | 'image' | 'gif' | 'audio';
 }) {
   if (!expo_tokens?.length) {
     console.warn(`⚠️ No Expo tokens provided for user ${otherUserId}`);
@@ -24,6 +24,7 @@ export async function sendMessageNotification({
   const bodyPreview = (() => {
     if (messageType === 'image') return `${userName} sent a photo`;
     if (messageType === 'gif') return `${userName} sent a GIF`;
+    if (messageType === 'audio') return `${userName} sent a voice note`;
     const text = (messageText || '').trim();
     if (!text) return `${userName} sent a message`;
     return text.length > 140 ? `${text.slice(0, 137)}...` : text;

@@ -194,7 +194,7 @@ export const getMessages = async (req: Request, res: Response) => {
 export const sendMessage = async (req: Request, res: Response) => {
     try {
         const userId = req.user?.user_id;
-        const { matchId, text, type = "text", mediaUrl } = req.body;
+        const { matchId, text, type = "text", mediaUrl, audioDuration } = req.body;
 
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
@@ -219,6 +219,7 @@ export const sendMessage = async (req: Request, res: Response) => {
             text,
             type,
             mediaUrl,
+            audioDuration,
             isRead: false
         });
 
@@ -252,6 +253,8 @@ export const sendMessage = async (req: Request, res: Response) => {
                 userAvatar: senderAvatar,
                 otherUserId: receiverId,
                 expo_tokens: receiverTokens,
+                messageText: type === "audio" ? "Voice note" : text,
+                messageType: type,
             });
         }
 

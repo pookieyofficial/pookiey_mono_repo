@@ -69,11 +69,12 @@ export const initializeSocket = (httpServer: HTTPServer) => {
         socket.on("send_message", async (data: {
             matchId: string;
             text: string;
-            type?: "text" | "image" | "gif";
+            type?: "text" | "image" | "gif" | "audio";
             mediaUrl?: string;
+            audioDuration?: number;
         }) => {
             try {
-                const { matchId, text, type = "text", mediaUrl } = data;
+                const { matchId, text, type = "text", mediaUrl, audioDuration } = data;
 
                 if (!userId) {
                     socket.emit("error", { message: "Unauthorized" });
@@ -96,6 +97,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                     text,
                     type,
                     mediaUrl,
+                    audioDuration,
                     isRead: false
                 });
 
@@ -142,7 +144,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                             userAvatar: senderAvatar,
                             otherUserId: receiverId,
                             expo_tokens: receiverTokens,
-                            messageText: text,
+                            messageText: type === "audio" ? "Voice note" : text,
                             messageType: type,
                         });
                     }

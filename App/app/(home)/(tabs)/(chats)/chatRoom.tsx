@@ -9,6 +9,8 @@ import {
   Platform,
   Linking,
   Keyboard,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
@@ -21,6 +23,9 @@ import { ThemedText } from '@/components/ThemedText';
 import CustomLoader from '@/components/CustomLoader';
 import ParsedText from 'react-native-parsed-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Audio, InterruptionModeIOS } from 'expo-av';
+import * as FileSystem from 'expo-file-system/legacy';
+import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
 
 export default function ChatRoom() {
   const params = useLocalSearchParams();
@@ -46,6 +51,17 @@ export default function ChatRoom() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDurationSeconds, setRecordingDurationSeconds] = useState(0);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const recordingDurationRef = useRef(0);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [isSoundPlaying, setIsSoundPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
   const navigation = useNavigation();
 
   const matchId = params.matchId as string;
@@ -197,6 +213,21 @@ export default function ChatRoom() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = undefined;
+      }
+      const currentSound = soundRef.current;
+      if (currentSound) {
+        currentSound.setOnPlaybackStatusUpdate(null);
+        void currentSound.unloadAsync();
+        soundRef.current = null;
+      }
+    };
+  }, []);
+
   const loadMessages = async () => {
     try {
       setLoading(true);
@@ -222,16 +253,16 @@ export default function ChatRoom() {
     sendMessage(messageData);
     setInputThemedText('');
     stopTyping(matchId);
-  }, [inputThemedText, matchId]);
+  }, [inputThemedText, matchId, sendMessage, stopTyping]);
 
-  const handleTyping = (ThemedText: string) => {
+  const handleTyping = useCallback((ThemedText: string) => {
     setInputThemedText(ThemedText);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     if (ThemedText.length > 0) {
       startTyping(matchId);
       typingTimeoutRef.current = setTimeout(() => stopTyping(matchId), 1000);
     } else stopTyping(matchId);
-  };
+  }, [matchId, startTyping, stopTyping]);
 
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('en-US', {
@@ -248,6 +279,251 @@ export default function ChatRoom() {
       year: 'numeric',
     });
   };
+
+  const formatDurationLabel = (totalSeconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const minutes = Math.floor(safeSeconds / 60);
+    const seconds = safeSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const handleSendVoiceNote = useCallback(
+    async (localUri: string, durationSeconds: number) => {
+      try {
+        setUploadingAudio(true);
+        const mimeType = 'audio/m4a';
+        const presignedUrls = await requestPresignedURl([mimeType]);
+
+        if (!Array.isArray(presignedUrls) || presignedUrls.length === 0) {
+          throw new Error('Failed to obtain upload URL');
+        }
+
+        const { uploadUrl, fileURL } = presignedUrls[0];
+        const uploaded = await uploadTos3(localUri, uploadUrl, mimeType);
+
+        if (!uploaded) {
+          throw new Error('Upload failed');
+        }
+
+        await FileSystem.deleteAsync(localUri, { idempotent: true });
+
+        sendMessage({
+          matchId,
+          text: '[Voice note]',
+          type: 'audio',
+          mediaUrl: fileURL,
+          audioDuration: durationSeconds,
+        });
+        stopTyping(matchId);
+      } catch (error) {
+        console.error('Error sending voice note:', error);
+        Alert.alert(
+          'Upload failed',
+          'We could not send your voice note. Please try again.'
+        );
+      } finally {
+        await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {});
+        setUploadingAudio(false);
+      }
+    },
+    [matchId, sendMessage, stopTyping]
+  );
+
+  const finalizeRecording = useCallback(
+    async (shouldSend: boolean) => {
+      if (!recording) return;
+
+      const durationSeconds = Math.max(1, recordingDurationRef.current);
+      let uri: string | null = null;
+
+      try {
+        await recording.stopAndUnloadAsync();
+        uri = recording.getURI();
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+      }
+
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = undefined;
+      }
+
+      setRecording(null);
+      setIsRecording(false);
+      setRecordingDurationSeconds(0);
+      recordingDurationRef.current = 0;
+
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+        });
+      } catch (error) {
+        console.error('Error resetting audio mode:', error);
+      }
+
+      if (!uri) {
+        if (shouldSend) {
+          Alert.alert('Voice note error', 'We could not access the recorded file.');
+        }
+        return;
+      }
+
+      if (shouldSend) {
+        await handleSendVoiceNote(uri, durationSeconds);
+      } else {
+        await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+      }
+    },
+    [recording, handleSendVoiceNote]
+  );
+
+  const startRecordingVoiceNote = useCallback(async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+
+      if (permission.status !== 'granted') {
+        Alert.alert(
+          'Microphone access needed',
+          'Please enable microphone access in your device settings to send voice notes.'
+        );
+        return;
+      }
+
+      if (soundRef.current) {
+        soundRef.current.setOnPlaybackStatusUpdate(null);
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        setPlayingMessageId(null);
+        setIsSoundPlaying(false);
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      const recordingObject = new Audio.Recording();
+      await recordingObject.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await recordingObject.startAsync();
+
+      setRecording(recordingObject);
+      setIsRecording(true);
+      recordingDurationRef.current = 0;
+      setRecordingDurationSeconds(0);
+
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+
+      recordingIntervalRef.current = setInterval(async () => {
+        try {
+          const status = await recordingObject.getStatusAsync();
+          if (status.isRecording && typeof status.durationMillis === 'number') {
+            const seconds = Math.floor(status.durationMillis / 1000);
+            recordingDurationRef.current = seconds;
+            setRecordingDurationSeconds(seconds);
+          }
+        } catch (error) {
+          console.error('Error updating recording status:', error);
+        }
+      }, 250);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      Alert.alert('Recording error', 'Unable to start recording. Please try again.');
+    }
+  }, []);
+
+  const handleStopRecording = useCallback(() => {
+    finalizeRecording(true).catch((error) =>
+      console.error('Error finalizing recording:', error)
+    );
+  }, [finalizeRecording]);
+
+  const handleCancelRecording = useCallback(() => {
+    finalizeRecording(false).catch((error) =>
+      console.error('Error cancelling recording:', error)
+    );
+  }, [finalizeRecording]);
+
+  const togglePlayback = useCallback(
+    async (message: Message) => {
+      if (!message.mediaUrl) return;
+
+      try {
+        if (playingMessageId === message._id && soundRef.current) {
+          const status = await soundRef.current.getStatusAsync();
+          if (status.isLoaded) {
+            if (status.isPlaying) {
+              await soundRef.current.pauseAsync();
+              setIsSoundPlaying(false);
+            } else {
+              await soundRef.current.playAsync();
+              setIsSoundPlaying(true);
+            }
+          }
+          return;
+        }
+
+        if (soundRef.current) {
+          soundRef.current.setOnPlaybackStatusUpdate(null);
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: message.mediaUrl },
+          { shouldPlay: true }
+        );
+
+        await sound.setProgressUpdateIntervalAsync(250);
+
+        soundRef.current = sound;
+        setPlayingMessageId(message._id);
+        setPlaybackPosition(0);
+        const initialDuration = (message.audioDuration ?? 0) * 1000;
+        setPlaybackDuration(initialDuration);
+        setIsSoundPlaying(true);
+
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded) {
+            return;
+          }
+
+          setPlaybackPosition(status.positionMillis ?? 0);
+          if (typeof status.durationMillis === 'number') {
+            setPlaybackDuration(status.durationMillis);
+          }
+          setIsSoundPlaying(status.isPlaying ?? false);
+
+          if (status.didJustFinish) {
+            sound.setOnPlaybackStatusUpdate(null);
+            setPlayingMessageId(null);
+            setPlaybackPosition(0);
+            setIsSoundPlaying(false);
+            setPlaybackDuration((message.audioDuration ?? 0) * 1000);
+            soundRef.current = null;
+            void sound.unloadAsync();
+          }
+        });
+      } catch (error) {
+        console.error('Error playing voice note:', error);
+        Alert.alert('Playback error', 'Unable to play this voice note.');
+      }
+    },
+    [playingMessageId]
+  );
 
   // group messages with date dividers
   const groupedMessages: any[] = [];
@@ -271,6 +547,86 @@ export default function ChatRoom() {
     }
 
     const isMine = item.senderId === dbUser?.user_id;
+
+    if (item.type === 'audio') {
+      const isPlayingMessage = playingMessageId === item._id;
+      const totalDurationMs =
+        isPlayingMessage && playbackDuration > 0
+          ? playbackDuration
+          : (item.audioDuration ?? 0) * 1000;
+      const currentPositionMs = isPlayingMessage ? playbackPosition : 0;
+      const currentSeconds = Math.max(0, Math.floor(currentPositionMs / 1000));
+      const totalSeconds =
+        totalDurationMs > 0
+          ? Math.max(0, Math.round(totalDurationMs / 1000))
+          : Math.max(0, item.audioDuration ?? 0);
+      const progress =
+        totalDurationMs > 0
+          ? Math.min(currentPositionMs / totalDurationMs, 1)
+          : 0;
+      const playIconColor = isMine ? '#fff' : Colors.primaryBackgroundColor;
+      const trackColor = isMine ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)';
+      const progressColor = isMine ? 'rgba(255,255,255,0.8)' : Colors.primaryBackgroundColor;
+
+      return (
+        <View
+          style={[
+            styles.messageBubble,
+            isMine ? styles.myMessage : styles.theirMessage,
+          ]}
+        >
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => togglePlayback(item)}
+            style={styles.voiceMessageContent}
+          >
+            <View
+              style={[
+                styles.voicePlayButton,
+                isMine ? styles.myVoiceButton : styles.theirVoiceButton,
+              ]}
+            >
+              <Ionicons
+                name={isPlayingMessage && isSoundPlaying ? 'pause' : 'play'}
+                size={18}
+                color={playIconColor}
+              />
+            </View>
+
+            <View style={styles.voiceMessageBody}>
+              <View style={[styles.voiceProgressTrack, { backgroundColor: trackColor }]}>
+                <View
+                  style={[
+                    styles.voiceProgressFill,
+                    {
+                      width: `${Math.min(100, Math.max(4, progress * 100))}%`,
+                      backgroundColor: progressColor,
+                    },
+                  ]}
+                />
+              </View>
+              <ThemedText
+                style={[
+                  styles.voiceTimer,
+                  isMine ? styles.myMessageTime : styles.theirMessageTime,
+                ]}
+              >
+                {`${formatDurationLabel(currentSeconds)} / ${formatDurationLabel(totalSeconds)}`}
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+
+          <ThemedText
+            style={[
+              styles.messageTime,
+              isMine ? styles.myMessageTime : styles.theirMessageTime,
+            ]}
+          >
+            {formatTime(item.createdAt)}
+          </ThemedText>
+        </View>
+      );
+    }
 
     return (
       <View
@@ -366,6 +722,22 @@ export default function ChatRoom() {
         }
       />
 
+      {isRecording && (
+        <View style={styles.recordingIndicator}>
+          <Ionicons name="mic" size={18} color="#FF3B30" style={{ marginRight: 8 }} />
+          <ThemedText style={styles.recordingText}>Recording</ThemedText>
+          <ThemedText style={styles.recordingTimer}>
+            {formatDurationLabel(recordingDurationSeconds)}
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.cancelRecordingButton}
+            onPress={handleCancelRecording}
+          >
+            <ThemedText style={styles.cancelRecordingText}>Cancel</ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Input Area */}
       <View
         style={[
@@ -377,6 +749,21 @@ export default function ChatRoom() {
           },
         ]}
       >
+        <TouchableOpacity
+          style={[
+            styles.micButton,
+            isRecording && styles.micButtonActive,
+            uploadingAudio && styles.micButtonDisabled,
+          ]}
+          onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
+          disabled={uploadingAudio}
+        >
+          <Ionicons
+            name={isRecording ? 'stop' : 'mic'}
+            size={22}
+            color={isRecording ? '#fff' : '#FF3B30'}
+          />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={inputThemedText}
@@ -385,20 +772,25 @@ export default function ChatRoom() {
           placeholderTextColor="#999"
           multiline
           maxLength={1000}
+          editable={!isRecording && !uploadingAudio}
         />
         <TouchableOpacity
           style={[
             styles.sendButton,
-            !inputThemedText.trim() && styles.sendButtonDisabled,
+            (!inputThemedText.trim() || uploadingAudio) && styles.sendButtonDisabled,
           ]}
           onPress={handleSend}
-          disabled={!inputThemedText.trim()}
+          disabled={!inputThemedText.trim() || uploadingAudio}
         >
-          <Ionicons
-            name="send"
-            size={24}
-            color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
-          />
+          {uploadingAudio ? (
+            <ActivityIndicator size="small" color="#FF3B30" />
+          ) : (
+            <Ionicons
+              name="send"
+              size={24}
+              color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -435,6 +827,34 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#fff',
   },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#FFE9E7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  recordingText: { fontSize: 14, color: '#FF3B30', fontFamily: 'HellixMedium', marginRight: 8 },
+  recordingTimer: { fontSize: 14, color: '#FF3B30', fontFamily: 'HellixSemiBold', marginRight: 16 },
+  cancelRecordingButton: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, backgroundColor: '#fff' },
+  cancelRecordingText: { fontSize: 13, color: '#555', fontFamily: 'HellixMedium' },
+  micButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  micButtonActive: { backgroundColor: '#FF3B30' },
+  micButtonDisabled: { opacity: 0.5 },
   input: {
     flex: 1,
     maxHeight: 100,
@@ -447,4 +867,28 @@ const styles = StyleSheet.create({
   },
   sendButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   sendButtonDisabled: { opacity: 0.5 },
+  voiceMessageContent: { flexDirection: 'row', alignItems: 'center' },
+  voicePlayButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  myVoiceButton: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  theirVoiceButton: { backgroundColor: 'rgba(0,0,0,0.08)' },
+  voiceMessageBody: { flex: 1 },
+  voiceProgressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  voiceProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  voiceTimer: { fontSize: 12, fontFamily: 'HellixMedium' },
 });

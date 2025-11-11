@@ -49,6 +49,17 @@ export default {
 
     plugins: [
       "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Pookiey to access your microphone."
+        }
+      ],
+
       [
         "expo-splash-screen",
         {
@@ -58,6 +69,7 @@ export default {
           backgroundColor: "#ffffff",
         },
       ],
+
       [
         "expo-location",
         {
@@ -69,12 +81,14 @@ export default {
             "Allow Pookiey to use your location to show you matches nearby.",
         },
       ],
+
       [
         "expo-contacts",
         {
           contactsPermission: "Allow Pookiey to access your contacts.",
         },
       ],
+
       [
         "expo-image-picker",
         {
@@ -84,9 +98,6 @@ export default {
             "Pookiey requires access to your camera to take profile pictures.",
         },
       ],
-      "expo-font",
-      "expo-secure-store",
-      "expo-web-browser",
     ],
 
     experiments: {

@@ -11,8 +11,9 @@ export interface Message {
   senderId: string;
   receiverId: string;
   text: string;
-  type: 'text' | 'image' | 'gif';
+  type: 'text' | 'image' | 'gif' | 'audio';
   mediaUrl?: string;
+  audioDuration?: number;
   isRead: boolean;
   readAt?: Date;
   createdAt: Date;
@@ -93,8 +94,9 @@ export const useSocket = () => {
   const sendMessage = (data: {
     matchId: string;
     text: string;
-    type?: 'text' | 'image' | 'gif';
+    type?: 'text' | 'image' | 'gif' | 'audio';
     mediaUrl?: string;
+    audioDuration?: number;
   }) => {
     socketRef.current?.emit('send_message', data);
   };

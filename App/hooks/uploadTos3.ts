@@ -50,8 +50,8 @@ export async function uploadMultipleTos3(files: { LocalUrl: string, PresignedUrl
     return results;
 }
 
-export async function requestPresignedURl(imageExtension: string[]) {
-    console.log("imageExtension from requestPresignedURl: ", imageExtension);
+export async function requestPresignedURl(mimeTypes: string[]) {
+    console.log("mimeTypes from requestPresignedURl: ", mimeTypes);
     
     try {
         const idToken = useAuthStore.getState().getIdToken();
@@ -61,7 +61,12 @@ export async function requestPresignedURl(imageExtension: string[]) {
             throw new Error("Authentication token is required");
         }
         
-        const response = await axios.post(getPresignedUrlAPI, {imageExtension}, {
+        const payload = {
+            imageExtension: mimeTypes,
+            mimeTypes,
+        };
+
+        const response = await axios.post(getPresignedUrlAPI, payload, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${idToken}`,

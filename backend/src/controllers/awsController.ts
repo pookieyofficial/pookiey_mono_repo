@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import s3 from '../config/s3configure';
 
 interface PresignedUrlRequest {
-    imageExtension: string[];
+    imageExtension?: string[];
+    mimeTypes?: string[];
 }
 
 interface PresignedUrlResponse {
@@ -28,16 +29,22 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
             });
         }
 
-        const { imageExtension } = req.body;
+        const { imageExtension, mimeTypes }: PresignedUrlRequest = req.body;
         const userId = (req as any).user.user_id;
 
         console.log('Generating presigned URLs for user:', userId);
-        console.log('Image extensions:', imageExtension);
+        console.log('Requested mime types:', mimeTypes || imageExtension);
 
-        if (!Array.isArray(imageExtension) || imageExtension.length === 0) {
+        const requestedMimeTypes = Array.isArray(mimeTypes) && mimeTypes.length > 0
+            ? mimeTypes
+            : Array.isArray(imageExtension) && imageExtension.length > 0
+                ? imageExtension
+                : null;
+
+        if (!requestedMimeTypes) {
             return res.status(400).json({
                 success: false,
-                message: "imageExtension must be a non-empty array"
+                message: "mimeTypes must be a non-empty array"
             });
         }
 
@@ -49,11 +56,13 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
         }
 
         const urls: PresignedUrlResponse[] = await Promise.all(
-            imageExtension.map(async (mimeType: string) => {        
-                const extension = mimeType.split('/')[1];
+            requestedMimeTypes.map(async (mimeType: string) => {        
+                const [category, subtype] = mimeType.split('/');
+                const sanitizedSubtype = (subtype || '').split(';')[0];
+                const extension = sanitizedSubtype || 'bin';
                 const safeExt = extension === 'jpeg' ? 'jpg' : extension;
                 
-                // Organize images by user ID folder
+                // Organize uploads by user ID folder
                 const key = `users/${userId}/${uuidv4()}.${safeExt}`;
                 
                 console.log(`Generated S3 key for user ${userId}:`, key);
@@ -62,7 +71,7 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
                     Bucket: process.env.AWS_BUCKET_NAME!,
                     Key: key,
                     Expires: 120,
-                    ContentType: `image/${safeExt}`,
+                    ContentType: mimeType,
                     ACL: 'public-read',
                 };
 

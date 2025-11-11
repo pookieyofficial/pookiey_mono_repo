@@ -6,8 +6,9 @@ export interface IMessage extends Document {
     receiverId: string;
     receiverNotificationToken?: string[];
     text: string;
-    type: "text" | "image" | "gif";
+    type: "text" | "image" | "gif" | "audio";
     mediaUrl?: string;
+    audioDuration?: number;
     isRead: boolean;
     readAt?: Date;
     createdAt: Date;
@@ -38,10 +39,11 @@ const MessageSchema = new Schema<IMessage>(
         text: { type: String, required: true },
         type: {
             type: String,
-            enum: ["text", "image", "gif"],
+            enum: ["text", "image", "gif", "audio"],
             default: "text"
         },
         mediaUrl: { type: String },
+        audioDuration: { type: Number },
         isRead: { type: Boolean, default: false },
         readAt: { type: Date },
     },

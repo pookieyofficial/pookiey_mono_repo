@@ -59,8 +59,9 @@ export const messageAPI = {
     data: {
       matchId: string;
       text: string;
-      type?: 'text' | 'image' | 'gif';
+      type?: 'text' | 'image' | 'gif' | 'audio';
       mediaUrl?: string;
+      audioDuration?: number;
     }
   ): Promise<Message> => {
     try {

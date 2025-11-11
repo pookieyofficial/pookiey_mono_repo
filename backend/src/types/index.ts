@@ -65,7 +65,8 @@ export interface Message {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'image' | 'gif' | 'video';
+  messageType: 'text' | 'image' | 'gif' | 'video' | 'audio';
+  audioDuration?: number;
   isRead: boolean;
   createdAt: Date;
   updatedAt: Date;
