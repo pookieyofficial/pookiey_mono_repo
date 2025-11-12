@@ -38,6 +38,10 @@ export default {
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
       ],
       package: "com.pookiey.pookiey",
       config: {
@@ -98,6 +102,17 @@ export default {
             "Pookiey requires access to your camera to take profile pictures.",
         },
       ],
+      [
+        "expo-media-library",
+        {
+          photosPermission: "Allow Pookiey to access your photos to save stories.",
+          savePhotosPermission: "Allow Pookiey to save photos to your gallery.",
+          isAccessMediaLocationEnabled: true,
+        },
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
     ],
 
     experiments: {

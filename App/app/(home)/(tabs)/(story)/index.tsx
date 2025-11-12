@@ -44,6 +44,7 @@ const STORY_DURATION = 5000; // 5 seconds per story
 export default function StoriesScreen() {
   const router = useRouter();
   const { token } = useAuth();
+  const insets = useSafeAreaInsets(); // Move hook to top - must be called unconditionally
   
   // Get stories from store (loaded from home page)
   const { stories, isLoading, setStories, setLoading, updateStoryViewStatus } = useStoryStore();
@@ -590,7 +591,7 @@ export default function StoriesScreen() {
     }
 
     const { user, story } = current;
-    const insets = useSafeAreaInsets();
+    // insets is already defined at the top of the component
     const progressWidth = progressAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ['0%', '100%'],
@@ -695,9 +696,19 @@ export default function StoriesScreen() {
           ))}
         </View>
 
-        {/* Header with Profile and Close/Menu Button */}
+        {/* Header with Back Button, Profile and Close/Menu Button */}
         <View style={[styles.storyHeader, { top: insets.top + 3 }]}>
           <View style={styles.storyHeaderRow}>
+            {/* Custom Back Button */}
+            <TouchableOpacity 
+              onPress={handleCloseStory} 
+              style={styles.storyBackButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.primary.white} />
+            </TouchableOpacity>
+            
+            {/* Profile Section */}
             <TouchableOpacity 
               style={styles.storyHeaderLeft}
               onPress={handleProfilePress}
@@ -706,6 +717,8 @@ export default function StoriesScreen() {
               <Image source={{ uri: user.avatar }} style={styles.storyHeaderAvatar} />
               <ThemedText style={styles.storyHeaderName}>{user.username}</ThemedText>
             </TouchableOpacity>
+            
+            {/* Close/Menu Button */}
             {user.isMe ? (
               <TouchableOpacity 
                 onPress={() => setShowMenu(true)} 
@@ -1007,11 +1020,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     marginTop: 5,
+    gap: 12,
+  },
+  storyBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   storyHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   storyHeaderAvatar: {
     width: 40,
