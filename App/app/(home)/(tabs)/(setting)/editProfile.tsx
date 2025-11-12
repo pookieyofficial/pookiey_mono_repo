@@ -19,8 +19,10 @@ import { useAuthStore } from '@/store/authStore'
 import { useUser } from '@/hooks/useUser'
 import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system/legacy'
 import { LogBox } from 'react-native';
 import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3'
+import { compressImageToJPEG } from '@/utils/imageCompression'
 LogBox.ignoreAllLogs(false);
 
 const { width } = Dimensions.get('window')
@@ -193,54 +195,109 @@ const EditProfile = () => {
 
       // Upload new local images to S3
       if (newLocalPhotos.length > 0) {
-        // Get MIME types for new images
-        const mimeTypes = newLocalPhotos.map(item => item.mimeType)
+        console.log('🔄 Compressing images for profile...');
         
-        // Request presigned URLs
-        const presignedUrls = await requestPresignedURl(mimeTypes)
+        // Step 1: Compress all new images
+        const compressedPhotos: { photo: any; mimeType: string; index: number; compressedUri: string }[] = [];
         
-        if (!presignedUrls || presignedUrls.length !== newLocalPhotos.length) {
-          Alert.alert('Error', 'Failed to get upload URLs. Please try again.')
-          setIsLoading(false)
-          return
+        for (let i = 0; i < newLocalPhotos.length; i++) {
+          const item = newLocalPhotos[i];
+          const photoUrl = typeof item.photo === 'string' ? item.photo : item.photo.url;
+          
+          try {
+            const compressed = await compressImageToJPEG(
+              photoUrl,
+              0.8,  // Good quality for profile photos
+              1920, // Max width
+              1920  // Max height
+            );
+            
+            compressedPhotos.push({
+              ...item,
+              compressedUri: compressed.uri,
+              mimeType: compressed.mimeType
+            });
+            
+            // Log compression stats
+            const originalInfo = await FileSystem.getInfoAsync(photoUrl);
+            if (originalInfo.exists && compressed.size) {
+              const originalSize = (originalInfo as any).size;
+              const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
+              console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+            }
+          } catch (compressionError) {
+            console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
+            compressedPhotos.push({
+              ...item,
+              compressedUri: photoUrl,
+              mimeType: item.mimeType
+            });
+          }
+        }
+        
+        console.log('✅ All images compressed successfully');
+        
+        // Step 2: Get MIME types for compressed images
+        const mimeTypes = compressedPhotos.map(item => item.mimeType);
+        
+        // Step 3: Request presigned URLs
+        const presignedUrls = await requestPresignedURl(mimeTypes);
+        
+        if (!presignedUrls || presignedUrls.length !== compressedPhotos.length) {
+          Alert.alert('Error', 'Failed to get upload URLs. Please try again.');
+          setIsLoading(false);
+          return;
         }
 
-        // Prepare files for upload
-        const filesToUpload = newLocalPhotos.map((item, i) => ({
-          LocalUrl: typeof item.photo === 'string' ? item.photo : item.photo.url,
+        // Step 4: Prepare compressed files for upload
+        const filesToUpload = compressedPhotos.map((item, i) => ({
+          LocalUrl: item.compressedUri,
           PresignedUrl: presignedUrls[i].uploadUrl,
           MimeType: item.mimeType
-        }))
+        }));
 
-        // Upload to S3
-        const uploadResults = await uploadMultipleTos3(filesToUpload)
+        // Step 5: Upload compressed images to S3
+        const uploadResults = await uploadMultipleTos3(filesToUpload);
         
         // Check if all uploads succeeded
         const allSucceeded = uploadResults.every(result => 
           result && (result.status === 200 || result.status === 204)
-        )
+        );
 
         if (!allSucceeded) {
-          Alert.alert('Error', 'Some images failed to upload. Please try again.')
-          setIsLoading(false)
-          return
+          Alert.alert('Error', 'Some images failed to upload. Please try again.');
+          setIsLoading(false);
+          return;
         }
 
-        // Map new local photos to their S3 URLs, preserving structure
-        const newS3Photos = newLocalPhotos.map((item, i) => {
-          const s3Url = presignedUrls[i].fileURL
+        // Step 6: Map new local photos to their S3 URLs, preserving structure
+        const newS3Photos = compressedPhotos.map((item, i) => {
+          const s3Url = presignedUrls[i].fileURL;
           // If photo is an object, preserve its structure
           if (typeof item.photo === 'object' && item.photo !== null) {
             return {
               ...item.photo,
               url: s3Url
-            }
+            };
           }
           // Otherwise, just return the S3 URL
-          return s3Url
-        })
+          return s3Url;
+        });
 
-        finalPhotos = [...existingS3Photos, ...newS3Photos]
+        finalPhotos = [...existingS3Photos, ...newS3Photos];
+        
+        // Step 7: Clean up temporary compressed files
+        for (let i = 0; i < compressedPhotos.length; i++) {
+          const originalUrl = typeof newLocalPhotos[i].photo === 'string' ? newLocalPhotos[i].photo : newLocalPhotos[i].photo.url;
+          if (compressedPhotos[i].compressedUri !== originalUrl) {
+            try {
+              await FileSystem.deleteAsync(compressedPhotos[i].compressedUri, { idempotent: true });
+              console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
+            } catch (cleanupError) {
+              console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
+            }
+          }
+        }
       }
 
       // Ensure at least one photo is marked as primary
