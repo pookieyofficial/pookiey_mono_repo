@@ -35,6 +35,7 @@ const DatingPreferences = () => {
   const [minAge, setMinAge] = useState(18)
   const [maxAge, setMaxAge] = useState(50)
   const [distance, setDistance] = useState(50)
+  const [showMe, setShowMe] = useState<("male" | "female" | "other")[]>(['male', 'female', 'other'])
   const [showLocationDialog, setShowLocationDialog] = useState(false)
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const DatingPreferences = () => {
       setMinAge(dbUser.preferences.ageRange?.[0] || 18)
       setMaxAge(dbUser.preferences.ageRange?.[1] || 50)
       setDistance(dbUser.preferences.distanceMaxKm || 50)
+      setShowMe((dbUser.preferences.showMe || ['male', 'female', 'other']) as ("male" | "female" | "other")[])
     }
   }, [dbUser])
 
@@ -104,13 +106,19 @@ const DatingPreferences = () => {
       return
     }
 
+    if (showMe.length === 0) {
+      Alert.alert('Invalid Selection', 'Please select at least one gender preference')
+      return
+    }
+
     setIsLoading(true)
     try {
+
       const preferencesData = {
         preferences: {
           ageRange: [minAge, maxAge],
           distanceMaxKm: distance,
-          showMe: dbUser?.preferences?.showMe || ['male', 'female', 'other']
+          showMe: showMe
         }
       }
 
@@ -146,6 +154,59 @@ const DatingPreferences = () => {
             Preferences
           </ThemedText>
           
+
+          {/* Gender Preference Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="people-outline" size={24} color={Colors.primary.red} />
+              <ThemedText style={styles.sectionTitle}>Show Me</ThemedText>
+            </View>
+            
+            <ThemedText style={styles.genderDescription}>
+              Select the genders you're interested in seeing
+            </ThemedText>
+
+            <View style={styles.genderOptions}>
+              {(['male', 'female', 'other'] as const).map((gender) => {
+                const isSelected = showMe.includes(gender)
+                return (
+                  <TouchableOpacity
+                    key={gender}
+                    style={[
+                      styles.genderOption,
+                      isSelected && styles.genderOptionSelected
+                    ]}
+                    onPress={() => {
+                      if (isSelected) {
+                        // Don't allow deselecting if it's the last one
+                        if (showMe.length > 1) {
+                          setShowMe(showMe.filter(g => g !== gender))
+                        }
+                      } else {
+                        setShowMe([...showMe, gender])
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.genderCheckbox,
+                      isSelected && styles.genderCheckboxSelected
+                    ]}>
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={16} color={Colors.primary.white} />
+                      )}
+                    </View>
+                    <ThemedText style={[
+                      styles.genderLabel,
+                      isSelected && styles.genderLabelSelected
+                    ]}>
+                      {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </View>
 
           {/* Age Range Section */}
           <View style={styles.section}>
@@ -389,6 +450,52 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: Colors.text.secondary,
+  },
+  genderDescription: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  genderOptions: {
+    gap: 12,
+  },
+  genderOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.text.light,
+    backgroundColor: Colors.primary.white,
+  },
+  genderOptionSelected: {
+    borderColor: Colors.primary.red,
+    backgroundColor: Colors.primary.red + '10',
+  },
+  genderCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.text.light,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.primary.white,
+  },
+  genderCheckboxSelected: {
+    borderColor: Colors.primary.red,
+    backgroundColor: Colors.primary.red,
+  },
+  genderLabel: {
+    fontSize: 16,
+    color: Colors.text.primary,
+  },
+  genderLabelSelected: {
+    color: Colors.primary.red,
+    fontWeight: '600',
   },
 })
 

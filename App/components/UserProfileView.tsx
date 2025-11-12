@@ -188,19 +188,25 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
       return
     }
 
-    // Navigate to chat room
+    // Prepare chat room params
     const userName = displayUser.profile?.firstName || displayUser.displayName || 'User'
     const userAvatar = displayUser.profile?.photos?.[0]?.url || displayUser.photoURL || ''
 
-    router.push({
-      pathname: '/(home)/(tabs)/(chats)/chatRoom' as any,
-      params: {
-        matchId,
-        userName,
-        userAvatar,
-        userId: displayUser.user_id,
-      },
-    })
+    // First navigate to chat tab
+    router.push('/(home)/(tabs)/(chats)/' as any)
+    
+    // Then navigate to chat room after a brief delay to show the chat tab first
+    setTimeout(() => {
+      router.push({
+        pathname: '/(home)/(tabs)/(chats)/chatRoom' as any,
+        params: {
+          matchId,
+          userName,
+          userAvatar,
+          userId: displayUser.user_id,
+        },
+      })
+    }, 150)
   }
 
   const getAge = () => {
