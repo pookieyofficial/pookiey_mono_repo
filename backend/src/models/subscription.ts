@@ -1,22 +1,27 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { SubscriptionPlanId } from "../config/subscriptionPlans";
+
+export type SubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
 
 export interface ISubscription extends Document {
     userId: mongoose.Types.ObjectId;
-    plan: "silver" | "gold" | "diamond";
-    status: "active" | "expired" | "cancelled" | "pending";
+    plan: SubscriptionPlanId;
+    status: SubscriptionStatus;
     startDate: Date;
     endDate: Date;
     autoRenew: boolean;
-    paymentProvider: "stripe" | "razorpay" | "paypal" | "apple" | "google";
+    paymentProvider: "razorpay" | "stripe" | "paypal" | "apple" | "google";
     transactionId?: string;
+    lastPaymentAt?: Date;
+    metadata?: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
 }
 
 const SubscriptionSchema = new Schema<ISubscription>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-        plan: { type: String, enum: ["silver", "gold", "diamond"], required: true },
+        userId: { type: Schema.Types.ObjectId, ref: "Users", required: true, index: true },
+        plan: { type: String, enum: ["basic", "premium", "super"], required: true },
         status: {
             type: String,
             enum: ["active", "expired", "cancelled", "pending"],
@@ -27,13 +32,18 @@ const SubscriptionSchema = new Schema<ISubscription>(
         autoRenew: { type: Boolean, default: true },
         paymentProvider: {
             type: String,
-            enum: ["stripe", "razorpay", "paypal", "apple", "google"],
-            required: true,
+            enum: ["razorpay", "stripe", "paypal", "apple", "google"],
+            default: "razorpay",
         },
         transactionId: { type: String, index: true },
+        lastPaymentAt: { type: Date },
+        metadata: { type: Schema.Types.Mixed },
     },
     { timestamps: true }
 );
+
+SubscriptionSchema.index({ userId: 1, status: 1 });
+SubscriptionSchema.index({ userId: 1, plan: 1, status: 1 });
 
 export const Subscription = mongoose.model<ISubscription>(
     "Subscription",

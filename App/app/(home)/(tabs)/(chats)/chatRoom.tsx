@@ -11,7 +11,6 @@ import {
   Keyboard,
   Alert,
   ActivityIndicator,
-  Animated,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
@@ -63,7 +62,6 @@ export default function ChatRoom() {
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
-  const progressAnim = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
 
   const matchId = params.matchId as string;
@@ -227,9 +225,8 @@ export default function ChatRoom() {
         void currentSound.unloadAsync();
         soundRef.current = null;
       }
-      progressAnim.setValue(0);
     };
-  }, [progressAnim]);
+  }, []);
 
   const loadMessages = async () => {
     try {
@@ -258,10 +255,10 @@ export default function ChatRoom() {
     stopTyping(matchId);
   }, [inputThemedText, matchId, sendMessage, stopTyping]);
 
-  const handleTyping = useCallback((ThemedText: string) => {
-    setInputThemedText(ThemedText);
+  const handleTyping = useCallback((text: string) => {
+    setInputThemedText(text);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    if (ThemedText.length > 0) {
+    if (text.length > 0) {
       startTyping(matchId);
       typingTimeoutRef.current = setTimeout(() => stopTyping(matchId), 1000);
     } else stopTyping(matchId);
@@ -325,7 +322,7 @@ export default function ChatRoom() {
           'We could not send your voice note. Please try again.'
         );
       } finally {
-        await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => { });
         setUploadingAudio(false);
       }
     },
@@ -376,7 +373,7 @@ export default function ChatRoom() {
       if (shouldSend) {
         await handleSendVoiceNote(uri, durationSeconds);
       } else {
-        await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+        await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => { });
       }
     },
     [recording, handleSendVoiceNote]
@@ -400,7 +397,6 @@ export default function ChatRoom() {
         soundRef.current = null;
         setPlayingMessageId(null);
         setIsSoundPlaying(false);
-        progressAnim.setValue(0);
       }
 
       await Audio.setAudioModeAsync({
@@ -439,7 +435,24 @@ export default function ChatRoom() {
       }, 250);
     } catch (error) {
       console.error('Error starting recording:', error);
-      Alert.alert('Recording error', 'Unable to start recording. Please try again.');
+      setRecording(null);
+      setIsRecording(false);
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+      }).catch(() => { });
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Unable to start recording. Please try again.';
+      Alert.alert(
+        'Recording error',
+        errorMessage.includes('Session activation failed')
+          ? 'Another app is using the microphone or audio sources.'
+          : 'Unable to start recording. Please try again.'
+      );
+      return;
     }
   }, []);
 
@@ -478,7 +491,6 @@ export default function ChatRoom() {
           soundRef.current.setOnPlaybackStatusUpdate(null);
           await soundRef.current.unloadAsync();
           soundRef.current = null;
-          progressAnim.setValue(0);
         }
 
         await Audio.setAudioModeAsync({
@@ -500,26 +512,22 @@ export default function ChatRoom() {
         const initialDuration = (message.audioDuration ?? 0) * 1000;
         setPlaybackDuration(initialDuration);
         setIsSoundPlaying(true);
-        progressAnim.setValue(0);
 
         sound.setOnPlaybackStatusUpdate((status) => {
           if (!status.isLoaded) {
             return;
           }
 
-          setPlaybackPosition(status.positionMillis ?? 0);
-          if (typeof status.durationMillis === 'number') {
-            setPlaybackDuration(status.durationMillis);
-          }
           setIsSoundPlaying(status.isPlaying ?? false);
+
           const durationMillis =
             typeof status.durationMillis === 'number'
               ? status.durationMillis
               : (message.audioDuration ?? 0) * 1000;
           const positionMillis = status.positionMillis ?? 0;
-          const ratio =
-            durationMillis > 0 ? Math.min(positionMillis / durationMillis, 1) : 0;
-          progressAnim.setValue(Math.max(0, ratio));
+
+          setPlaybackPosition(positionMillis);
+          setPlaybackDuration(durationMillis);
 
           if (status.didJustFinish) {
             sound.setOnPlaybackStatusUpdate(null);
@@ -528,7 +536,6 @@ export default function ChatRoom() {
             setIsSoundPlaying(false);
             setPlaybackDuration((message.audioDuration ?? 0) * 1000);
             soundRef.current = null;
-            progressAnim.setValue(0);
             void sound.unloadAsync();
           }
         });
@@ -537,7 +544,7 @@ export default function ChatRoom() {
         Alert.alert('Playback error', 'Unable to play this voice note.');
       }
     },
-    [playingMessageId, progressAnim]
+    [playingMessageId]
   );
 
   // group messages with date dividers
@@ -570,72 +577,63 @@ export default function ChatRoom() {
           ? playbackDuration
           : (item.audioDuration ?? 0) * 1000;
       const currentPositionMs = isPlayingMessage ? playbackPosition : 0;
-      const currentSeconds = Math.max(0, Math.floor(currentPositionMs / 1000));
-      const totalSeconds =
-        totalDurationMs > 0
-          ? Math.max(0, Math.round(totalDurationMs / 1000))
-          : Math.max(0, item.audioDuration ?? 0);
       const progress =
-        totalDurationMs > 0
-          ? Math.min(currentPositionMs / totalDurationMs, 1)
-          : 0;
-      const playIconColor = isMine ? '#fff' : Colors.primaryBackgroundColor;
-      const trackColor = isMine ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)';
-      const progressColor = isMine ? 'rgba(255,255,255,0.8)' : Colors.primaryBackgroundColor;
-      const progressFillStyles = [
-        styles.voiceProgressFill,
-        { backgroundColor: progressColor },
-        isPlayingMessage
-          ? {
-              width: progressAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0%', '100%'],
-              }),
-            }
-          : {
-              width: `${Math.min(100, Math.max(4, progress * 100))}%`,
-            },
-      ];
+        totalDurationMs > 0 ? Math.min(currentPositionMs / totalDurationMs, 1) : 0;
 
       return (
         <View
           style={[
             styles.messageBubble,
             isMine ? styles.myMessage : styles.theirMessage,
+            { paddingVertical: 10, paddingHorizontal: 14 },
           ]}
         >
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => togglePlayback(item)}
-            style={styles.voiceMessageContent}
-          >
-            <View
+          <View style={styles.audioRow}>
+            {/* Play / Pause */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => togglePlayback(item)}
               style={[
-                styles.voicePlayButton,
-                isMine ? styles.myVoiceButton : styles.theirVoiceButton,
+                styles.audioPlayBtn,
+                { backgroundColor: isMine ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)' },
               ]}
             >
               <Ionicons
                 name={isPlayingMessage && isSoundPlaying ? 'pause' : 'play'}
                 size={18}
-                color={playIconColor}
+                color={isMine ? '#fff' : Colors.primaryBackgroundColor}
+              />
+            </TouchableOpacity>
+
+            {/* Thin progress line + moving dot */}
+            <View style={styles.audioProgressContainer}>
+              <View
+                style={[
+                  styles.audioProgressLine,
+                  { backgroundColor: isMine ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.15)' },
+                ]}
+              />
+              <View
+                style={[
+                  styles.audioProgressIndicator,
+                  {
+                    backgroundColor: isMine ? '#fff' : Colors.primaryBackgroundColor,
+                    left: `${progress * 100}%`,
+                  },
+                ]}
               />
             </View>
 
-            <View style={styles.voiceMessageBody}>
-              <View style={[styles.voiceProgressTrack, { backgroundColor: trackColor }]}>
-                <Animated.View style={progressFillStyles} />
-              </View>
-              <ThemedText
-                style={[
-                  styles.voiceTimer,
-                  isMine ? styles.myMessageTime : styles.theirMessageTime,
-                ]}
-              >
-                {`${formatDurationLabel(currentSeconds)} / ${formatDurationLabel(totalSeconds)}`}
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
+            {/* Duration */}
+            <ThemedText
+              style={[
+                styles.audioDuration,
+                isMine ? styles.myMessageTime : styles.theirMessageTime,
+              ]}
+            >
+              {formatDurationLabel(Math.max(0, Math.floor(totalDurationMs / 1000)))}
+            </ThemedText>
+          </View>
 
           <ThemedText
             style={[
@@ -649,6 +647,7 @@ export default function ChatRoom() {
       );
     }
 
+    // Text message
     return (
       <View
         style={[
@@ -722,7 +721,7 @@ export default function ChatRoom() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 0 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 1 : 0}
     >
       {/* Main Chat Area */}
       <FlatList
@@ -833,7 +832,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   dateText: { fontSize: 13, color: '#444', fontFamily: 'HellixMedium' },
-  messageBubble: { maxWidth: '75%', padding: 12, borderRadius: 18, marginBottom: 8 },
+  messageBubble: { maxWidth: '75%', padding: 12, borderRadius: 20, marginBottom: 8 },
   myMessage: { alignSelf: 'flex-end', backgroundColor: Colors.primaryBackgroundColor },
   theirMessage: { alignSelf: 'flex-start', backgroundColor: Colors.secondaryBackgroundColor },
   messageThemedText: { fontSize: 16, lineHeight: 20 },
@@ -891,31 +890,51 @@ const styles = StyleSheet.create({
   },
   sendButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   sendButtonDisabled: { opacity: 0.5 },
-  voiceMessageContent: { flexDirection: 'row', alignItems: 'center' },
-  voicePlayButton: {
+
+  // --- WhatsApp-like voice bubble ---
+  audioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  audioPlayBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  myVoiceButton: { backgroundColor: 'rgba(255,255,255,0.25)' },
-  theirVoiceButton: { backgroundColor: 'rgba(0,0,0,0.08)' },
-  voiceMessageBody: { flex: 1 },
-  voiceProgressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    overflow: 'hidden',
-    marginBottom: 8,
+  audioProgressContainer: {
+    flex: 1,
+    height: 20,
+    justifyContent: 'center',
+    position: 'relative',
   },
-  voiceProgressFill: {
-    height: '100%',
-    borderRadius: 2,
+  audioProgressLine: {
     position: 'absolute',
+    top: '50%',
     left: 0,
-    top: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 2,
+    transform: [{ translateY: -1 }],
   },
-  voiceTimer: { fontSize: 12, fontFamily: 'HellixMedium' },
+  audioProgressIndicator: {
+    position: 'absolute',
+    top: '50%',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    transform: [{ translateY: -5 }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+  },
+  audioDuration: {
+    fontSize: 12,
+    marginLeft: 8,
+    width: 50,
+    textAlign: 'right',
+  },
 });

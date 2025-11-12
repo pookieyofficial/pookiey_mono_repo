@@ -3,3 +3,5 @@ export { Matches } from "./Matches";
 export { Report } from "./Report";
 export { Messages } from "./Messages";
 export { Story } from "./Story";
+export { Subscription } from "./subscription";
+export { PaymentTransaction } from "./payment";
