@@ -1,76 +1,50 @@
-# Dating App Backend
+# Pookiey Backend
 
-A robust backend API for the dating app built with Node.js, Express.js, MongoDB, and Firebase Admin SDK.
+Supabase-secured subscription and messaging API for the Pookiey dating ecosystem, built with Express, MongoDB, and Razorpay.
 
-## Features
+## Key Capabilities
 
-- 🔥 Firebase Authentication integration
-- 🍃 MongoDB database connection
-- 🚀 Express.js REST API
-- 🔒 JWT token authentication
-- 🛡️ Security middleware (Helmet, CORS)
-- 🏥 Health check endpoints
-- 📱 Mobile app ready
-- 🔄 Graceful shutdown handling
-- 🚀 TypeScript with strict configuration
-- 🔧 ESLint for code quality
+- Supabase access-token verification via service role key
+- MongoDB with Mongoose models for users, subscriptions, payments, matches, stories, and messaging
+- REST APIs secured with bearer tokens
+- Razorpay order creation and signature verification for plan purchases
+- Structured payment logging and automatic subscription lifecycle updates
+- Socket.io for realtime messaging (unchanged)
 
-## Getting Started
+## Setup
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- MongoDB (local or Atlas)
-- Firebase project with Admin SDK
+- Node.js 18+
+- MongoDB (local replica or Atlas cluster)
+- Supabase project with email/password auth enabled
+- Razorpay account (test keys are sufficient for sandbox mode)
+- Existing AWS/S3 credentials if you are already using the media upload routes
 
-### Installation
+1. Create a `.env` file (see variables below).
+2. Install dependencies with `npm install`.
+3. Start the API in watch mode via `npm run dev` (or `npm run build && npm start` for production).
 
-1. Install dependencies:
-```bash
-npm install
+### Environment Variables
+
 ```
-
-2. Create environment file:
-```bash
-# Create a .env file with the following variables:
-```
-
-3. Configure your environment variables in `.env`:
-```bash
-# Server Configuration
-PORT=3000
+PORT=6969
 NODE_ENV=development
+MONGO_URI=mongodb://127.0.0.1:27017/pookiey
 
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/dating-app
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=service-role-key-from-supabase
 
-# Firebase Configuration (get from Firebase Console > Project Settings > Service Accounts)
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY_ID=your-private-key-id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour-private-key\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=your-client-email@your-project-id.iam.gserviceaccount.com
-FIREBASE_CLIENT_ID=your-client-id
+# Razorpay (test keys work for sandbox)
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxx
 
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=7d
-```
-
-### Development
-
-Run the development server:
-```bash
-npm run dev
-```
-
-Build the project:
-```bash
-npm run build
-```
-
-Start production server:
-```bash
-npm start
+# Existing env (if already configured)
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=...
+S3_BUCKET_NAME=...
 ```
 
 ## API Endpoints
@@ -80,85 +54,51 @@ npm start
 - `GET /health` - Health check with service status
 
 ### Authentication
-All protected routes require a Bearer token in the Authorization header:
+All protected routes require the Supabase access token:
 ```
-Authorization: Bearer <firebase-id-token>
+Authorization: Bearer <supabase-access-token>
 ```
 
 ## Project Structure
 
 ```
 src/
-├── config/
-│   ├── env.ts          # Environment configuration
-│   ├── database.ts     # MongoDB connection
-│   └── firebase.ts     # Firebase Admin SDK setup
-├── middleware/
-│   └── auth.ts         # Authentication middleware
-├── types/
-│   └── index.ts        # TypeScript type definitions
-└── index.ts            # Main application entry point
+├── config/               # Supabase, MongoDB, Razorpay configuration
+├── controllers/          # Express route handlers
+├── middleware/           # Supabase token verification
+├── models/               # Mongoose schemas (Users, Subscription, PaymentTransaction, etc.)
+├── routes/               # REST route definitions
+├── services/             # Subscription/payment orchestration logic
+└── index.ts              # Express bootstrap
 ```
-
-## Database Schema
-
-### Users Collection
-- User profiles and authentication data
-- Firebase UID integration
-- Location-based matching support
-
-### Matches Collection
-- User matching system
-- Match status tracking
-
-### Messages Collection
-- Real-time messaging support
-- Message types (text, image, gif)
-- Read status tracking
-
-## Firebase Setup
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select existing
-3. Enable Authentication and Firestore
-4. Go to Project Settings > Service Accounts
-5. Generate a new private key
-6. Copy the credentials to your `.env` file
-
-## MongoDB Setup
-
-### Local MongoDB
-```bash
-# Install MongoDB locally
-# macOS
-brew install mongodb/brew/mongodb-community
-
-# Start MongoDB service
-brew services start mongodb/brew/mongodb-community
-```
-
-### MongoDB Atlas
-1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
-2. Create a cluster
-3. Get connection string
-4. Update `MONGODB_URI` in `.env`
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PORT` | Server port | No (default: 3000) |
-| `NODE_ENV` | Environment mode | No (default: development) |
-| `MONGODB_URI` | MongoDB connection string | Yes |
-| `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
-| `FIREBASE_PRIVATE_KEY` | Firebase private key | Yes |
-| `FIREBASE_CLIENT_EMAIL` | Firebase client email | Yes |
-| `JWT_SECRET` | JWT signing secret | Yes |
 
 ## Scripts
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JavaScript
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Run the API in watch mode |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm start` | Launch compiled build |
+| `npm run lint` | ESLint over `src/**/*.ts` |
+
+## Subscription & Payment APIs
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/v1/subscriptions/plans` | Fetch available plan catalog (`basic`, `premium`, `super`) |
+| `GET` | `/api/v1/subscriptions/current` | Returns the user's active subscription if present |
+| `GET` | `/api/v1/subscriptions/payments` | Most recent payment attempts for the user |
+| `POST` | `/api/v1/subscriptions/create-order` | Creates a Razorpay order and logs a `PaymentTransaction` document |
+| `POST` | `/api/v1/subscriptions/verify` | Validates Razorpay signature, marks payment captured, and upserts `Subscription` |
+
+## Data Model Changes
+
+- `Subscription` model now supports the `basic`, `premium`, and `super` plans, tracks `lastPaymentAt`, and stores lightweight metadata for future analytics.
+- New `PaymentTransaction` model logs every Razorpay order + payment lifecycle state.
+- Both models are indexed on user id to keep lookups fast.
+
+## Monitoring & Production Notes
+
+- Razorpay errors are surfaced in the API response; consider piping them to your logging solution (e.g. Datadog, Sentry).
+- Mongo collections now rely on additional indexes; run `npm run build` once before deploying to ensure Mongoose creates them.
+- The architecture is provider-agnostic: plug in webhooks and retry strategies by extending `subscriptionService`.

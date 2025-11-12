@@ -1,4 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { SubscriptionStatus } from "./subscription";
+import { SubscriptionPlanId } from "../config/subscriptionPlans";
 
 export interface IUser extends Document {
     user_id: string;
@@ -12,6 +14,7 @@ export interface IUser extends Document {
     status: "active" | "banned" | "deleted" | "suspended";
     profile?: IUserProfile;
     preferences?: IUserPreferences;
+    subscription?: IUserSubscriptionSnapshot;
     createdAt: Date;
     updatedAt: Date;
     lastLoginAt?: Date;
@@ -51,6 +54,17 @@ export interface IUserPreferences {
         comment: boolean;
         follow: boolean;
     };
+}
+
+export interface IUserSubscriptionSnapshot {
+    status: SubscriptionStatus | "none";
+    plan?: SubscriptionPlanId | null;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    autoRenew?: boolean;
+    lastPaymentAt?: Date | null;
+    provider?: "razorpay" | "stripe" | "paypal" | "apple" | "google" | null;
+    updatedAt?: Date | null;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -104,6 +118,28 @@ const UserSchema = new Schema<IUser>(
             distanceMaxKm: { type: Number, default: 50 },
             ageRange: { type: [Number], default: [18, 35] },
             showMe: { type: [String], enum: ["male", "female", "other"] },
+        },
+        subscription: {
+            status: {
+                type: String,
+                enum: ["none", "pending", "active", "expired", "cancelled"],
+                default: "none",
+            },
+            plan: {
+                type: String,
+                enum: ["basic", "premium", "super", null],
+                default: null,
+            },
+            startDate: { type: Date, default: null },
+            endDate: { type: Date, default: null },
+            autoRenew: { type: Boolean, default: true },
+            lastPaymentAt: { type: Date, default: null },
+            provider: {
+                type: String,
+                enum: ["razorpay", "stripe", "paypal", "apple", "google", null],
+                default: null,
+            },
+            updatedAt: { type: Date, default: null },
         },
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, default: Date.now },

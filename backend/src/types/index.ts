@@ -14,6 +14,7 @@ export interface User {
   lastLoginAt?: Date;
   status: 'active' | 'inactive' | 'blocked' | 'deleted';
   preferences: UserPreferences;
+  subscription?: UserSubscriptionSnapshot;
 
 }
 
@@ -86,5 +87,16 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
     total: number;
     totalPages: number;
   };
+}
+
+export interface UserSubscriptionSnapshot {
+  status: 'none' | 'pending' | 'active' | 'expired' | 'cancelled';
+  plan?: 'basic' | 'premium' | 'super' | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  autoRenew?: boolean;
+  lastPaymentAt?: Date | null;
+  provider?: 'razorpay' | 'stripe' | 'paypal' | 'apple' | 'google' | null;
+  updatedAt?: Date | null;
 }
 

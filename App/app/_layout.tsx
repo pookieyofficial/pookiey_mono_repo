@@ -46,8 +46,6 @@ export default function RootLayout() {
           <Stack initialRouteName='(auth)' screenOptions={{ headerShown: false }}>
             <Stack.Screen name='(auth)' />
             <Stack.Screen name='(home)' />
-            <Stack.Screen name='matchingScreen'/>
-            <Stack.Screen name='imageGallery' options={{ presentation: 'fullScreenModal' }} />
           </Stack>
         </ThemeProvider>
       </PaperProvider>
