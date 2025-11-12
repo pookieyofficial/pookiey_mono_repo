@@ -166,17 +166,22 @@ export default function StoriesScreen() {
     router.push('/(home)/(tabs)/(story)/create' as any);
   };
 
-  const handleCloseStory = () => {
+  const handleCloseStory = async () => {
     if (storyTimer.current) {
       clearTimeout(storyTimer.current);
       storyTimer.current = null;
     }
-    // Stop video if playing
+    // Stop video if playing - await to ensure it completes
     if (videoRef.current) {
-      videoRef.current.pauseAsync();
-      videoRef.current.unloadAsync();
+      try {
+        await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
+      } catch (error) {
+        console.error('Error stopping video:', error);
+      }
     }
     progressAnim.setValue(0);
+    progressAnim.stopAnimation();
     setSelectedStoryIndex(null);
     setCurrentUserIndex(0);
     setCurrentStoryIndex(0);
@@ -185,6 +190,32 @@ export default function StoriesScreen() {
     // No need to navigate - setting selectedStoryIndex to null will show the list view
     // Refresh stories to update view status
     loadStories();
+  };
+
+  const handleBackButton = async () => {
+    // Clean up story resources
+    if (storyTimer.current) {
+      clearTimeout(storyTimer.current);
+      storyTimer.current = null;
+    }
+    // Stop video if playing - await to ensure it completes
+    if (videoRef.current) {
+      try {
+        await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
+      } catch (error) {
+        console.error('Error stopping video:', error);
+      }
+    }
+    progressAnim.setValue(0);
+    progressAnim.stopAnimation();
+    setSelectedStoryIndex(null);
+    setCurrentUserIndex(0);
+    setCurrentStoryIndex(0);
+    setViewedStoryIds(new Set());
+    setShowMenu(false);
+    // Navigate to home tab
+    router.push('/(home)/(tabs)/index' as any);
   };
 
   const handleDeleteStory = async () => {
@@ -303,12 +334,16 @@ export default function StoriesScreen() {
   }, [getAllStories, currentUserIndex, currentStoryIndex]);
 
   // Navigate to next story
-  const nextStory = useCallback(() => {
+  const nextStory = useCallback(async () => {
     progressAnim.stopAnimation();
-    // Stop current video if playing
+    // Stop current video if playing - await to ensure it completes
     if (videoRef.current) {
-      videoRef.current.pauseAsync();
-      videoRef.current.unloadAsync();
+      try {
+        await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
+      } catch (error) {
+        console.error('Error stopping video:', error);
+      }
     }
     const allStories = getAllStories();
     if (allStories.length === 0) {
@@ -331,12 +366,16 @@ export default function StoriesScreen() {
   }, [getAllStories, currentUserIndex, currentStoryIndex, progressAnim, handleCloseStory]);
 
   // Navigate to previous story
-  const prevStory = useCallback(() => {
+  const prevStory = useCallback(async () => {
     progressAnim.stopAnimation();
-    // Stop current video if playing
+    // Stop current video if playing - await to ensure it completes
     if (videoRef.current) {
-      videoRef.current.pauseAsync();
-      videoRef.current.unloadAsync();
+      try {
+        await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
+      } catch (error) {
+        console.error('Error stopping video:', error);
+      }
     }
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex(currentStoryIndex - 1);
@@ -404,6 +443,14 @@ export default function StoriesScreen() {
       setCurrentStoryIndex(0);
       progressAnim.setValue(0);
       setWasViewingStory(null); // Clear the flag when starting a new story
+    } else {
+      // When story viewer closes, ensure video is stopped
+      if (videoRef.current) {
+        videoRef.current.pauseAsync()
+          .then(() => videoRef.current?.unloadAsync())
+          .catch(() => {});
+      }
+      progressAnim.stopAnimation();
     }
   }, [selectedStoryIndex, progressAnim]);
 
@@ -465,10 +512,14 @@ export default function StoriesScreen() {
     return () => {
       if (storyTimer.current) {
         clearTimeout(storyTimer.current);
+        storyTimer.current = null;
       }
       progressAnim.stopAnimation();
+      // Ensure video is stopped and unloaded when component unmounts or story changes
       if (videoRef.current) {
-        videoRef.current.pauseAsync().catch(() => {});
+        videoRef.current.pauseAsync()
+          .then(() => videoRef.current?.unloadAsync())
+          .catch(() => {});
       }
     };
   }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim, getCurrentStory]);
@@ -604,8 +655,14 @@ export default function StoriesScreen() {
         clearTimeout(storyTimer.current);
         storyTimer.current = null;
       }
+      // Stop and unload video if playing
       if (videoRef.current) {
-        videoRef.current.pauseAsync();
+        try {
+          await videoRef.current.pauseAsync();
+          await videoRef.current.unloadAsync();
+        } catch (error) {
+          console.error('Error stopping video:', error);
+        }
       }
       progressAnim.stopAnimation();
       
@@ -656,6 +713,7 @@ export default function StoriesScreen() {
         {/* Story Media (Image or Video) */}
         {story.type === 'video' ? (
           <Video
+            key={`video-${story.id}-${currentUserIndex}-${currentStoryIndex}`}
             ref={videoRef}
             source={{ uri: story.url }}
             style={styles.storyImage}
@@ -699,14 +757,7 @@ export default function StoriesScreen() {
         {/* Header with Back Button, Profile and Close/Menu Button */}
         <View style={[styles.storyHeader, { top: insets.top + 3 }]}>
           <View style={styles.storyHeaderRow}>
-            {/* Custom Back Button */}
-            <TouchableOpacity 
-              onPress={handleCloseStory} 
-              style={styles.storyBackButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={24} color={Colors.primary.white} />
-            </TouchableOpacity>
+
             
             {/* Profile Section */}
             <TouchableOpacity 
@@ -1022,16 +1073,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     gap: 12,
   },
-  storyBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
+
   storyHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',

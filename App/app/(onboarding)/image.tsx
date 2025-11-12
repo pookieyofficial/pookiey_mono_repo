@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Alert, Dimensions, ScrollView, Anim
 import { Image } from 'expo-image';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3';
 import { useOnboardingStore } from '@/store/onboardingStore';
+import { compressImageToJPEG } from '@/utils/imageCompression';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_SIZE = (screenWidth - 80) / 3;
@@ -46,39 +48,85 @@ export default function PremiumImageSelectorScreen() {
   const handleupload = async () => {
     try {
       if (!Array.isArray(photos) || photos.length === 0) {
-        const arrayofPresignedUrls = await requestPresignedURl(selectedImageMimeTypes)
-        //here we have to parse the localImageurl, presignedurl, mimeType from the array and have to make an array
-        let resultArray = []
-
+        console.log('🔄 Compressing images for onboarding...');
+        
+        // Step 1: Compress all images
+        const compressedImages = [];
+        const compressedMimeTypes = [];
+        
         for (let i = 0; i < selectedImages.length; i++) {
-          let obj = {
-            LocalUrl: selectedImages[i],
-            PresignedUrl: arrayofPresignedUrls[i].uploadUrl,
-            MimeType: selectedImageMimeTypes[i]
+          try {
+            const compressed = await compressImageToJPEG(
+              selectedImages[i],
+              0.8,  // Good quality for profile photos
+              1920, // Max width
+              1920  // Max height
+            );
+            
+            compressedImages.push(compressed.uri);
+            compressedMimeTypes.push(compressed.mimeType);
+            
+            // Log compression stats
+            const originalInfo = await FileSystem.getInfoAsync(selectedImages[i]);
+            if (originalInfo.exists && compressed.size) {
+              const originalSize = (originalInfo as any).size;
+              const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
+              console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+            }
+          } catch (compressionError) {
+            console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
+            compressedImages.push(selectedImages[i]);
+            compressedMimeTypes.push(selectedImageMimeTypes[i]);
           }
-          resultArray.push(obj)
         }
-        let ImagePublicUrl = []
-        for (let i = 0; i < selectedImages.length; i++) {
-          const fileUrl = arrayofPresignedUrls[i].fileURL
-          console.log({ fileUrl })
-          ImagePublicUrl.push(fileUrl)
+        
+        console.log('✅ All images compressed successfully');
+        
+        // Step 2: Request presigned URLs with compressed image MIME types
+        const arrayofPresignedUrls = await requestPresignedURl(compressedMimeTypes);
+        
+        // Step 3: Prepare result array with compressed images
+        let resultArray = [];
+        for (let i = 0; i < compressedImages.length; i++) {
+          let obj = {
+            LocalUrl: compressedImages[i],
+            PresignedUrl: arrayofPresignedUrls[i].uploadUrl,
+            MimeType: compressedMimeTypes[i]
+          };
+          resultArray.push(obj);
         }
+        
+        let ImagePublicUrl = [];
+        for (let i = 0; i < compressedImages.length; i++) {
+          const fileUrl = arrayofPresignedUrls[i].fileURL;
+          console.log({ fileUrl });
+          ImagePublicUrl.push(fileUrl);
+        }
+        
         // Save the public URLs to Zustand store
         setPhotos(ImagePublicUrl);
         console.log("Photos saved to store:", ImagePublicUrl);
-        console.log("publicurl of image is ", photos)
+        console.log("publicurl of image is ", photos);
         console.log("resultArray", resultArray);
 
-        const uploadResponse = await uploadMultipleTos3(resultArray)
-
-
-
-
-        console.log("uploadResponse", uploadResponse)
+        // Step 4: Upload compressed images to S3
+        const uploadResponse = await uploadMultipleTos3(resultArray);
+        console.log("uploadResponse", uploadResponse);
+        
+        // Step 5: Clean up temporary compressed files
+        for (let i = 0; i < compressedImages.length; i++) {
+          if (compressedImages[i] !== selectedImages[i]) {
+            try {
+              await FileSystem.deleteAsync(compressedImages[i], { idempotent: true });
+              console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
+            } catch (cleanupError) {
+              console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
+            }
+          }
+        }
       }
     } catch (error) {
-      console.log("error from handleUpload", error)
+      console.log("error from handleUpload", error);
     }
   }
 

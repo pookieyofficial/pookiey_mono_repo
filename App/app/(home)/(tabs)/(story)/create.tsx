@@ -26,6 +26,7 @@ import { useAuthStore } from '@/store/authStore';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
+import { compressImageToJPEG } from '@/utils/imageCompression';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -417,7 +418,36 @@ export default function CreateStoryScreen() {
     setUploading(true);
 
     try {
-      const mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
+      let mediaToUpload = capturedMedia;
+      let mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
+
+      // Compress image to JPEG if it's an image
+      if (mediaType === 'image') {
+        console.log('🔄 Compressing image for story...');
+        try {
+          const compressed = await compressImageToJPEG(
+            capturedMedia,
+            0.85, // High quality for stories
+            1080, // Max width for stories (9:16 aspect ratio)
+            1920  // Max height for stories
+          );
+          mediaToUpload = compressed.uri;
+          mimeType = compressed.mimeType;
+          console.log('✅ Image compressed successfully');
+          
+          // Log compression results
+          const originalInfo = await FileSystem.getInfoAsync(capturedMedia);
+          if (originalInfo.exists && compressed.size) {
+            const originalSize = (originalInfo as any).size;
+            const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
+            console.log(`📊 Compression: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+          }
+        } catch (compressionError) {
+          console.error('⚠️ Image compression failed, uploading original:', compressionError);
+          // Continue with original image if compression fails
+        }
+      }
+
       const presignedUrls = await requestPresignedURl([mimeType]);
       
       if (!presignedUrls || presignedUrls.length === 0) {
@@ -425,10 +455,20 @@ export default function CreateStoryScreen() {
       }
 
       const { uploadUrl, fileURL } = presignedUrls[0];
-      const uploadSuccess = await uploadTos3(capturedMedia, uploadUrl, mimeType);
+      const uploadSuccess = await uploadTos3(mediaToUpload, uploadUrl, mimeType);
       
       if (!uploadSuccess) {
         throw new Error('Failed to upload media');
+      }
+
+      // Clean up compressed temporary file if different from original
+      if (mediaType === 'image' && mediaToUpload !== capturedMedia) {
+        try {
+          await FileSystem.deleteAsync(mediaToUpload, { idempotent: true });
+          console.log('🗑️ Cleaned up temporary compressed file');
+        } catch (cleanupError) {
+          console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
+        }
       }
 
       // Create story
