@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { CameraView, CameraType, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import { Colors } from '@/constants/Colors';
 import { ThemedText } from '@/components/ThemedText';
@@ -38,36 +38,22 @@ export default function CreateStoryScreen() {
   
   // Camera states
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
   const [mediaLibraryPermission, setMediaLibraryPermission] = useState<{ granted: boolean } | null>(null);
   const [facing, setFacing] = useState<CameraType>('back');
-  const [isRecording, setIsRecording] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   
   // Media states
   const [capturedMedia, setCapturedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [uploading, setUploading] = useState(false);
-  
-  // Recording timer
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isPressedRef = useRef(false);
-  const isRecordingStartedRef = useRef(false);
-  const recordingStartTimeRef = useRef<number | null>(null);
-  const recordingPromiseRef = useRef<Promise<{ uri: string } | undefined> | null>(null);
-  const [showHoldHint, setShowHoldHint] = useState(false);
-  const [isRecordingInitializing, setIsRecordingInitializing] = useState(false);
   const videoRef = useRef<Video>(null);
-  const MIN_RECORDING_DURATION = 1500; // Minimum 1.5 second recording (in milliseconds)
 
   // File size limits
   const MAX_IMAGE_SIZE = 7 * 1024 * 1024; // 7 MB in bytes
   const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30 MB in bytes
   const MAX_VIDEO_DURATION = 30; // 30 seconds
 
-  // Request camera and microphone permissions on mount
+  // Request camera permission on mount
   useEffect(() => {
     const requestPermissions = async () => {
       try {
@@ -75,28 +61,13 @@ export default function CreateStoryScreen() {
           const result = await requestCameraPermission();
           console.log('Camera permission result:', result);
         }
-        if (!microphonePermission?.granted) {
-          const result = await requestMicrophonePermission();
-          console.log('Microphone permission result:', result);
-        }
       } catch (error) {
         console.error('Error requesting permissions:', error);
       }
     };
     requestPermissions();
-  }, [cameraPermission, microphonePermission]);
+  }, [cameraPermission]);
 
-  // Clean up timers on unmount
-  useEffect(() => {
-    return () => {
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      if (pressTimerRef.current) {
-        clearTimeout(pressTimerRef.current);
-      }
-    };
-  }, []);
 
   // Play video when preview is shown
   useEffect(() => {
@@ -140,195 +111,6 @@ export default function CreateStoryScreen() {
     }
   };
 
-  // Start recording video
-  const handleStartRecording = async () => {
-    if (!cameraRef.current || isRecording) {
-      console.log('Cannot start recording - camera ref or already recording');
-      return;
-    }
-
-    // Check microphone permission before recording
-    if (!microphonePermission?.granted) {
-      console.log('Microphone permission not granted, requesting...');
-      Alert.alert(
-        'Microphone Permission Required', 
-        'Please grant microphone access to record video with audio.',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          },
-          {
-            text: 'Grant Permission',
-            onPress: async () => {
-              const result = await requestMicrophonePermission();
-              console.log('Microphone permission request result:', result);
-            }
-          }
-        ]
-      );
-      return;
-    }
-
-    try {
-      console.log('Starting video recording...');
-      setIsRecording(true);
-      setIsRecordingInitializing(true);
-      setRecordingDuration(0);
-      isRecordingStartedRef.current = false;
-      recordingStartTimeRef.current = null;
-
-      // Start the recording and store the promise
-      const recordingPromise = cameraRef.current.recordAsync({
-        maxDuration: MAX_VIDEO_DURATION,
-      });
-      recordingPromiseRef.current = recordingPromise;
-
-      // Mark that recording has started after sufficient delay
-      // Camera needs time to initialize recording - Snapchat style: wait longer
-      setTimeout(() => {
-        if (isRecording && recordingPromiseRef.current) {
-          isRecordingStartedRef.current = true;
-          setIsRecordingInitializing(false);
-          recordingStartTimeRef.current = Date.now();
-          console.log('Recording actually started and ready');
-        }
-      }, 1500); // Give camera 1500ms to fully initialize (Snapchat style)
-
-      // Start timer for UI
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingDuration(prev => {
-          const newDuration = prev + 1;
-          if (newDuration >= MAX_VIDEO_DURATION) {
-            handleStopRecording();
-          }
-          return newDuration;
-        });
-      }, 1000);
-
-      // Wait for recording to complete
-      const video = await recordingPromise;
-      recordingPromiseRef.current = null;
-      
-      console.log('Video recording completed:', video?.uri);
-
-      if (video && video.uri) {
-        // Check file size
-        try {
-          const fileInfo = await FileSystem.getInfoAsync(video.uri);
-          if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_VIDEO_SIZE) {
-            Alert.alert('File too large', `Video size must be less than 30 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
-            return;
-          }
-        } catch (error) {
-          console.error('Error checking file size:', error);
-        }
-
-        setCapturedMedia(video.uri);
-        setMediaType('video');
-      }
-    } catch (error: any) {
-      console.error('Error recording video:', error);
-      recordingPromiseRef.current = null;
-      // Only show error if it's not the "stopped too early" error
-      if (!error.message?.includes('before any data could be produced')) {
-        Alert.alert('Error', 'Failed to record video');
-      }
-    } finally {
-      setIsRecording(false);
-      setIsRecordingInitializing(false);
-      isRecordingStartedRef.current = false;
-      recordingStartTimeRef.current = null;
-      recordingPromiseRef.current = null;
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      setRecordingDuration(0);
-    }
-  };
-
-  // Stop recording video (Snapchat style - ensures recording has data)
-  const handleStopRecording = async () => {
-    if (!cameraRef.current || !isRecording || !recordingPromiseRef.current) {
-      console.log('Cannot stop recording - not currently recording or no promise');
-      return;
-    }
-
-    // CRITICAL: Wait for recording to actually start (Snapchat style)
-    if (!isRecordingStartedRef.current) {
-      console.log('Recording not initialized yet, waiting for camera to be ready...');
-      // Wait for the full initialization time (1500ms) + a bit more for safety
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Double check it started
-      if (!isRecordingStartedRef.current) {
-        console.log('Recording still not started, waiting more...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    // Now ensure minimum recording duration has passed (Snapchat ensures at least 1.5s)
-    if (recordingStartTimeRef.current) {
-      const elapsed = Date.now() - recordingStartTimeRef.current;
-      if (elapsed < MIN_RECORDING_DURATION) {
-        console.log(`Recording too short (${elapsed}ms), waiting for minimum ${MIN_RECORDING_DURATION}ms...`);
-        const remaining = MIN_RECORDING_DURATION - elapsed;
-        await new Promise(resolve => setTimeout(resolve, remaining));
-      }
-    } else {
-      // Fallback: wait full minimum duration if timestamp not set
-      console.log('No recording timestamp, waiting full minimum duration...');
-      await new Promise(resolve => setTimeout(resolve, MIN_RECORDING_DURATION + 500));
-    }
-    
-    console.log('Stopping video recording now (recording has data)...');
-    try {
-      if (cameraRef.current && isRecording) {
-        cameraRef.current.stopRecording();
-      }
-    } catch (error) {
-      console.error('Error stopping recording:', error);
-    }
-  };
-
-  // Handle press down - start timer to detect long press
-  const handlePressIn = () => {
-    isPressedRef.current = true;
-    setShowHoldHint(true);
-    
-    // Set a timer for 600ms to detect if this is a long press
-    // This gives enough time to distinguish from a tap
-    pressTimerRef.current = setTimeout(() => {
-      if (isPressedRef.current) {
-        // Long press detected - start recording video
-        console.log('Long press detected (600ms) - starting video recording');
-        setShowHoldHint(false);
-        handleStartRecording();
-      }
-    }, 1000);
-  };
-
-  // Handle press up - determine if photo or stop video
-  const handlePressOut = async () => {
-    const wasPressed = isPressedRef.current;
-    isPressedRef.current = false;
-    setShowHoldHint(false);
-    
-    if (pressTimerRef.current) {
-      clearTimeout(pressTimerRef.current);
-      pressTimerRef.current = null;
-    }
-
-    if (isRecording) {
-      // Was recording - stop the video (with minimum duration check)
-      console.log('Releasing button - stopping video recording');
-      await handleStopRecording();
-    } else if (!isRecording && wasPressed) {
-      // Was not recording and quick tap - take photo
-      console.log('Quick tap - taking photo');
-      handleTakePhoto();
-    }
-  };
 
   // Save media to device storage
   const saveToDevice = async (uri: string, type: 'image' | 'video') => {
@@ -565,7 +347,7 @@ export default function CreateStoryScreen() {
   };
 
   // Show loading while checking permissions
-  if (!cameraPermission || !microphonePermission) {
+  if (!cameraPermission) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
@@ -574,34 +356,24 @@ export default function CreateStoryScreen() {
   }
 
   // Show permission request screen if needed
-  if (!cameraPermission.granted || !microphonePermission.granted) {
-    const needsCamera = !cameraPermission.granted;
-    const needsMicrophone = !microphonePermission.granted;
-    
+  if (!cameraPermission.granted) {
     return (
       <View style={styles.permissionContainer}>
         <Ionicons 
-          name={needsCamera ? "camera-outline" : "mic-outline"} 
+          name="camera-outline" 
           size={80} 
           color={Colors.text.tertiary} 
         />
         <ThemedText type="subtitle" style={styles.permissionTitle}>
-          {needsCamera && needsMicrophone ? 'Camera & Microphone Access Required' : 
-           needsCamera ? 'Camera Access Required' : 
-           'Microphone Access Required'}
+          Camera Access Required
         </ThemedText>
         <Text style={styles.permissionText}>
-          {needsCamera && needsMicrophone 
-            ? 'We need access to your camera and microphone to capture photos and videos with audio for your story.'
-            : needsCamera
-            ? 'We need access to your camera to capture photos and videos for your story.'
-            : 'We need access to your microphone to record audio for your videos.'}
+          We need access to your camera to capture photos for your story.
         </Text>
         <TouchableOpacity 
           style={styles.permissionButton} 
           onPress={async () => {
-            if (needsCamera) await requestCameraPermission();
-            if (needsMicrophone) await requestMicrophonePermission();
+            await requestCameraPermission();
           }}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
@@ -710,11 +482,7 @@ export default function CreateStoryScreen() {
             </TouchableOpacity>
             <View style={styles.headerCenter}>
               <ThemedText type="defaultSemiBold" style={styles.cameraTitle}>
-                {isRecordingInitializing 
-                  ? 'Starting...' 
-                  : isRecording 
-                  ? 'Recording...' 
-                  : 'Tap to Capture'}
+                Tap to Capture
               </ThemedText>
             </View>
             <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
@@ -722,31 +490,13 @@ export default function CreateStoryScreen() {
             </TouchableOpacity>
           </SafeAreaView>
 
-          {/* Recording Timer */}
-          {isRecording && (
-            <View style={styles.recordingIndicator}>
-              <View style={styles.recordingDot} />
-              <Text style={styles.recordingTime}>
-                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')} / 0:30
-              </Text>
-            </View>
-          )}
-
           {/* Camera Controls */}
           <SafeAreaView style={styles.cameraControls} edges={['bottom']}>
-            {/* Hold Hint */}
-            {showHoldHint && (
-              <View style={styles.holdHint}>
-                <Text style={styles.holdHintText}>Keep holding to record video...</Text>
-              </View>
-            )}
-            
             <View style={styles.controlsRow}>
               {/* Gallery Button */}
               <TouchableOpacity
                 style={styles.galleryButton}
                 onPress={handlePickFromGallery}
-                disabled={isRecording}
               >
                 <Ionicons name="images" size={32} color="#fff" />
                 <Text style={styles.galleryButtonText}>Gallery</Text>
@@ -754,18 +504,17 @@ export default function CreateStoryScreen() {
 
               {/* Capture Button */}
               <TouchableOpacity
-                style={[styles.captureButton, isRecording && styles.captureButtonRecording]}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
+                style={styles.captureButton}
+                onPress={handleTakePhoto}
                 activeOpacity={0.8}
               >
-                <View style={[styles.captureButtonInner, isRecording && styles.captureButtonInnerRecording]} />
+                <View style={styles.captureButtonInner} />
               </TouchableOpacity>
 
               {/* Help Text */}
               <View style={styles.helpContainer}>
                 <Text style={styles.helpText}>Tap for photo</Text>
-                <Text style={styles.helpText}>Hold 1s+ for video</Text>
+                <Text style={styles.helpText}>Gallery for video</Text>
               </View>
             </View>
           </SafeAreaView>
@@ -859,30 +608,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 24,
   },
-  // Recording Indicator
-  recordingIndicator: {
-    position: 'absolute',
-    top: 100,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,0,0,0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#fff',
-  },
-  recordingTime: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   // Camera Controls
   cameraControls: {
     position: 'absolute',
@@ -892,19 +617,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  holdHint: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(233,64,87,0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  holdHintText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   controlsRow: {
     flexDirection: 'row',
@@ -931,21 +643,11 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#fff',
   },
-  captureButtonRecording: {
-    backgroundColor: 'rgba(255,0,0,0.3)',
-    borderColor: '#ff0000',
-  },
   captureButtonInner: {
     width: 68,
     height: 68,
     borderRadius: 34,
     backgroundColor: '#fff',
-  },
-  captureButtonInnerRecording: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#ff0000',
   },
   helpContainer: {
     alignItems: 'center',
