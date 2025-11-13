@@ -4,7 +4,7 @@
         "dev:web": "cd web && npm run dev",
         "dev:mobile": "cd app && npx expo start --go",
         "cloudflare:tunnel": "cloudflared tunnel run localhosts",
-        "ngrok:tunnel": "ngrok http --url=https://deistic-alphabetically-lieselotte.ngrok-free.app",
+        "ngrok:tunnel": "ngrok http --url=https://deistic-alphabetically-lieselotte.ngrok-free.app 6969",
         "dev:all-cf": "npm-run-all --parallel dev:backend dev:web dev:mobile cloudflare:tunnel",
         "dev:all-ng": "npm-run-all --parallel dev:backend dev:web dev:mobile ngrok:tunnel"
     },
