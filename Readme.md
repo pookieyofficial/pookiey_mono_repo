@@ -26,7 +26,7 @@ You can use one of the following commands to start all apps and a tunnel in para
 ### ▶️ 1. Using Cloudflare Tunnel
 
 ```bash
-npm run dev:all_cf
+npm run dev:all-cf
 ```
 
 This runs:
@@ -43,7 +43,7 @@ This runs:
 ### ▶️ 2. Using Ngrok Tunnel
 
 ```bash
-npm run dev:all_ng
+npm run dev:all-ng
 ```
 
 This runs:
