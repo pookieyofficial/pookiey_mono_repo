@@ -11,8 +11,10 @@ import { useRouter } from 'expo-router'
 import { storyAPI } from '@/APIs/storyAPIs'
 import { useStoryStore, StoryItem } from '@/store/storyStore'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 
 export default function index() {
+  const { t } = useTranslation();
   const router = useRouter()
 
   const { getRecommendedUsers } = useUser()
@@ -179,14 +181,14 @@ export default function index() {
         {isLoading && profiles.length === 0
           ?
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ThemedText>Loading profiles...</ThemedText>
+            <ThemedText>{t('home.loadingProfiles')}</ThemedText>
           </View>
           :
           <SwipeDeck key={deckKey} data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
         }
 
         <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
-          <ThemedText>go to matching screen</ThemedText>
+          <ThemedText>{t('home.goToMatchingScreen')}</ThemedText>
         </TouchableOpacity>
 
 

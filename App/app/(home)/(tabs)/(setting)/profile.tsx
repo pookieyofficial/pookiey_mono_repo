@@ -17,10 +17,12 @@ import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
 import { LogBox } from 'react-native'
+import { useTranslation } from 'react-i18next'
 LogBox.ignoreAllLogs(false);
 
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { dbUser } = useAuthStore()
   const navigationRouter = useRouter()
   const { signOut } = useAuth()
@@ -59,7 +61,7 @@ const Profile = () => {
     if (dbUser?.profile?.firstName || dbUser?.profile?.lastName) {
       return `${dbUser.profile.firstName || ''} ${dbUser.profile.lastName || ''}`.trim()
     }
-    return dbUser?.displayName || 'User'
+    return dbUser?.displayName || t('profilePage.user') || 'User'
   }
 
   // Get interests count
@@ -73,15 +75,15 @@ const Profile = () => {
 
   const handleSignOut = () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('settings.signOut'),
+      t('settings.areYouSureSignOut'),
       [
         {
-          text: 'Cancel',
+          text: t('settings.cancel'),
           style: 'cancel'
         },
         {
-          text: 'Sign Out',
+          text: t('settings.signOut'),
           style: 'destructive',
           onPress: () => signOut()
         }
@@ -99,7 +101,7 @@ const Profile = () => {
           activeOpacity={0.7}
         >
           <Ionicons name="log-out-outline" size={20} color={Colors.primaryBackgroundColor} />
-          <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
+          <ThemedText style={styles.signOutText}>{t('profilePage.signOut')}</ThemedText>
         </TouchableOpacity>
       </View>
       <ScrollView
@@ -139,8 +141,8 @@ const Profile = () => {
             <ThemedText style={styles.userName}>{getFullName()}</ThemedText>
             <ThemedText style={styles.userAge}>
               {typeof calculateAge(dbUser?.profile?.dateOfBirth) === 'number'
-                ? `${calculateAge(dbUser?.profile?.dateOfBirth)} years old`
-                : 'Age not set'}
+                ? `${calculateAge(dbUser?.profile?.dateOfBirth)} ${t('profilePage.yearsOld')}`
+                : t('profilePage.ageNotSet')}
             </ThemedText>
           </View>
 
@@ -155,19 +157,19 @@ const Profile = () => {
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <ThemedText style={styles.statNumber}>{getInterestsCount()}</ThemedText>
-              <ThemedText style={styles.statLabel}>Interests</ThemedText>
+              <ThemedText style={styles.statLabel}>{t('profilePage.interests')}</ThemedText>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <ThemedText style={styles.statNumber}>{dbUser?.profile?.photos?.length || 0}</ThemedText>
-              <ThemedText style={styles.statLabel}>Photos</ThemedText>
+              <ThemedText style={styles.statLabel}>{t('profilePage.photos')}</ThemedText>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <ThemedText style={styles.statNumber}>
                 {dbUser?.profile?.occupation ? '1' : '0'}
               </ThemedText>
-              <ThemedText style={styles.statLabel}>Occupation</ThemedText>
+              <ThemedText style={styles.statLabel}>{t('profilePage.occupation')}</ThemedText>
             </View>
           </View>
         </View>
@@ -177,7 +179,7 @@ const Profile = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="heart-outline" size={20} color={Colors.primaryBackgroundColor} />
-              <ThemedText style={styles.sectionTitle}>Interests</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('profilePage.interests')}</ThemedText>
             </View>
             <View style={styles.tagsContainer}>
               {getInterestTags().map((interest, index) => (
@@ -198,7 +200,7 @@ const Profile = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle-outline" size={20} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.sectionTitle}>Details</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('profilePage.details')}</ThemedText>
           </View>
 
           {/* Gender */}
@@ -206,10 +208,10 @@ const Profile = () => {
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="people-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Gender</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.gender')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>
-                {dbUser.profile.gender.charAt(0).toUpperCase() + dbUser.profile.gender.slice(1)}
+                {dbUser.profile.gender === 'male' ? t('gender.man') : dbUser.profile.gender === 'female' ? t('gender.woman') : dbUser.profile.gender.charAt(0).toUpperCase() + dbUser.profile.gender.slice(1)}
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -219,7 +221,7 @@ const Profile = () => {
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="location-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Location</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.location')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>{dbUser.profile.location.city}</ThemedText>
             </TouchableOpacity>
@@ -230,7 +232,7 @@ const Profile = () => {
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="briefcase-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Occupation</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.occupation')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>{dbUser.profile.occupation}</ThemedText>
             </TouchableOpacity>
@@ -241,7 +243,7 @@ const Profile = () => {
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="school-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Education</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.education')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>{dbUser.profile.education}</ThemedText>
             </TouchableOpacity>
@@ -252,7 +254,7 @@ const Profile = () => {
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="resize-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Height</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.height')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>
                 {`${dbUser.profile.height} cm`}
@@ -267,7 +269,7 @@ const Profile = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="images-outline" size={20} color={Colors.primaryBackgroundColor} />
-              <ThemedText style={styles.sectionTitle}>Photos</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('profilePage.photos')}</ThemedText>
             </View>
             <ScrollView
               horizontal
@@ -298,7 +300,7 @@ const Profile = () => {
                     <Image source={{ uri: photo?.url }} style={styles.photoImage} />
                     {photo?.isPrimary && (
                       <View style={styles.primaryBadge}>
-                        <ThemedText style={styles.primaryBadgeText}>Primary</ThemedText>
+                        <ThemedText style={styles.primaryBadgeText}>{t('profilePage.primary')}</ThemedText>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -313,13 +315,13 @@ const Profile = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="settings-outline" size={20} color={Colors.primaryBackgroundColor} />
-              <ThemedText style={styles.sectionTitle}>Dating Preferences</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('profilePage.datingPreferences')}</ThemedText>
             </View>
 
             <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
               <View style={styles.detailLeft}>
                 <Ionicons name="navigate-outline" size={20} color="#666" />
-                <ThemedText style={styles.detailLabel}>Max Distance</ThemedText>
+                <ThemedText style={styles.detailLabel}>{t('profilePage.maxDistance')}</ThemedText>
               </View>
               <ThemedText style={styles.detailValue}>
                 {dbUser?.preferences?.distanceMaxKm} km
@@ -330,10 +332,10 @@ const Profile = () => {
               <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
                 <View style={styles.detailLeft}>
                   <Ionicons name="time-outline" size={20} color="#666" />
-                  <ThemedText style={styles.detailLabel}>Age Range</ThemedText>
+                  <ThemedText style={styles.detailLabel}>{t('profilePage.ageRange')}</ThemedText>
                 </View>
                 <ThemedText style={styles.detailValue}>
-                  {`${dbUser.preferences.ageRange?.[0]} - ${dbUser.preferences.ageRange?.[1]} years`}
+                  {`${dbUser.preferences.ageRange?.[0]} - ${dbUser.preferences.ageRange?.[1]} ${t('profilePage.yearsOld')}`}
                 </ThemedText>
 
               </TouchableOpacity>
@@ -343,10 +345,10 @@ const Profile = () => {
               <TouchableOpacity style={styles.detailItem} activeOpacity={0.7}>
                 <View style={styles.detailLeft}>
                   <Ionicons name="eye-outline" size={20} color="#666" />
-                  <ThemedText style={styles.detailLabel}>Show Me</ThemedText>
+                  <ThemedText style={styles.detailLabel}>{t('profilePage.showMe')}</ThemedText>
                 </View>
                 <ThemedText style={styles.detailValue}>
-                  {dbUser.preferences.showMe.join(', ')}
+                  {dbUser.preferences.showMe.map(g => g === 'male' ? t('gender.man') : g === 'female' ? t('gender.woman') : g).join(', ')}
                 </ThemedText>
               </TouchableOpacity>
             )}
@@ -360,7 +362,7 @@ const Profile = () => {
           onPress={() => navigationRouter.push('/(home)/(tabs)/(setting)/editProfile')}
         >
           <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-          <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
+          <ThemedText style={styles.editButtonText}>{t('profilePage.editProfile')}</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

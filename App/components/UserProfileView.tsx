@@ -24,6 +24,7 @@ import { useMessagingStore } from '@/store/messagingStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserInteraction } from '@/hooks/userInteraction'
 import { messageAPI } from '@/APIs/messageAPIs'
+import { useTranslation } from 'react-i18next'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -70,6 +71,7 @@ interface UserProfileViewProps {
 }
 
 const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) => {
+  const { t } = useTranslation();
   const router = useRouter()
   const { returnToStory } = useLocalSearchParams<{ returnToStory?: string }>()
   const [isBioExpanded, setIsBioExpanded] = useState(false)
@@ -150,8 +152,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const handleChatPress = async () => {
     if (!displayUser?.user_id) {
       setAlertMessage({
-        title: '⚠️ Error',
-        message: 'User information is not available. Please try again later.'
+        title: t('userProfileView.error'),
+        message: t('userProfileView.userInfoNotAvailable')
       })
       setShowAlert(true)
       return
@@ -159,8 +161,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
     if (!currentUser?.user_id) {
       setAlertMessage({
-        title: '⚠️ Error',
-        message: 'You must be logged in to chat with other users.'
+        title: t('userProfileView.error'),
+        message: t('userProfileView.mustBeLoggedIn')
       })
       setShowAlert(true)
       return
@@ -168,8 +170,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
     if (!token) {
       setAlertMessage({
-        title: '⚠️ Error',
-        message: 'Authentication token not available. Please log in again.'
+        title: t('userProfileView.error'),
+        message: t('userProfileView.authTokenNotAvailable')
       })
       setShowAlert(true)
       return
@@ -181,8 +183,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     if (!matchId) {
       const userName = displayUser.profile?.firstName || displayUser.displayName || displayUser.user_id || 'this user'
       setAlertMessage({
-        title: '💬 Chat Unavailable',
-        message: `You must be a matched user to chat with ${userName}. Like them and wait for them to like you back to start chatting! 💕`
+        title: t('userProfileView.chatUnavailable'),
+        message: t('userProfileView.mustBeMatched', { userName })
       })
       setShowAlert(true)
       return
@@ -346,7 +348,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {/* Location */}
           {location && (
             <View style={styles.section}>
-              <ThemedText type="bold" style={styles.sectionTitle}>Location</ThemedText>
+              <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.location')}</ThemedText>
               <View style={styles.locationRow}>
                 <ThemedText style={styles.locationText}>
                   {location.city}{location.country ? `, ${location.country}` : ''}
@@ -362,12 +364,12 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {/* About */}
           {bio && (
             <View style={styles.section}>
-              <ThemedText type="bold" style={styles.sectionTitle}>About</ThemedText>
+              <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.about')}</ThemedText>
               <ThemedText style={styles.bioText}>{displayBio}</ThemedText>
               {isBioLong && (
                 <TouchableOpacity onPress={() => setIsBioExpanded(!isBioExpanded)}>
                   <ThemedText style={styles.readMoreText}>
-                    {isBioExpanded ? 'Read less' : 'Read more'}
+                    {isBioExpanded ? t('userProfileView.readLess') : t('userProfileView.readMore')}
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -378,7 +380,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {interests.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
-                <ThemedText type="bold" style={styles.sectionTitle}>Interests</ThemedText>
+                <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.interests')}</ThemedText>
               </View>
               <View style={styles.tagsContainer}>
                 {interests.map((interest, i) => {
@@ -402,7 +404,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           {photos.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
-                <ThemedText type="bold" style={styles.sectionTitle}>Gallery</ThemedText>
+                <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.gallery')}</ThemedText>
                 <TouchableOpacity
                   onPress={() => {
                     router.push({
@@ -414,7 +416,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                     })
                   }}
                 >
-                  <ThemedText style={styles.seeAllText}>See all</ThemedText>
+                  <ThemedText style={styles.seeAllText}>{t('userProfileView.seeAll')}</ThemedText>
                 </TouchableOpacity>
               </View>
               <View style={styles.galleryGrid}>
@@ -472,7 +474,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                 onPress={() => setShowAlert(false)}
                 activeOpacity={0.8}
               >
-                <ThemedText style={styles.alertButtonText}>Got it</ThemedText>
+                <ThemedText style={styles.alertButtonText}>{t('userProfileView.gotIt')}</ThemedText>
               </TouchableOpacity>
             </View>
           </Pressable>

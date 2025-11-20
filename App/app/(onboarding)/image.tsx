@@ -14,11 +14,13 @@ import { Colors } from '@/constants/Colors';
 import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { compressImageToJPEG } from '@/utils/imageCompression';
+import { useTranslation } from 'react-i18next';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_SIZE = (screenWidth - 80) / 3;
 
 export default function PremiumImageSelectorScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { photos, setPhotos } = useOnboardingStore();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -137,7 +139,7 @@ export default function PremiumImageSelectorScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (permissionResult.granted === false) {
-        Alert.alert("Permission Required", "Please grant camera roll permissions to select images.");
+        Alert.alert(t('image.permissionRequired'), t('image.grantCameraRoll'));
         return;
       }
 
@@ -174,7 +176,7 @@ export default function PremiumImageSelectorScreen() {
         ]).start();
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to select images. Please try again.");
+      Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
       console.error('Image picker error:', error);
     } finally {
       setIsLoading(false);
@@ -269,7 +271,7 @@ export default function PremiumImageSelectorScreen() {
               <View style={styles.addIconContainer}>
                 <MaterialCommunityIcons name="plus" size={28} color={Colors.primaryBackgroundColor} />
               </View>
-              <ThemedText style={styles.addText}>Add Photo</ThemedText>
+              <ThemedText style={styles.addText}>{t('image.addPhoto')}</ThemedText>
             </View>
           )}
         </TouchableOpacity>
@@ -285,19 +287,19 @@ export default function PremiumImageSelectorScreen() {
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <ThemedText style={styles.title}>
-            Show Your Best Self
+            {t('image.title')}
           </ThemedText>
           <View style={styles.titleUnderline} />
         </View>
         <ThemedText style={styles.subtitle}>
-          Add 6 photos that showcase your personality and interests
+          {t('image.subtitle')}
         </ThemedText>
 
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressLabels}>
             <ThemedText style={styles.progressText}>
-              {selectedImages.length}/6 photos
+              {selectedImages.length}/6 {t('image.photos')}
             </ThemedText>
             <ThemedText style={styles.progressPercentage}>
               {Math.round(progressPercentage)}%
@@ -332,8 +334,10 @@ export default function PremiumImageSelectorScreen() {
         <MainButton
           title={
             isComplete
-              ? "Continue"
-              : `Select ${remainingImages} More Photo${remainingImages !== 1 ? 's' : ''}`
+              ? t('image.continue')
+              : remainingImages === 1
+                ? t('image.selectMore', { count: remainingImages })
+                : t('image.selectMorePlural', { count: remainingImages })
           }
           onPress={() => {
             handleContinue();

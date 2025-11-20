@@ -15,10 +15,11 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 
 export default function ContactScreen() {
-
+    const { t } = useTranslation();
     const { isLoading, contacts, hasPermission, requestContactsPermission } = useContacts();
     const router = useRouter();
     
@@ -61,7 +62,7 @@ export default function ContactScreen() {
 
                     <View style={styles.contactsHeader}>
                         <ThemedText type="title">
-                            Contacts
+                            {t('contact.contacts')}
                         </ThemedText>
                     </View>
 
@@ -74,7 +75,7 @@ export default function ContactScreen() {
                     />
 
                     <MainButton
-                        title="Continue"
+                        title={t('contact.continue')}
                         onPress={handleContinue}
                         disabled={false}
                     />
@@ -101,17 +102,17 @@ export default function ContactScreen() {
 
                 <View style={styles.textContainer}>
                     <ThemedText type="title" style={styles.title}>
-                        Search friends
+                        {t('contact.title')}
                     </ThemedText>
                     <ThemedText style={styles.subtitle}>
-                        You can find friends from your contact lists to connect
+                        {t('contact.subtitle')}
                     </ThemedText>
                 </View>
 
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? "Requesting..." : "Access Contacts"}
+                    title={isLoading ? t('contact.requesting') : t('contact.accessContacts')}
                     onPress={handleAccessContacts}
                     disabled={isLoading}
                 />

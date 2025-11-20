@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system/legacy';
+import { Image } from 'react-native';
 import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
 
 export interface CompressedImageResult {
@@ -40,17 +41,23 @@ export async function compressImageToJPEG(
     const imageInfo = await FileSystem.getInfoAsync(imageUri);
     console.log('Original file size:', imageInfo.exists ? (imageInfo as any).size : 'unknown');
 
-    // Resize and compress the image
+    // Get original image dimensions
+    const originalDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => resolve({ width, height }),
+        (error) => reject(error)
+      );
+    });
+
+    const originalWidth = originalDimensions.width;
+    const originalHeight = originalDimensions.height;
+    console.log('Original dimensions:', originalWidth, 'x', originalHeight);
+
+    // Only compress the image - NO resizing, keep original dimensions
     const manipulatedImage = await ImageManipulator.manipulateAsync(
       imageUri,
-      [
-        {
-          resize: {
-            width: maxWidth,
-            height: maxHeight,
-          },
-        },
-      ],
+      [], // No manipulations - keep original size
       {
         compress: quality,
         format: ImageManipulator.SaveFormat.JPEG,
@@ -63,7 +70,7 @@ export async function compressImageToJPEG(
 
     console.log('✅ Compression complete');
     console.log('Compressed URI:', manipulatedImage.uri);
-    console.log('New dimensions:', manipulatedImage.width, 'x', manipulatedImage.height);
+    console.log('Dimensions (unchanged):', manipulatedImage.width, 'x', manipulatedImage.height);
     console.log('Compressed size:', compressedSize, 'bytes');
 
     return {

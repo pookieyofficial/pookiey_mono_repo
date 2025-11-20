@@ -9,6 +9,7 @@ import { useMessagingStore } from '@/store/messagingStore';
 import { useAuth } from '@/hooks/useAuth';
 import { messageAPI } from '@/APIs/messageAPIs';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 // Wrapper component for chat icon with badge
 function ChatIconWithBadge({ color, focused }: { color: string; focused: boolean }) {
@@ -32,6 +33,7 @@ function ChatIconWithBadge({ color, focused }: { color: string; focused: boolean
 }
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { isConnected, onInboxUpdate, onNewMessage } = useSocket();
   const { setSocketConnected, setInbox } = useMessagingStore();
   const { token } = useAuth();
@@ -101,7 +103,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, focused }) =>
             <IconSymbol size={28} name={focused ? "house.fill" : "house"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}
@@ -109,7 +111,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(chats)"
         options={{
-          title: 'Chats',
+          title: t('tabs.chats'),
           tabBarIcon: ({ color, focused }) => (
             <ChatIconWithBadge color={color} focused={focused} />
           ),
@@ -118,7 +120,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(story)"
         options={{
-          title: 'Stories',
+          title: t('tabs.stories'),
           tabBarIcon: ({ color, focused }) => (
             <IconSymbol size={28} name={focused ? "camera.fill" : "camera"} color={color} weight={focused ? 'bold' : 'regular'} />
           ),
@@ -127,7 +129,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(setting)"
         options={{
-          title: 'Setting',
+          title: t('tabs.setting'),
           tabBarIcon: ({ color, focused }) =>
             <IconSymbol size={28} name={focused ? "gearshape.fill" : "gearshape"} color={color} weight={focused ? 'bold' : 'regular'} />,
         }}

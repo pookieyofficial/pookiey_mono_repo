@@ -9,10 +9,12 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import CustomLoader from '@/components/CustomLoader';
 import { useRouter } from 'expo-router';
 import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
 export default function Page() {
+  const { t } = useTranslation();
   const router = useRouter()
   const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
@@ -21,21 +23,21 @@ export default function Page() {
     try {
       const result = await signInWithGoogleMobile();
       if (result.error) {
-        Alert.alert('Google Sign In Error', result.error.message);
+        Alert.alert(t('auth.googleSignInError'), result.error.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred during Google sign in');
+      Alert.alert(t('auth.error'), t('auth.unexpectedError'));
     }
   };
 
   if (googleLoading)
     return (
-      <CustomLoader messages={["Logging you in..", "Almost there..", "Wrapping up..", "Hang in there.."]} />
+      <CustomLoader messages={[t('auth.loggingIn'), t('auth.almostThere'), t('auth.wrappingUp'), t('auth.hangInThere')]} />
     )
 
   if (isDeepLinkProcessing) {
     return (
-      <CustomLoader messages={["Just a moment.."]} />
+      <CustomLoader messages={[t('auth.justAMoment')]} />
     )
   }
 
@@ -53,13 +55,13 @@ export default function Page() {
 
         <View style={styles.headingContainer}>
           <ThemedText type='title' style={styles.mainHeading}>
-            Swipe, Match, Connect
+            {t('auth.swipeMatchConnect')}
           </ThemedText>
           <ThemedText type='title' style={styles.mainHeading}>
-            Discover True Bonds
+            {t('auth.discoverTrueBonds')}
           </ThemedText>
           <ThemedText style={styles.subHeading}>
-            Sign in to start your journey
+            {t('auth.signInToStart')}
           </ThemedText>
         </View>
 
@@ -76,14 +78,14 @@ export default function Page() {
             </View>
             <View style={styles.googleTextContainer}>
               <ThemedText type='defaultSemiBold' style={styles.googleButtonText}>
-                Continue with Google
+                {t('auth.continueWithGoogle')}
               </ThemedText>
             </View>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
-            <ThemedText style={styles.dividerText}>or</ThemedText>
+            <ThemedText style={styles.dividerText}>{t('auth.or')}</ThemedText>
             <View style={styles.divider} />
           </View>
 
@@ -101,7 +103,7 @@ export default function Page() {
             </View>
             <View style={styles.emailTextContainer}>
               <ThemedText type='defaultSemiBold' style={styles.emailButtonText}>
-                Continue with Email
+                {t('auth.continueWithEmail')}
               </ThemedText>
             </View>
           </TouchableOpacity>
@@ -109,7 +111,7 @@ export default function Page() {
 
         <View style={styles.footerContainer}>
           <ThemedText style={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            {t('auth.termsAndPrivacy')}
           </ThemedText>
         </View>
       </ScrollView>

@@ -9,8 +9,10 @@ import { Mail } from 'react-native-feather';
 import { useAuth } from '@/hooks/useAuth';
 import CustomLoader from '@/components/CustomLoader';
 import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginWithEmail() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const { signInWithLink, isLoading } = useAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
@@ -22,12 +24,12 @@ export default function LoginWithEmail() {
     const result = await signInWithLink(email);
 
     if (result.error) {
-      Alert.alert('Error', result.error.message);
+      Alert.alert(t('auth.error'), result.error.message);
     } else {
       Alert.alert(
-        'Check Your Email! 📧',
-        `We've sent a magic link to ${email}. Click the link to sign in.`,
-        [{ text: 'OK' }]
+        t('auth.checkYourEmail'),
+        t('auth.magicLinkSent', { email }),
+        [{ text: t('auth.ok') }]
       );
     }
 
@@ -36,13 +38,13 @@ export default function LoginWithEmail() {
 
   if (isLoading) {
     return (
-      <CustomLoader messages={["Sending magic link.."]} />
+      <CustomLoader messages={[t('auth.sendingMagicLink')]} />
     )
   }
 
   if (isDeepLinkProcessing) {
     return (
-      <CustomLoader messages={["Just a moment.."]} />
+      <CustomLoader messages={[t('auth.justAMoment')]} />
     )
   }
 
@@ -55,11 +57,11 @@ export default function LoginWithEmail() {
       >
         <View style={styles.content}>
           {/* Title */}
-          <ThemedText type="title" style={styles.mainHeading}>Sign In with Email</ThemedText>
+          <ThemedText type="title" style={styles.mainHeading}>{t('auth.signInWithEmail')}</ThemedText>
 
           {/* Subtitle */}
           <ThemedText type="default" style={styles.subHeading}>
-            We'll send you a secure link to sign in on this device.
+            {t('auth.secureLinkMessage')}
           </ThemedText>
 
           {/* Email Input */}
@@ -72,7 +74,7 @@ export default function LoginWithEmail() {
             />
             <TextInput
               style={styles.textInput}
-              placeholder="Enter your email"
+              placeholder={t('auth.enterYourEmail')}
               placeholderTextColor={Colors.text?.secondary}
               value={email}
               onChangeText={setEmail}
@@ -94,7 +96,7 @@ export default function LoginWithEmail() {
           <View style={styles.footer}>
 
             <MainButton
-              title="Continue"
+              title={t('auth.continue')}
               onPress={handleContinue}
             />
           </View>

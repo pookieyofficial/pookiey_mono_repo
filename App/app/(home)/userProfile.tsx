@@ -7,8 +7,10 @@ import { Colors } from '@/constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import UserProfileView from '@/components/UserProfileView'
 import { DBUser } from '@/types/Auth'
+import { useTranslation } from 'react-i18next'
 
 const UserProfile = () => {
+  const { t } = useTranslation();
   const { userData, returnToStory } = useLocalSearchParams<{ userData?: string; returnToStory?: string }>()
   const router = useRouter()
   
@@ -26,14 +28,14 @@ const UserProfile = () => {
             setUser(parsedUser)
           } catch (e) {
             console.error('Error parsing userData:', e)
-            Alert.alert('Error', 'Failed to load user profile data')
+            Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
           }
         } else {
-          Alert.alert('Error', 'No user data provided')
+          Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
         }
       } catch (error) {
         console.error('Error loading user profile:', error)
-        Alert.alert('Error', 'Failed to load user profile')
+        Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
       } finally {
         setIsLoading(false)
       }
@@ -56,7 +58,7 @@ const UserProfile = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
-          <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
+          <ThemedText style={styles.loadingText}>{t('userProfileView.loadingProfile')}</ThemedText>
         </View>
       </SafeAreaView>
     )

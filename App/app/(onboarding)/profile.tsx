@@ -4,6 +4,8 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '@/components/LanguageSelector';
 import {
   Image,
   KeyboardAvoidingView,
@@ -46,7 +48,8 @@ const Colors = {
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
-  const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture } = useOnboardingStore();
+  const { t } = useTranslation();
+  const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture, setLanguage } = useOnboardingStore();
   const { dbUser } = useAuthStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(birthday ? new Date(birthday) : new Date());
@@ -99,12 +102,12 @@ export default function ProfileScreen() {
 
   const handleConfirm = () => {
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert('Missing Information', 'Please enter both first and last name');
+      Alert.alert(t('profile.missingInfo'), t('profile.enterBothNames'));
       return;
     }
 
     if (!birthday) {
-      Alert.alert('Missing Information', 'Please select your birthday');
+      Alert.alert(t('profile.missingInfo'), t('profile.selectBirthday'));
       return;
     }
 
@@ -114,8 +117,8 @@ export default function ProfileScreen() {
     
     if (age < 18) {
       Alert.alert(
-        'Age Restriction',
-        'You must be at least 18 years old to use this app. Please select a valid birthday.',
+        t('profile.ageRestriction'),
+        t('profile.mustBe18'),
       );
       return;
     }
@@ -136,7 +139,7 @@ export default function ProfileScreen() {
   };
 
   const formatDate = (dateString: any) => {
-    if (!dateString) return 'Choose birthday date';
+    if (!dateString) return t('profile.chooseBirthday');
 
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -151,7 +154,7 @@ export default function ProfileScreen() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert('Permission required', 'Sorry, we need camera roll permissions to select a profile picture.');
+        Alert.alert(t('profile.permissionRequired'), t('profile.cameraRollPermission'));
         return;
       }
 
@@ -166,7 +169,7 @@ export default function ProfileScreen() {
         setProfilePicture(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
     }
   };
 
@@ -175,7 +178,7 @@ export default function ProfileScreen() {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert('Permission required', 'Sorry, we need camera permissions to take a photo.');
+        Alert.alert(t('profile.permissionRequired'), t('profile.cameraPermission'));
         return;
       }
 
@@ -189,25 +192,25 @@ export default function ProfileScreen() {
         setProfilePicture(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      Alert.alert(t('profile.error'), t('profile.failedToTakePhoto'));
     }
   };
 
   const showImagePickerOptions = () => {
     Alert.alert(
-      'Select Profile Picture',
-      'Choose an option',
+      t('profile.selectProfilePicture'),
+      t('profile.chooseOption'),
       [
         {
-          text: 'Choose from Library',
+          text: t('profile.chooseFromLibrary'),
           onPress: pickImage,
         },
         {
-          text: 'Take Photo',
+          text: t('profile.takePhoto'),
           onPress: takePhoto,
         },
         {
-          text: 'Cancel',
+          text: t('profile.cancel'),
           style: 'cancel',
         },
       ]
@@ -226,8 +229,11 @@ export default function ProfileScreen() {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <ThemedText type="title" style={styles.title}>Profile details</ThemedText>
-              <ThemedText type='subtitle' style={styles.subtitle}>Let's get to know you better</ThemedText>
+              <View style={styles.languageSelectorContainer}>
+                <LanguageSelector store={{ setLanguage }} />
+              </View>
+              <ThemedText type="title" style={styles.title}>{t('profile.title')}</ThemedText>
+              <ThemedText type='subtitle' style={styles.subtitle}>{t('profile.subtitle')}</ThemedText>
             </View>
 
             <View style={styles.profilePictureContainer}>
@@ -248,12 +254,12 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
-              <ThemedText type='default' style={styles.profilePictureHint}>Tap to change photo</ThemedText>
+              <ThemedText type='default' style={styles.profilePictureHint}>{t('profile.tapToChangePhoto')}</ThemedText>
             </View>
 
             <View style={styles.inputContainer}>
               <View style={styles.inputWrapper}>
-                <ThemedText type='default' style={styles.inputLabel}>First name</ThemedText>
+                <ThemedText type='default' style={styles.inputLabel}>{t('profile.firstName')}</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   value={firstName}
@@ -264,7 +270,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <ThemedText type='default' style={styles.inputLabel}>Last name</ThemedText>
+                <ThemedText type='default' style={styles.inputLabel}>{t('profile.lastName')}</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   value={lastName}
@@ -275,7 +281,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <ThemedText type='default' style={styles.inputLabel}>Birthday</ThemedText>
+                <ThemedText type='default' style={styles.inputLabel}>{t('profile.birthday')}</ThemedText>
                 <TouchableOpacity
                   style={styles.birthdayButton}
                   onPress={() => setShowDatePicker(true)}
@@ -296,10 +302,8 @@ export default function ProfileScreen() {
             </View>
 
             <MainButton
-              title="Continue"
+              title={t('profile.continue')}
               onPress={handleConfirm}
-
-
             />
           </View>
         </ScrollView>
@@ -352,6 +356,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     paddingTop: 10,
+  },
+  languageSelectorContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

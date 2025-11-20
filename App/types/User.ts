@@ -52,7 +52,7 @@ export interface UserPhoto {
 export interface UserPreferences {
     distanceMaxKm: number;
     ageRange: [number, number]; // [minAge, maxAge]
-    showMe: ("male" | "female" | "other")[];
+    showMe: ("male" | "female")[];
 }
 
 // API Request/Response types

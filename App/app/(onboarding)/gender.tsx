@@ -6,6 +6,7 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     StyleSheet,
     TouchableOpacity,
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type GenderOption = 'Woman' | 'Man';
 
 export default function GenderScreen() {
+    const { t } = useTranslation();
     const { setGender, gender } = useOnboardingStore();
 
     const handleContinue = () => {
@@ -44,7 +46,7 @@ export default function GenderScreen() {
                     styles.genderText,
                     isSelected && styles.genderTextSelected,
                 ]}>
-                    {gender}
+                    {gender === 'Woman' ? t('gender.woman') : t('gender.man')}
                 </ThemedText>
                 {isSelected && (
                     <Ionicons
@@ -62,7 +64,7 @@ export default function GenderScreen() {
             <CustomBackButton />
             <View style={styles.content}>
 
-                <ThemedText type='title'>I am a</ThemedText>
+                <ThemedText type='title'>{t('gender.title')}</ThemedText>
 
                 <View style={styles.optionsContainer}>
                     {renderGenderOption('Woman', gender === 'Woman')}
@@ -70,7 +72,7 @@ export default function GenderScreen() {
                 </View>
 
                 <MainButton
-                    title="Continue"
+                    title={t('gender.continue')}
                     onPress={handleContinue}
                 />
             </View>
