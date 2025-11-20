@@ -537,11 +537,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   photosScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
+    maxHeight: 180,
   },
   photosContainer: {
+    paddingHorizontal: 0,
     gap: 12,
+    paddingRight: 20,
   },
   photoItem: {
     width: 120,
@@ -549,10 +550,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    marginRight: 0,
   },
   photoImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   primaryBadge: {
     position: 'absolute',

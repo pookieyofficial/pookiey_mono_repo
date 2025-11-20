@@ -209,7 +209,7 @@ export default function CreateStoryScreen() {
         try {
           const compressed = await compressImageToJPEG(
             capturedMedia,
-git             0.85 // High quality for stories
+             0.85 // High quality for stories
           );
           mediaToUpload = compressed.uri;
           mimeType = compressed.mimeType;
