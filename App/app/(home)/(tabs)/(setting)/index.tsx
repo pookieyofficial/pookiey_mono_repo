@@ -13,10 +13,14 @@ import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/store/authStore'
 import { truncateText } from '@/utils/truncateTexts'
+import { useTranslation } from 'react-i18next'
+import LanguageSelector from '@/components/LanguageSelector'
+import { useOnboardingStore } from '@/store/onboardingStore'
 
 const Settings = () => {
-
+  const { t } = useTranslation();
   const { dbUser } = useAuthStore()
+  const { setLanguage } = useOnboardingStore()
 
   const handleButtonPress = (buttonName: string) => {
     console.log(`${buttonName} pressed`)
@@ -35,7 +39,7 @@ const Settings = () => {
     <SafeAreaView style={styles.container}>
       {/* Settings Header */}
       <View style={styles.headerSection}>
-        <ThemedText type='title' style={styles.headerTitle}>Settings</ThemedText>
+        <ThemedText type='title' style={styles.headerTitle}>{t('settings.settings')}</ThemedText>
       </View>
       <ScrollView
         style={styles.scrollView}
@@ -94,7 +98,7 @@ const Settings = () => {
               <Ionicons name="heart-outline" size={24} color={Colors.primary.red} />
             </View>
 
-            <ThemedText style={styles.settingText}>Dating Preference</ThemedText>
+            <ThemedText style={styles.settingText}>{t('settings.datingPreference')}</ThemedText>
 
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
@@ -109,9 +113,21 @@ const Settings = () => {
             <View style={styles.settingIconContainer}>
               <Ionicons name="settings-outline" size={24} color={Colors.primary.red} />
             </View>
-            <ThemedText style={styles.settingText}>Account Settings</ThemedText>
+            <ThemedText style={styles.settingText}>{t('settings.accountSettings')}</ThemedText>
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
+
+          <View style={styles.decorativeBorder} />
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="language-outline" size={24} color={Colors.primary.red} />
+            </View>
+            <ThemedText style={styles.settingText}>{t('settings.language')}</ThemedText>
+            <View style={{ marginLeft: 'auto' }}>
+              <LanguageSelector store={{ setLanguage }} />
+            </View>
+          </View>
 
           <View style={styles.decorativeBorder} />
 
@@ -123,7 +139,7 @@ const Settings = () => {
             <View style={styles.settingIconContainer}>
               <Ionicons name="help-circle-outline" size={24} color={Colors.primary.red} />
             </View>
-            <ThemedText style={styles.settingText}>Help Center</ThemedText>
+            <ThemedText style={styles.settingText}>{t('settings.helpCenter')}</ThemedText>
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
 
@@ -137,7 +153,7 @@ const Settings = () => {
             <View style={styles.settingIconContainer}>
               <Ionicons name="shield-outline" size={24} color={Colors.primary.red} />
             </View>
-            <ThemedText style={styles.settingText}>Privacy Policy</ThemedText>
+            <ThemedText style={styles.settingText}>{t('settings.privacyPolicy')}</ThemedText>
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
         </View>

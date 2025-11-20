@@ -12,6 +12,7 @@ interface OnboardingState {
     bio: string;
     profilePicture: string;
     photos: string[];
+    language: string;
 }
 
 interface OnboardingActions {
@@ -24,6 +25,7 @@ interface OnboardingActions {
     setBio: (bio: string) => void;
     setProfilePicture: (profilePicture: string) => void;
     setPhotos: (photos: string[]) => void;
+    setLanguage: (language: string) => void;
     clearOnboarding: () => void;
 }
 
@@ -39,6 +41,7 @@ const initialState: OnboardingState = {
     bio: '',
     profilePicture: '',
     photos: [],
+    language: 'en',
 }
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -54,6 +57,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
             setBio: (bio: string) => set({ bio }),
             setProfilePicture: (profilePicture: string) => set({ profilePicture }),
             setPhotos: (photos: string[]) => set({ photos }),
+            setLanguage: (language: string) => set({ language }),
             clearOnboarding: () => set(initialState),
             }),
         {
@@ -69,6 +73,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 bio: state.bio,
                 profilePicture: state.profilePicture,
                 photos: state.photos,
+                language: state.language,
             }),
         }
     )

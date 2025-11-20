@@ -23,11 +23,13 @@ import * as FileSystem from 'expo-file-system/legacy'
 import { LogBox } from 'react-native';
 import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3'
 import { compressImageToJPEG } from '@/utils/imageCompression'
+import { useTranslation } from 'react-i18next'
 LogBox.ignoreAllLogs(false);
 
 const { width } = Dimensions.get('window')
 
 const EditProfile = () => {
+  const { t } = useTranslation();
   const { dbUser, idToken, setDBUser } = useAuthStore()
   const { updateUser } = useUser()
   
@@ -69,7 +71,7 @@ const EditProfile = () => {
       setInterests([...interests, newInterest.trim()])
       setNewInterest('')
     } else if (interests.length >= 10) {
-      Alert.alert('Limit Reached', 'You can add up to 10 interests')
+      Alert.alert(t('editProfile.limitReached'), t('editProfile.upTo10Interests'))
     }
   }
 
@@ -99,7 +101,7 @@ const EditProfile = () => {
   // Pick image from gallery
   const pickImage = async () => {
     if (photos.length >= 6) {
-      Alert.alert('Limit Reached', 'You can add up to 6 photos')
+      Alert.alert(t('editProfile.limitReached'), t('editProfile.upTo6Photos'))
       return
     }
 
@@ -121,7 +123,7 @@ const EditProfile = () => {
         
         // Check for duplicates
         if (isDuplicateImage(localUri, photos)) {
-          Alert.alert('Duplicate Image', 'This image has already been selected.')
+          Alert.alert(t('editProfile.duplicateImage'), t('editProfile.imageAlreadySelected'))
           continue
         }
 
@@ -156,18 +158,18 @@ const EditProfile = () => {
   // Save profile
   const saveProfile = async () => {
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert('Error', 'First name and last name are required')
+      Alert.alert(t('editProfile.error'), t('editProfile.firstNameLastNameRequired'))
       return
     }
 
     if (!idToken) {
-      Alert.alert('Error', 'Authentication token not found. Please log in again.')
+      Alert.alert(t('editProfile.error'), t('editProfile.authTokenNotFound'))
       return
     }
 
     // Validate minimum 2 images
     if (photos.length < 2) {
-      Alert.alert('Error', 'Please upload at least 2 photos')
+      Alert.alert(t('editProfile.error'), t('editProfile.uploadAtLeast2Photos'))
       return
     }
 
@@ -244,7 +246,7 @@ const EditProfile = () => {
         const presignedUrls = await requestPresignedURl(mimeTypes);
         
         if (!presignedUrls || presignedUrls.length !== compressedPhotos.length) {
-          Alert.alert('Error', 'Failed to get upload URLs. Please try again.');
+          Alert.alert(t('editProfile.error'), t('editProfile.failedToGetUploadUrls'));
           setIsLoading(false);
           return;
         }
@@ -265,7 +267,7 @@ const EditProfile = () => {
         );
 
         if (!allSucceeded) {
-          Alert.alert('Error', 'Some images failed to upload. Please try again.');
+          Alert.alert(t('editProfile.error'), t('editProfile.someImagesFailedToUpload'));
           setIsLoading(false);
           return;
         }
@@ -331,16 +333,16 @@ const EditProfile = () => {
       if (response?.success) {
         // Update the user in the store
         setDBUser(response.data)
-        Alert.alert('Success', 'Profile updated successfully', [
-          { text: 'OK', onPress: () => router.back() }
+        Alert.alert(t('editProfile.success'), t('editProfile.profileUpdatedSuccessfully'), [
+          { text: t('editProfile.ok'), onPress: () => router.back() }
         ])
       } else {
-        Alert.alert('Error', response?.message || 'Failed to update profile')
+        Alert.alert(t('editProfile.error'), response?.message || t('editProfile.failedToUpdateProfile'))
       }
     } catch (error: any) {
       console.error('Update profile error:', error)
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update profile'
-      Alert.alert('Error', errorMessage)
+      const errorMessage = error?.response?.data?.message || error?.message || t('editProfile.failedToUpdateProfile')
+      Alert.alert(t('editProfile.error'), errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -356,41 +358,41 @@ const EditProfile = () => {
       >
         {/* Header */}
         <View style={styles.headerSection}>
-          <ThemedText type='title' style={styles.headerTitle}>Edit Profile</ThemedText>
+          <ThemedText type='title' style={styles.headerTitle}>{t('editProfile.editProfile')}</ThemedText>
         </View>
 
         {/* Basic Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="person-outline" size={20} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.sectionTitle}>Basic Information</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('editProfile.basicInformation')}</ThemedText>
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>First Name *</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.firstName')}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="Enter your first name"
+              placeholder={t('editProfile.enterFirstName')}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Last Name *</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.lastName')}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={lastName}
               onChangeText={setLastName}
-              placeholder="Enter your last name"
+              placeholder={t('editProfile.enterLastName')}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
             <View style={styles.inputLabelContainer}>
-              <ThemedText style={styles.inputLabel}>Bio</ThemedText>
+              <ThemedText style={styles.inputLabel}>{t('editProfile.bio')}</ThemedText>
               <ThemedText style={styles.characterCount}>{bio.length}/500</ThemedText>
             </View>
             <TextInput
@@ -401,7 +403,7 @@ const EditProfile = () => {
                   setBio(text)
                 }
               }}
-              placeholder="Tell us about yourself..."
+              placeholder={t('editProfile.tellUsAboutYourself')}
               placeholderTextColor="#999"
               multiline
               numberOfLines={4}
@@ -410,7 +412,7 @@ const EditProfile = () => {
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Gender</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.gender')}</ThemedText>
             <View style={styles.genderContainer}>
               {['male', 'female', 'other'].map((option) => (
                 <TouchableOpacity
@@ -425,7 +427,7 @@ const EditProfile = () => {
                     styles.genderText,
                     gender === option && styles.genderTextSelected
                   ]}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                    {option === 'male' ? t('editProfile.male') : option === 'female' ? t('editProfile.female') : t('editProfile.other')}
                   </ThemedText>
                 </TouchableOpacity>
               ))}
@@ -437,38 +439,38 @@ const EditProfile = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="information-circle-outline" size={20} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.sectionTitle}>Details</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('editProfile.details')}</ThemedText>
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Occupation</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.occupation')}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={occupation}
               onChangeText={setOccupation}
-              placeholder="What do you do?"
+              placeholder={t('editProfile.whatDoYouDo')}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Education</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.education')}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={education}
               onChangeText={setEducation}
-              placeholder="Your education background"
+              placeholder={t('editProfile.educationBackground')}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Height (cm)</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.height')}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={height}
               onChangeText={setHeight}
-              placeholder="Your height in cm"
+              placeholder={t('editProfile.heightInCm')}
               placeholderTextColor="#999"
               keyboardType="numeric"
             />
@@ -479,17 +481,17 @@ const EditProfile = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="heart-outline" size={20} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.sectionTitle}>Interests</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('editProfile.interests')}</ThemedText>
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Add Interest</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.addInterest')}</ThemedText>
             <View style={styles.addInterestContainer}>
               <TextInput
                 style={[styles.textInput, styles.addInterestInput]}
                 value={newInterest}
                 onChangeText={setNewInterest}
-                placeholder="Enter an interest"
+                placeholder={t('editProfile.enterAnInterest')}
                 placeholderTextColor="#999"
                 onSubmitEditing={addInterest}
               />
@@ -520,17 +522,17 @@ const EditProfile = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="images-outline" size={20} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.sectionTitle}>Photos</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('editProfile.photos')}</ThemedText>
           </View>
           <View style={styles.photoCountContainer}>
             <ThemedText style={styles.photoCountText}>
-              {photos.length}/6 photos (Minimum 2 required)
+              {t('editProfile.photoCount', { count: photos.length })}
             </ThemedText>
           </View>
 
           <TouchableOpacity style={styles.addPhotoButton} onPress={pickImage}>
             <Ionicons name="camera-outline" size={24} color={Colors.primaryBackgroundColor} />
-            <ThemedText style={styles.addPhotoText}>Add Photo</ThemedText>
+            <ThemedText style={styles.addPhotoText}>{t('editProfile.addPhoto')}</ThemedText>
           </TouchableOpacity>
 
           {photos.length > 0 && (
@@ -580,7 +582,7 @@ const EditProfile = () => {
         {/* Save Button */}
         <View style={styles.saveButtonContainer}>
           <MainButton
-            title="Save Changes"
+            title={t('editProfile.saveChanges')}
             onPress={saveProfile}
             disabled={isLoading}
           />

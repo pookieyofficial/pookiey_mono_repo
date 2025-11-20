@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import { Colors } from '@/constants/Colors';
+import '@/config/i18n'; // Initialize i18n
 
 SplashScreen.preventAutoHideAsync();
 

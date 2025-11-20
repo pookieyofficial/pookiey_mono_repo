@@ -17,9 +17,11 @@ import {
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { deepLinkState } from '@/utils/deepLinkState';
+import { useTranslation } from 'react-i18next';
 
 
 export default function LocationScreen() {
+    const { t } = useTranslation();
     const {
         isLoading,
         hasPermission,
@@ -143,7 +145,7 @@ export default function LocationScreen() {
 
                     <View style={styles.locationHeader}>
                         <ThemedText type="subtitle">
-                            {address}
+                            {address || t('location.currentLocation')}
                         </ThemedText>
                     </View>
 
@@ -166,14 +168,14 @@ export default function LocationScreen() {
                                     latitude: location.coords.latitude,
                                     longitude: location.coords.longitude,
                                 }}
-                                title="Your Location"
-                                description={address || "Current location"}
+                                title={t('location.yourLocation')}
+                                description={address || t('location.currentLocation')}
                             >
                             </Marker>
                         </MapView>
                     </View>
                     <MainButton
-                        title="Continue"
+                        title={t('location.continue')}
                         onPress={handleContinue}
                         disabled={updatingUser}
                     />
@@ -200,17 +202,17 @@ export default function LocationScreen() {
 
                 <View style={styles.textContainer}>
                     <ThemedText type="title" style={styles.title}>
-                        Enable your location
+                        {t('location.title')}
                     </ThemedText>
                     <ThemedText style={styles.subtitle}>
-                        You'll need to enable your location to find people around you
+                        {t('location.subtitle')}
                     </ThemedText>
                 </View>
 
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? "Getting location..." : "Allow location"}
+                    title={isLoading ? t('location.gettingLocation') : t('location.allowLocation')}
                     onPress={handleAccessLocation}
                     disabled={isLoading}
                 />
@@ -219,13 +221,13 @@ export default function LocationScreen() {
             <CustomDialog
                 visible={showErrorDialog}
                 type="error"
-                message={"Unable to access location. Please allow location access to continue."}
+                message={t('location.unableToAccess')}
                 onDismiss={() => {
                     setShowErrorDialog(false);
                     clearError();
                 }}
                 primaryButton={{
-                    text: "Try Again",
+                    text: t('location.tryAgain'),
                     onPress: () => {
                         setShowErrorDialog(false);
                         clearError();

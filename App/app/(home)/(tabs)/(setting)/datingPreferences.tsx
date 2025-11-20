@@ -18,8 +18,10 @@ import CustomBackButton from '@/components/CustomBackButton'
 import MainButton from '@/components/MainButton'
 import CustomDialog from '@/components/CustomDialog'
 import Slider from '@react-native-community/slider'
+import { useTranslation } from 'react-i18next'
 
 const DatingPreferences = () => {
+  const { t } = useTranslation();
   const { dbUser, idToken, setDBUser } = useAuthStore()
   const { updateUser } = useUser()
   const [isLoading, setIsLoading] = useState(false)
@@ -35,7 +37,7 @@ const DatingPreferences = () => {
   const [minAge, setMinAge] = useState(18)
   const [maxAge, setMaxAge] = useState(50)
   const [distance, setDistance] = useState(50)
-  const [showMe, setShowMe] = useState<("male" | "female" | "other")[]>(['male', 'female', 'other'])
+  const [showMe, setShowMe] = useState<("male" | "female")[]>(['male', 'female'])
   const [showLocationDialog, setShowLocationDialog] = useState(false)
 
   useEffect(() => {
@@ -44,18 +46,22 @@ const DatingPreferences = () => {
       setMinAge(dbUser.preferences.ageRange?.[0] || 18)
       setMaxAge(dbUser.preferences.ageRange?.[1] || 50)
       setDistance(dbUser.preferences.distanceMaxKm || 50)
-      setShowMe((dbUser.preferences.showMe || ['male', 'female', 'other']) as ("male" | "female" | "other")[])
+      // Filter out 'other' from existing preferences
+      const filteredShowMe = (dbUser.preferences.showMe || ['male', 'female']).filter(
+        (g) => g === 'male' || g === 'female'
+      ) as ("male" | "female")[]
+      setShowMe(filteredShowMe.length > 0 ? filteredShowMe : ['male', 'female'])
     }
   }, [dbUser])
 
   const handleUpdateLocation = async () => {
     if (!location) {
-      Alert.alert('No Location', 'Please allow location access to update your location')
+      Alert.alert(t('datingPreferences.noLocation'), t('datingPreferences.allowLocationAccess'))
       return
     }
 
     if (!idToken) {
-      Alert.alert('Error', 'Authentication token not found. Please log in again.')
+      Alert.alert(t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
       return
     }
 
@@ -74,13 +80,13 @@ const DatingPreferences = () => {
 
       if (response?.success) {
         setDBUser(response.data)
-        Alert.alert('Success', 'Location updated successfully')
+        Alert.alert(t('datingPreferences.success'), t('datingPreferences.locationUpdatedSuccessfully'))
       } else {
-        Alert.alert('Error', response?.message || 'Failed to update location')
+        Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdateLocation'))
       }
     } catch (error: any) {
       console.error('Update location error:', error)
-      Alert.alert('Error', error?.message || 'Failed to update location')
+      Alert.alert(t('datingPreferences.error'), error?.message || t('datingPreferences.failedToUpdateLocation'))
     }
   }
 
@@ -96,18 +102,13 @@ const DatingPreferences = () => {
   }
 
   const handleSave = async () => {
-    if (minAge >= maxAge) {
-      Alert.alert('Invalid Age Range', 'Minimum age must be less than maximum age')
-      return
-    }
-
     if (!idToken) {
-      Alert.alert('Error', 'Authentication token not found. Please log in again.')
+      Alert.alert(t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
       return
     }
 
     if (showMe.length === 0) {
-      Alert.alert('Invalid Selection', 'Please select at least one gender preference')
+      Alert.alert(t('datingPreferences.invalidSelection'), t('datingPreferences.selectAtLeastOneGender'))
       return
     }
 
@@ -126,16 +127,16 @@ const DatingPreferences = () => {
 
       if (response?.success) {
         setDBUser(response.data)
-        Alert.alert('Success', 'Preferences updated successfully', [
-          { text: 'OK', onPress: () => router.back() }
+        Alert.alert(t('datingPreferences.success'), t('datingPreferences.preferencesUpdatedSuccessfully'), [
+          { text: t('datingPreferences.ok'), onPress: () => router.back() }
         ])
       } else {
-        Alert.alert('Error', response?.message || 'Failed to update preferences')
+        Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdatePreferences'))
       }
     } catch (error: any) {
       console.error('Update preferences error:', error)
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update preferences'
-      Alert.alert('Error', errorMessage)
+      const errorMessage = error?.response?.data?.message || error?.message || t('datingPreferences.failedToUpdatePreferences')
+      Alert.alert(t('datingPreferences.error'), errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -151,7 +152,7 @@ const DatingPreferences = () => {
         <View style={styles.content}>
           {/* Header */}
           <ThemedText type="title" style={styles.title}>
-            Preferences
+            {t('datingPreferences.preferences')}
           </ThemedText>
           
 
@@ -159,15 +160,15 @@ const DatingPreferences = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="people-outline" size={24} color={Colors.primary.red} />
-              <ThemedText style={styles.sectionTitle}>Show Me</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('datingPreferences.showMe')}</ThemedText>
             </View>
             
             <ThemedText style={styles.genderDescription}>
-              Select the genders you're interested in seeing
+              {t('datingPreferences.selectGendersInterested')}
             </ThemedText>
 
             <View style={styles.genderOptions}>
-              {(['male', 'female', 'other'] as const).map((gender) => {
+              {(['male', 'female'] as const).map((gender) => {
                 const isSelected = showMe.includes(gender)
                 return (
                   <TouchableOpacity
@@ -200,7 +201,7 @@ const DatingPreferences = () => {
                       styles.genderLabel,
                       isSelected && styles.genderLabelSelected
                     ]}>
-                      {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                      {gender === 'male' ? t('gender.man') : t('gender.woman')}
                     </ThemedText>
                   </TouchableOpacity>
                 )
@@ -212,31 +213,36 @@ const DatingPreferences = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="heart-outline" size={24} color={Colors.primary.red} />
-              <ThemedText style={styles.sectionTitle}>Age Range</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('datingPreferences.ageRange')}</ThemedText>
             </View>
             
             {/* Min and Max Age Display */}
             <View style={styles.valueRow}>
               <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>Min Age</ThemedText>
+                <ThemedText style={styles.valueLabel}>{t('datingPreferences.minAge')}</ThemedText>
                 <ThemedText type="bold" style={styles.valueText}>{minAge}</ThemedText>
               </View>
               
               <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>Max Age</ThemedText>
+                <ThemedText style={styles.valueLabel}>{t('datingPreferences.maxAge')}</ThemedText>
                 <ThemedText type="bold" style={styles.valueText}>{maxAge}</ThemedText>
               </View>
             </View>
 
             {/* Sliders */}
             <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>Minimum Age: {minAge}</ThemedText>
+              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.minimumAge', { age: minAge })}</ThemedText>
               <Slider
                 style={styles.slider}
                 minimumValue={18}
-                maximumValue={64}
+                maximumValue={Math.max(18, maxAge - 1)}
                 value={minAge}
-                onValueChange={setMinAge}
+                onValueChange={(value) => {
+                  // Ensure min age is always less than max age
+                  if (value < maxAge) {
+                    setMinAge(Math.round(value))
+                  }
+                }}
                 minimumTrackTintColor={Colors.primary.red}
                 maximumTrackTintColor={Colors.text.light}
                 thumbTintColor={Colors.primary.red}
@@ -245,13 +251,18 @@ const DatingPreferences = () => {
             </View>
 
             <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>Maximum Age: {maxAge}</ThemedText>
+              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.maximumAge', { age: maxAge })}</ThemedText>
               <Slider
                 style={styles.slider}
-                minimumValue={18}
+                minimumValue={Math.min(65, minAge + 1)}
                 maximumValue={65}
                 value={maxAge}
-                onValueChange={setMaxAge}
+                onValueChange={(value) => {
+                  // Ensure max age is always greater than min age
+                  if (value > minAge) {
+                    setMaxAge(Math.round(value))
+                  }
+                }}
                 minimumTrackTintColor={Colors.primary.red}
                 maximumTrackTintColor={Colors.text.light}
                 thumbTintColor={Colors.primary.red}
@@ -264,18 +275,18 @@ const DatingPreferences = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="location-outline" size={24} color={Colors.primary.red} />
-              <ThemedText style={styles.sectionTitle}>Maximum Distance</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('datingPreferences.maximumDistance')}</ThemedText>
             </View>
 
             <View style={styles.valueRow}>
               <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>Distance</ThemedText>
+                <ThemedText style={styles.valueLabel}>{t('datingPreferences.distance')}</ThemedText>
                 <ThemedText type="bold" style={styles.valueText}>{distance} km</ThemedText>
               </View>
             </View>
 
             <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>Distance: {distance} km</ThemedText>
+              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.distanceKm', { distance })}</ThemedText>
               <Slider
                 style={styles.slider}
                 minimumValue={1}
@@ -294,11 +305,11 @@ const DatingPreferences = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="navigate-outline" size={24} color={Colors.primary.red} />
-              <ThemedText style={styles.sectionTitle}>Update Location</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('datingPreferences.updateLocation')}</ThemedText>
             </View>
 
             <ThemedText style={styles.locationDescription}>
-              Update your location to see nearby users and connect with people around you
+              {t('datingPreferences.updateLocationDescription')}
             </ThemedText>
 
             <TouchableOpacity
@@ -307,7 +318,7 @@ const DatingPreferences = () => {
               activeOpacity={0.7}
             >
               <Ionicons name="refresh-outline" size={20} color={Colors.primary.red} />
-              <ThemedText style={styles.updateLocationButtonText}>Update Location</ThemedText>
+              <ThemedText style={styles.updateLocationButtonText}>{t('datingPreferences.updateLocationButton')}</ThemedText>
             </TouchableOpacity>
 
             {address && (
@@ -320,7 +331,7 @@ const DatingPreferences = () => {
 
           {/* Save Button */}
           <MainButton
-            title="Save Preferences"
+            title={t('datingPreferences.savePreferences')}
             onPress={handleSave}
             disabled={isLoading}
           />
@@ -330,13 +341,13 @@ const DatingPreferences = () => {
       <CustomDialog
         visible={showLocationDialog}
         type="error"
-        message="Unable to access location. Please allow location access in your device settings to update your location."
+        message={t('datingPreferences.unableToAccessLocation')}
         onDismiss={() => {
           setShowLocationDialog(false)
           clearError()
         }}
         primaryButton={{
-          text: "Try Again",
+          text: t('datingPreferences.tryAgain'),
           onPress: () => {
             setShowLocationDialog(false)
             clearError()

@@ -46,7 +46,7 @@ export interface IUserProfile {
 export interface IUserPreferences {
     distanceMaxKm: number;
     ageRange: [number, number];
-    showMe: ("male" | "female" | "other")[];
+    showMe: ("male" | "female")[];
     notificationPermissions: {
         like: boolean;
         message: boolean;
@@ -117,7 +117,7 @@ const UserSchema = new Schema<IUser>(
         preferences: {
             distanceMaxKm: { type: Number, default: 50 },
             ageRange: { type: [Number], default: [18, 35] },
-            showMe: { type: [String], enum: ["male", "female", "other"] },
+            showMe: { type: [String], enum: ["male", "female"] },
         },
         subscription: {
             status: {

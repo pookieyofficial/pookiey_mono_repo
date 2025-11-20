@@ -15,8 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { ThemedText } from '@/components/ThemedText';
 import CustomLoader from '@/components/CustomLoader';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatsScreen() {
+  const { t } = useTranslation();
   const { inbox, isSocketConnected, triggerReload } = useMessagingStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,16 +48,16 @@ export default function ChatsScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <ThemedText type="title" style={styles.emptyTitle}>No Matches Yet</ThemedText>
+      <ThemedText type="title" style={styles.emptyTitle}>{t('chats.noMatchesYet')}</ThemedText>
       <ThemedText style={styles.emptyThemedText}>
-        Start swiping to find matches and begin conversations!
+        {t('chats.startSwiping')}
       </ThemedText>
     </View>
   );
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <ThemedText type="title" style={styles.headerTitle}>Messages</ThemedText>
+      <ThemedText type="title" style={styles.headerTitle}>{t('chats.messages')}</ThemedText>
     </View>
   );
 

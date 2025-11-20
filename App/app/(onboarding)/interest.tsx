@@ -6,6 +6,7 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ScrollView,
     StyleSheet,
@@ -16,23 +17,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interests = [
-    { id: 'photography', name: 'Photography', icon: 'camera' },
-    { id: 'shopping', name: 'Shopping', icon: 'bag' },
-    { id: 'karaoke', name: 'Karaoke', icon: 'mic' },
-    { id: 'yoga', name: 'Yoga', icon: 'body' },
-    { id: 'cooking', name: 'Cooking', icon: 'restaurant' },
-    { id: 'tennis', name: 'Tennis', icon: 'tennisball' },
-    { id: 'run', name: 'Run', icon: 'walk' },
-    { id: 'swimming', name: 'Swimming', icon: 'water' },
-    { id: 'art', name: 'Art', icon: 'brush' },
-    { id: 'traveling', name: 'Traveling', icon: 'airplane' },
-    { id: 'extreme', name: 'Extreme', icon: 'trail-sign' },
-    { id: 'music', name: 'Music', icon: 'musical-notes' },
-    { id: 'drink', name: 'Drink', icon: 'wine' },
-    { id: 'videogames', name: 'Video games', icon: 'game-controller' },
+    { id: 'photography', key: 'photography', icon: 'camera' },
+    { id: 'shopping', key: 'shopping', icon: 'bag' },
+    { id: 'karaoke', key: 'karaoke', icon: 'mic' },
+    { id: 'yoga', key: 'yoga', icon: 'body' },
+    { id: 'cooking', key: 'cooking', icon: 'restaurant' },
+    { id: 'tennis', key: 'tennis', icon: 'tennisball' },
+    { id: 'run', key: 'run', icon: 'walk' },
+    { id: 'swimming', key: 'swimming', icon: 'water' },
+    { id: 'art', key: 'art', icon: 'brush' },
+    { id: 'traveling', key: 'traveling', icon: 'airplane' },
+    { id: 'extreme', key: 'extreme', icon: 'trail-sign' },
+    { id: 'music', key: 'music', icon: 'musical-notes' },
+    { id: 'drink', key: 'drink', icon: 'wine' },
+    { id: 'videogames', key: 'videogames', icon: 'game-controller' },
 ];
 
 export default function InterestScreen() {
+    const { t } = useTranslation();
     const { interests: storedInterests, setInterests } = useOnboardingStore();
 
     const handleBack = () => {
@@ -43,7 +45,9 @@ export default function InterestScreen() {
         router.push('/(onboarding)/contact');
     };
 
-    const toggleInterest = (interestName: string) => {
+    const toggleInterest = (interestKey: string) => {
+        // Get the English name for storage
+        const interestName = interests.find(i => i.key === interestKey)?.key || interestKey;
         const currentInterests = storedInterests || [];
         let updatedInterests;
 
@@ -57,7 +61,7 @@ export default function InterestScreen() {
     };
 
     const renderInterestChip = (interest: typeof interests[0]) => {
-        const isSelected = (storedInterests || []).includes(interest.name);
+        const isSelected = (storedInterests || []).includes(interest.key);
 
         return (
             <TouchableOpacity
@@ -66,7 +70,7 @@ export default function InterestScreen() {
                     styles.interestChip,
                     isSelected && styles.interestChipSelected,
                 ]}
-                onPress={() => toggleInterest(interest.name)}
+                onPress={() => toggleInterest(interest.key)}
                 activeOpacity={0.7}
             >
                 <Ionicons
@@ -78,7 +82,7 @@ export default function InterestScreen() {
                     styles.interestText,
                     isSelected && styles.interestTextSelected,
                 ]}>
-                    {interest.name}
+                    {t(`interest.${interest.key}`)}
                 </ThemedText>
             </TouchableOpacity>
         );
@@ -93,9 +97,9 @@ export default function InterestScreen() {
 
 
                     <View style={styles.titleSection}>
-                        <ThemedText type="title" style={styles.titleOverride}>Interests</ThemedText>
+                        <ThemedText type="title" style={styles.titleOverride}>{t('interest.title')}</ThemedText>
                         <ThemedText style={styles.subtitle}>
-                            Let everyone know what you're passionate about.
+                            {t('interest.subtitle')}
                         </ThemedText>
                     </View>
 
@@ -107,7 +111,7 @@ export default function InterestScreen() {
 
             <View style={styles.buttonContainer}>
                 <MainButton
-                    title="Continue"
+                    title={t('interest.continue')}
                     onPress={handleContinue}
                     disabled={false}
                 />

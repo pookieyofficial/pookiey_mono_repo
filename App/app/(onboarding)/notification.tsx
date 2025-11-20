@@ -16,8 +16,10 @@ import {
 
 import * as Device from 'expo-device';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 export default function NotificationScreen() {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const [showErrorDialog, setShowErrorDialog] = useState(false);
@@ -108,17 +110,17 @@ export default function NotificationScreen() {
 
                     <View style={styles.textContainer}>
                         <ThemedText type="title" style={styles.title}>
-                            Notifications enabled!
+                            {t('notification.notificationsEnabled')}
                         </ThemedText>
                         <ThemedText type="subtitle" style={styles.subtitle}>
-                            You'll now receive notifications when someone likes your profile or sends you a message
+                            {t('notification.notificationsEnabledSubtitle')}
                         </ThemedText>
                     </View>
 
                     <View style={styles.spacer} />
 
                     <MainButton
-                        title="Continue"
+                        title={t('notification.continue')}
                         onPress={handleContinue}
                     />
                 </View>
@@ -148,10 +150,10 @@ export default function NotificationScreen() {
 
                 <View style={styles.textContainer}>
                     <ThemedText type="title" style={styles.title}>
-                        Stay in the loop
+                        {t('notification.title')}
                     </ThemedText>
                     <ThemedText style={styles.subtitle}>
-                        Get notified when someone likes your profile or sends you a message.
+                        {t('notification.subtitle')}
                     </ThemedText>
                 </View>
 
@@ -161,7 +163,7 @@ export default function NotificationScreen() {
                             <Ionicons name="heart" size={20} color={Colors.primaryBackgroundColor} />
                         </View>
                         <ThemedText style={styles.featureText}>
-                            Know when someone likes you
+                            {t('notification.knowWhenLikes')}
                         </ThemedText>
                     </View>
 
@@ -170,7 +172,7 @@ export default function NotificationScreen() {
                             <Ionicons name="chatbubble" size={20} color={Colors.primaryBackgroundColor} />
                         </View>
                         <ThemedText style={styles.featureText}>
-                            Get instant message alerts
+                            {t('notification.instantMessageAlerts')}
                         </ThemedText>
                     </View>
 
@@ -179,7 +181,7 @@ export default function NotificationScreen() {
                             <Ionicons name="flash" size={20} color={Colors.primaryBackgroundColor} />
                         </View>
                         <ThemedText style={styles.featureText}>
-                            Never miss a match
+                            {t('notification.neverMissMatch')}
                         </ThemedText>
                     </View>
                 </View>
@@ -187,7 +189,7 @@ export default function NotificationScreen() {
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? "Enabling notifications..." : "Allow notifications"}
+                    title={isLoading ? t('notification.enablingNotifications') : t('notification.allowNotifications')}
                     onPress={handleContinue}
                     disabled={isLoading}
                 />
@@ -196,17 +198,17 @@ export default function NotificationScreen() {
             <CustomDialog
                 visible={showErrorDialog}
                 type="error"
-                message="Unable to enable notifications. You can enable them later in your device settings."
+                message={t('notification.unableToEnable')}
                 onDismiss={() => setShowErrorDialog(false)}
                 primaryButton={{
-                    text: "Try Again",
+                    text: t('notification.tryAgain'),
                     onPress: () => {
                         setShowErrorDialog(false);
                         requestNotificationPermission();
                     }
                 }}
                 secondaryButton={{
-                    text: "Skip",
+                    text: t('notification.skip'),
                     onPress: () => {
                         setShowErrorDialog(false);
                         handleSkip();
