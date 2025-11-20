@@ -19,7 +19,7 @@ export interface User {
 }
 
 export interface UserPreferences {
-  interestedIn: ('male' | 'female' | 'other')[];
+  interestedIn: ('male' | 'female')[];
   ageRange: [number, number];
   distanceRangeKm: number;
   education: string[];
