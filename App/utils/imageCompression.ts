@@ -20,18 +20,15 @@ export interface UploadedImageResult {
 }
 
 /**
- * Compress and convert an image to JPEG
+ * Compress and convert an image to JPEG without changing dimensions
+ * Only changes format and applies compression - preserves original width and height
  * @param imageUri - Local URI of the image
  * @param quality - Compression quality (0-1), default is 0.8
- * @param maxWidth - Maximum width in pixels, default is 1920
- * @param maxHeight - Maximum height in pixels, default is 1920
- * @returns Compressed image result
+ * @returns Compressed image result with original dimensions preserved
  */
 export async function compressImageToJPEG(
   imageUri: string,
-  quality: number = 0.8,
-  maxWidth: number = 1920,
-  maxHeight: number = 1920
+  quality: number = 0.8
 ): Promise<CompressedImageResult> {
   try {
     console.log('🔄 Starting image compression...');
@@ -87,24 +84,21 @@ export async function compressImageToJPEG(
 }
 
 /**
- * Compress multiple images to JPEG
+ * Compress multiple images to JPEG without changing dimensions
+ * Only changes format and applies compression - preserves original width and height
  * @param imageUris - Array of local URIs
  * @param quality - Compression quality (0-1), default is 0.8
- * @param maxWidth - Maximum width in pixels, default is 1920
- * @param maxHeight - Maximum height in pixels, default is 1920
- * @returns Array of compressed image results
+ * @returns Array of compressed image results with original dimensions preserved
  */
 export async function compressMultipleImages(
   imageUris: string[],
-  quality: number = 0.8,
-  maxWidth: number = 1920,
-  maxHeight: number = 1920
+  quality: number = 0.8
 ): Promise<CompressedImageResult[]> {
   try {
     console.log(`🔄 Compressing ${imageUris.length} images...`);
 
     const compressedImages = await Promise.all(
-      imageUris.map((uri) => compressImageToJPEG(uri, quality, maxWidth, maxHeight))
+      imageUris.map((uri) => compressImageToJPEG(uri, quality))
     );
 
     console.log(`✅ All ${imageUris.length} images compressed`);

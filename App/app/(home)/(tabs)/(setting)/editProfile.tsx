@@ -32,6 +32,7 @@ const EditProfile = () => {
   const { t } = useTranslation();
   const { dbUser, idToken, setDBUser } = useAuthStore()
   const { updateUser } = useUser()
+  const MAX_PHOTOS = 10
   
   // Form state
   const [firstName, setFirstName] = useState('')
@@ -100,8 +101,9 @@ const EditProfile = () => {
 
   // Pick image from gallery
   const pickImage = async () => {
-    if (photos.length >= 6) {
-      Alert.alert(t('editProfile.limitReached'), t('editProfile.upTo6Photos'))
+    const maxPhotos = MAX_PHOTOS
+    if (photos.length >= maxPhotos) {
+      Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
       return
     }
 
@@ -111,14 +113,23 @@ const EditProfile = () => {
       aspect: [3, 4],
       quality: 0.8,
       allowsMultipleSelection: true,
-      selectionLimit: 6 - photos.length,
+      selectionLimit: maxPhotos - photos.length,
     })
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const newPhotos: any[] = []
       const newMimeTypes: string[] = []
+      const remainingSlots = maxPhotos - photos.length
       
-      for (const asset of result.assets) {
+      if (remainingSlots <= 0) {
+        Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
+        return
+      }
+      
+      // Limit the number of photos that can be added
+      const photosToAdd = result.assets.slice(0, remainingSlots)
+      
+      for (const asset of photosToAdd) {
         const localUri = asset.uri
         
         // Check for duplicates
@@ -137,8 +148,26 @@ const EditProfile = () => {
       }
 
       if (newPhotos.length > 0) {
-        setPhotos([...photos, ...newPhotos])
-        setPhotoMimeTypes([...photoMimeTypes, ...newMimeTypes])
+        const totalPhotos = photos.length + newPhotos.length
+        if (totalPhotos > maxPhotos) {
+          // This shouldn't happen, but add a safety check
+          const photosToKeep = newPhotos.slice(0, maxPhotos - photos.length)
+          const mimeTypesToKeep = newMimeTypes.slice(0, maxPhotos - photos.length)
+          setPhotos([...photos, ...photosToKeep])
+          setPhotoMimeTypes([...photoMimeTypes, ...mimeTypesToKeep])
+          Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
+        } else {
+          setPhotos([...photos, ...newPhotos])
+          setPhotoMimeTypes([...photoMimeTypes, ...newMimeTypes])
+        }
+      }
+      
+      // Warn if user tried to select more than allowed
+      if (result.assets.length > remainingSlots) {
+        Alert.alert(
+          t('editProfile.limitReached'), 
+          `You can add up to ${maxPhotos} photos. Only ${remainingSlots} ${remainingSlots === 1 ? 'photo' : 'photos'} added.`
+        )
       }
     }
   }
@@ -209,9 +238,7 @@ const EditProfile = () => {
           try {
             const compressed = await compressImageToJPEG(
               photoUrl,
-              0.8,  // Good quality for profile photos
-              1920, // Max width
-              1920  // Max height
+              0.8  // Good quality for profile photos
             );
             
             compressedPhotos.push({
@@ -526,7 +553,7 @@ const EditProfile = () => {
           </View>
           <View style={styles.photoCountContainer}>
             <ThemedText style={styles.photoCountText}>
-              {t('editProfile.photoCount', { count: photos.length })}
+              {photos.length}/{MAX_PHOTOS} photos (Minimum 2 required)
             </ThemedText>
           </View>
 
@@ -748,12 +775,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   photosScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
+    maxHeight: 220,
   },
   photosContainer: {
+    paddingHorizontal: 0,
     gap: 12,
-    paddingRight: 0,
+    paddingRight: 20,
   },
   photoItem: {
     width: 150,
@@ -761,6 +788,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    marginRight: 0,
   },
   photoImage: {
     width: '100%',

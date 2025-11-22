@@ -60,9 +60,7 @@ export default function PremiumImageSelectorScreen() {
           try {
             const compressed = await compressImageToJPEG(
               selectedImages[i],
-              0.8,  // Good quality for profile photos
-              1920, // Max width
-              1920  // Max height
+              0.8  // Good quality for profile photos
             );
             
             compressedImages.push(compressed.uri);
