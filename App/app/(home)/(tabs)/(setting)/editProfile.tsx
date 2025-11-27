@@ -62,7 +62,7 @@ const EditProfile = () => {
         setOccupation(dbUser.profile.occupation || '')
         setEducation(dbUser.profile.education || '')
         setHeight(dbUser.profile.height?.toString() || '')
-        setInterests(dbUser.profile.interests || [])
+        setInterests((dbUser.profile.interests || []).map((interest: string) => interest.toLowerCase()))
         const existingPhotos = dbUser.profile.photos || []
         setPhotos(existingPhotos)
         // Set default mime types for existing S3 URLs
@@ -77,8 +77,9 @@ const EditProfile = () => {
 
   // Add interest
   const addInterest = () => {
-    if (newInterest.trim() && !interests.includes(newInterest.trim()) && interests.length < 10) {
-      setInterests([...interests, newInterest.trim()])
+    const trimmedInterest = newInterest.trim().toLowerCase()
+    if (trimmedInterest && !interests.includes(trimmedInterest) && interests.length < 10) {
+      setInterests([...interests, trimmedInterest])
       setNewInterest('')
     } else if (interests.length >= 10) {
       Alert.alert(t('editProfile.limitReached'), t('editProfile.upTo10Interests'))
@@ -486,7 +487,7 @@ const EditProfile = () => {
           occupation: occupation.trim() || undefined,
           education: education.trim() || undefined,
           height: height ? parseInt(height) : undefined,
-          interests: interests.length > 0 ? interests : undefined,
+          interests: interests.length > 0 ? interests.map(interest => interest.toLowerCase()) : undefined,
           photos: finalPhotos
         }
       }
