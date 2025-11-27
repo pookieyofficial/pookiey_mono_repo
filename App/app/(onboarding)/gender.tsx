@@ -23,7 +23,7 @@ export default function GenderScreen() {
     const handleContinue = () => {
         if (gender === '') return
         setGender(gender as GenderOption);
-        router.push('/(onboarding)/interest');
+        router.push('/(onboarding)/occupation');
     };
 
     const handleGenderSelect = (gender: GenderOption) => {

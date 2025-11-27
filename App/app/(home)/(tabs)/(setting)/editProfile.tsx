@@ -7,7 +7,8 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
@@ -21,7 +22,7 @@ import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { LogBox } from 'react-native';
-import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3'
+import { requestPresignedURl, uploadMultipleTos3, uploadTos3 } from '@/hooks/uploadTos3'
 import { compressImageToJPEG } from '@/utils/imageCompression'
 import { useTranslation } from 'react-i18next'
 LogBox.ignoreAllLogs(false);
@@ -46,23 +47,31 @@ const EditProfile = () => {
   const [newInterest, setNewInterest] = useState('')
   const [photos, setPhotos] = useState<any[]>([])
   const [photoMimeTypes, setPhotoMimeTypes] = useState<string[]>([])
+  const [photoURL, setPhotoURL] = useState('')
+  const [isUploadingPhotoURL, setIsUploadingPhotoURL] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   // Initialize form with current user data
   useEffect(() => {
-    if (dbUser?.profile) {
-      setFirstName(dbUser.profile.firstName || '')
-      setLastName(dbUser.profile.lastName || '')
-      setBio(dbUser.profile.bio || '')
-      setGender((dbUser.profile.gender as 'male' | 'female' | 'other') || 'male')
-      setOccupation(dbUser.profile.occupation || '')
-      setEducation(dbUser.profile.education || '')
-      setHeight(dbUser.profile.height?.toString() || '')
-      setInterests(dbUser.profile.interests || [])
-      const existingPhotos = dbUser.profile.photos || []
-      setPhotos(existingPhotos)
-      // Set default mime types for existing S3 URLs
-      setPhotoMimeTypes(existingPhotos.map(() => 'image/jpeg'))
+    if (dbUser) {
+      if (dbUser.profile) {
+        setFirstName(dbUser.profile.firstName || '')
+        setLastName(dbUser.profile.lastName || '')
+        setBio(dbUser.profile.bio || '')
+        setGender((dbUser.profile.gender as 'male' | 'female' | 'other') || 'male')
+        setOccupation(dbUser.profile.occupation || '')
+        setEducation(dbUser.profile.education || '')
+        setHeight(dbUser.profile.height?.toString() || '')
+        setInterests(dbUser.profile.interests || [])
+        const existingPhotos = dbUser.profile.photos || []
+        setPhotos(existingPhotos)
+        // Set default mime types for existing S3 URLs
+        setPhotoMimeTypes(existingPhotos.map(() => 'image/jpeg'))
+      }
+      // Initialize photoURL
+      if (dbUser.photoURL) {
+        setPhotoURL(dbUser.photoURL)
+      }
     }
   }, [dbUser])
 
@@ -183,6 +192,133 @@ const EditProfile = () => {
     setPhotos(newPhotos)
     setPhotoMimeTypes(newMimeTypes)
   }
+
+  // Upload profile picture (photoURL)
+  const uploadProfilePicture = async (imageUri: string) => {
+    try {
+      setIsUploadingPhotoURL(true);
+      
+      // Check if it's already an S3 URL
+      if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+        setPhotoURL(imageUri);
+        setIsUploadingPhotoURL(false);
+        return imageUri;
+      }
+
+      // Compress the image
+      const compressed = await compressImageToJPEG(imageUri, 0.8);
+      
+      // Request presigned URL
+      const presignedUrls = await requestPresignedURl([compressed.mimeType]);
+      
+      if (!presignedUrls || presignedUrls.length === 0) {
+        throw new Error('Failed to get presigned URL');
+      }
+
+      const { uploadUrl, fileURL } = presignedUrls[0];
+
+      // Upload to S3
+      const uploadSuccess = await uploadTos3(
+        compressed.uri,
+        uploadUrl,
+        compressed.mimeType
+      );
+
+      if (!uploadSuccess) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Clean up compressed file if different from original
+      if (compressed.uri !== imageUri) {
+        try {
+          await FileSystem.deleteAsync(compressed.uri, { idempotent: true });
+        } catch (cleanupError) {
+          console.warn('Failed to clean up compressed file:', cleanupError);
+        }
+      }
+
+      setPhotoURL(fileURL);
+      setIsUploadingPhotoURL(false);
+      return fileURL;
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      setIsUploadingPhotoURL(false);
+      Alert.alert(t('editProfile.error'), t('editProfile.failedToUploadImage'));
+      throw error;
+    }
+  };
+
+  // Pick profile picture
+  const pickProfilePicture = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(t('editProfile.permissionRequired'), t('editProfile.cameraRollPermission'));
+        return;
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const selectedUri = result.assets[0].uri;
+        await uploadProfilePicture(selectedUri);
+      }
+    } catch (error) {
+      Alert.alert(t('editProfile.error'), t('editProfile.failedToSelectImage'));
+    }
+  };
+
+  // Take profile picture
+  const takeProfilePicture = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(t('editProfile.permissionRequired'), t('editProfile.cameraPermission'));
+        return;
+      }
+
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const selectedUri = result.assets[0].uri;
+        await uploadProfilePicture(selectedUri);
+      }
+    } catch (error) {
+      Alert.alert(t('editProfile.error'), t('editProfile.failedToTakePhoto'));
+    }
+  };
+
+  const showProfilePictureOptions = () => {
+    Alert.alert(
+      t('editProfile.selectProfilePicture'),
+      t('editProfile.chooseOption'),
+      [
+        {
+          text: t('editProfile.chooseFromLibrary'),
+          onPress: pickProfilePicture,
+        },
+        {
+          text: t('editProfile.takePhoto'),
+          onPress: takeProfilePicture,
+        },
+        {
+          text: t('editProfile.cancel'),
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   // Save profile
   const saveProfile = async () => {
@@ -341,7 +477,7 @@ const EditProfile = () => {
         }
       }
 
-      const profileData = {
+      const profileData: any = {
         profile: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -353,6 +489,11 @@ const EditProfile = () => {
           interests: interests.length > 0 ? interests : undefined,
           photos: finalPhotos
         }
+      }
+
+      // Include photoURL if it has been set
+      if (photoURL) {
+        profileData.photoURL = photoURL;
       }
 
       const response = await updateUser(idToken, profileData)
@@ -393,6 +534,44 @@ const EditProfile = () => {
           <View style={styles.sectionHeader}>
             <Ionicons name="person-outline" size={20} color={Colors.primaryBackgroundColor} />
             <ThemedText style={styles.sectionTitle}>{t('editProfile.basicInformation')}</ThemedText>
+          </View>
+
+          {/* Profile Picture (photoURL) */}
+          <View style={styles.inputGroup}>
+            <ThemedText style={styles.inputLabel}>{t('editProfile.profilePicture')}</ThemedText>
+            <View style={styles.profilePictureContainer}>
+              <TouchableOpacity 
+                onPress={showProfilePictureOptions} 
+                style={styles.profilePictureButton}
+                disabled={isUploadingPhotoURL}
+              >
+                {photoURL ? (
+                  <View style={styles.profilePictureWrapper}>
+                    <Image source={{ uri: photoURL }} style={styles.profilePictureImage} />
+                    {isUploadingPhotoURL && (
+                      <View style={styles.uploadingOverlay}>
+                        <ActivityIndicator size="large" color="#FFFFFF" />
+                      </View>
+                    )}
+                    
+                  </View>
+                ) : (
+                  <View style={styles.profilePicturePlaceholder}>
+                    <Ionicons name="person" size={40} color={Colors.secondaryForegroundColor} />
+                    <Ionicons name="camera" size={20} color={Colors.primaryBackgroundColor} style={styles.cameraIconPlaceholder} />
+                  </View>
+                )}
+              </TouchableOpacity>
+              {photoURL && (
+                <TouchableOpacity 
+                  style={styles.editPhotoButton}
+                  onPress={showProfilePictureOptions}
+                >
+                  <Ionicons name="create-outline" size={16} color={Colors.primaryBackgroundColor} />
+                  <ThemedText style={styles.editPhotoText}>{t('editProfile.editPhoto')}</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
@@ -819,6 +998,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+  },
+  profilePictureContainer: {
+    alignItems: 'center',
+  },
+  profilePictureButton: {
+    marginBottom: 12,
+  },
+  profilePictureWrapper: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: Colors.secondaryBackgroundColor,
+  },
+  profilePictureImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  profilePicturePlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.secondaryBackgroundColor,
+    borderWidth: 3,
+    borderColor: Colors.secondaryBackgroundColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  cameraIconOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: Colors.primaryBackgroundColor,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  cameraIconPlaceholder: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.secondaryBackgroundColor,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  editPhotoText: {
+    fontSize: 14,
+    color: Colors.primaryBackgroundColor,
+    fontWeight: '600',
   },
 })
 

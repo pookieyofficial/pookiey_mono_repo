@@ -19,11 +19,16 @@ import {
   Platform,
   Alert,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
+import { compressImageToJPEG } from '@/utils/imageCompression';
+import { useUser } from '@/hooks/useUser';
+import * as FileSystem from 'expo-file-system/legacy';
 
 // Define color scheme
 const Colors = {
@@ -50,9 +55,12 @@ const { width } = Dimensions.get('window');
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture, setLanguage } = useOnboardingStore();
-  const { dbUser } = useAuthStore();
+  const { dbUser, idToken, setDBUser } = useAuthStore();
+  const { updateUser, getUser } = useUser();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(birthday ? new Date(birthday) : new Date());
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedPhotoURL, setUploadedPhotoURL] = useState<string | null>(null);
   
   // Initialize name from provider if available, otherwise from store
   const getInitialFirstName = () => {
@@ -77,6 +85,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (dbUser?.photoURL && !profilePicture) {
       setProfilePicture(dbUser.photoURL);
+      setUploadedPhotoURL(dbUser.photoURL);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbUser?.photoURL]);
@@ -149,6 +158,75 @@ export default function ProfileScreen() {
     });
   };
 
+  const uploadProfilePicture = async (imageUri: string) => {
+    try {
+      setIsUploading(true);
+      
+      // Check if it's already an S3 URL
+      if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+        setUploadedPhotoURL(imageUri);
+        setIsUploading(false);
+        return imageUri;
+      }
+
+      // Compress the image
+      const compressed = await compressImageToJPEG(imageUri, 0.8);
+      
+      // Request presigned URL
+      const presignedUrls = await requestPresignedURl([compressed.mimeType]);
+      
+      if (!presignedUrls || presignedUrls.length === 0) {
+        throw new Error('Failed to get presigned URL');
+      }
+
+      const { uploadUrl, fileURL } = presignedUrls[0];
+
+      // Upload to S3
+      const uploadSuccess = await uploadTos3(
+        compressed.uri,
+        uploadUrl,
+        compressed.mimeType
+      );
+
+      if (!uploadSuccess) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Clean up compressed file if different from original
+      if (compressed.uri !== imageUri) {
+        try {
+          await FileSystem.deleteAsync(compressed.uri, { idempotent: true });
+        } catch (cleanupError) {
+          console.warn('Failed to clean up compressed file:', cleanupError);
+        }
+      }
+
+      setUploadedPhotoURL(fileURL);
+      
+      // Save to database immediately
+      if (idToken) {
+        try {
+          await updateUser(idToken, { photoURL: fileURL });
+          const updatedUserResponse = await getUser(idToken);
+          const updatedDBUser = updatedUserResponse?.data?.user || updatedUserResponse?.data;
+          if (updatedDBUser) {
+            setDBUser(updatedDBUser);
+          }
+        } catch (error) {
+          console.error('Failed to save photoURL to database:', error);
+        }
+      }
+
+      setIsUploading(false);
+      return fileURL;
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      setIsUploading(false);
+      Alert.alert(t('profile.error'), t('profile.failedToUploadImage'));
+      throw error;
+    }
+  };
+
   const pickImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -160,13 +238,16 @@ export default function ProfileScreen() {
 
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
+        allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 1,
       });
 
       if (!result.canceled) {
-        setProfilePicture(result.assets[0].uri);
+        const selectedUri = result.assets[0].uri;
+        setProfilePicture(selectedUri);
+        // Upload immediately
+        await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
       Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
@@ -183,13 +264,16 @@ export default function ProfileScreen() {
       }
 
       let result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
+        allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 1,
       });
 
       if (!result.canceled) {
-        setProfilePicture(result.assets[0].uri);
+        const selectedUri = result.assets[0].uri;
+        setProfilePicture(selectedUri);
+        // Upload immediately
+        await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
       Alert.alert(t('profile.error'), t('profile.failedToTakePhoto'));
@@ -237,13 +321,24 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.profilePictureContainer}>
-              <TouchableOpacity onPress={showImagePickerOptions} style={styles.profilePictureButton}>
+              <TouchableOpacity 
+                onPress={showImagePickerOptions} 
+                style={styles.profilePictureButton}
+                disabled={isUploading}
+              >
                 <View style={styles.profilePicture}>
                   {profilePicture ? (
-                    <Image
-                      source={{ uri: profilePicture }}
-                      style={styles.profileImage}
-                    />
+                    <>
+                      <Image
+                        source={{ uri: profilePicture }}
+                        style={styles.profileImage}
+                      />
+                      {isUploading && (
+                        <View style={styles.uploadingOverlay}>
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        </View>
+                      )}
+                    </>
                   ) : (
                     <View style={styles.profileImagePlaceholder}>
                       <Ionicons name="person" size={60} color={Colors.secondaryForegroundColor} />
@@ -254,7 +349,20 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
-              <ThemedText type='default' style={styles.profilePictureHint}>{t('profile.tapToChangePhoto')}</ThemedText>
+              <ThemedText type='default' style={styles.profilePictureHint}>
+                {isUploading ? t('profile.uploading') : t('profile.tapToChangePhoto')}
+              </ThemedText>
+              {profilePicture && uploadedPhotoURL && (
+                <View style={styles.editOptionsContainer}>
+                  <TouchableOpacity 
+                    style={styles.editOptionButton}
+                    onPress={showImagePickerOptions}
+                  >
+                    <Ionicons name="create-outline" size={16} color={Colors.primaryBackgroundColor} />
+                    <ThemedText style={styles.editOptionText}>{t('profile.editPhoto')}</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputContainer}>
@@ -423,6 +531,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.secondaryForegroundColor,
     marginTop: 8,
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editOptionsContainer: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  editOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.secondaryBackgroundColor,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  editOptionText: {
+    fontSize: 14,
+    color: Colors.primaryBackgroundColor,
+    fontWeight: '600',
   },
   inputContainer: {
     flex: 1,
