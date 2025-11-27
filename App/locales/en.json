@@ -23,13 +23,23 @@
     "cameraPermission": "Sorry, we need camera permissions to take a photo.",
     "error": "Error",
     "failedToSelectImage": "Failed to select image. Please try again.",
-    "failedToTakePhoto": "Failed to take photo. Please try again."
+    "failedToTakePhoto": "Failed to take photo. Please try again.",
+    "uploading": "Uploading...",
+    "editPhoto": "Edit Photo",
+    "failedToUploadImage": "Failed to upload image. Please try again."
   },
   "gender": {
     "title": "I am a",
     "woman": "Woman",
     "man": "Man",
     "continue": "Continue"
+  },
+  "occupation": {
+    "title": "What do you do?",
+    "subtitle": "Let others know about your profession",
+    "continue": "Continue",
+    "noneOfAbove": "None of the above",
+    "enterCustom": "Enter your occupation"
   },
   "interest": {
     "title": "Interests",
@@ -246,7 +256,20 @@
     "duplicateImage": "Duplicate Image",
     "imageAlreadySelected": "This image has already been selected.",
     "failedToGetUploadUrls": "Failed to get upload URLs. Please try again.",
-    "someImagesFailedToUpload": "Some images failed to upload. Please try again."
+    "someImagesFailedToUpload": "Some images failed to upload. Please try again.",
+    "profilePicture": "Profile Picture",
+    "selectProfilePicture": "Select Profile Picture",
+    "chooseOption": "Choose an option",
+    "chooseFromLibrary": "Choose from Library",
+    "takePhoto": "Take Photo",
+    "cancel": "Cancel",
+    "editPhoto": "Edit Photo",
+    "permissionRequired": "Permission required",
+    "cameraRollPermission": "Sorry, we need camera roll permissions to select a profile picture.",
+    "cameraPermission": "Sorry, we need camera permissions to take a photo.",
+    "failedToSelectImage": "Failed to select image. Please try again.",
+    "failedToTakePhoto": "Failed to take photo. Please try again.",
+    "failedToUploadImage": "Failed to upload image. Please try again."
   },
   "datingPreferences": {
     "preferences": "Preferences",
