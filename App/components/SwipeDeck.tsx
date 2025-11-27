@@ -33,7 +33,6 @@ export interface SwipeDeckProps {
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     data,
     onSwiped,
-    onMatch,
     onCardPress,
 }) => {
     const router = useRouter();
@@ -82,24 +81,6 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         }
     };
 
-    const handleYup = (item: CardItem) => {
-        handleInteraction(item, "right");
-        onSwiped?.(item, "right");
-        return true;
-    };
-
-    const handleNope = (item: CardItem) => {
-        handleInteraction(item, "left");
-        onSwiped?.(item, "left");
-        return true;
-    };
-
-    const handleMaybe = (item: CardItem) => {
-        handleInteraction(item, "up");
-        onSwiped?.(item, "up");
-        return true;
-    };
-
     const renderCard = (item: CardItem) => {
         if (!item) return null;
         const age = calculateAge(item?.profile?.dateOfBirth);
@@ -118,36 +99,25 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
                 <BlurView intensity={80} tint="dark" style={styles.gradient} />
 
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => onCardPress?.(item)}
-                    >
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => onCardPress?.(item)}
+                >
+                    <View style={styles.footer}>
                         <ThemedText type="bold" style={styles.name}>
                             {item?.profile?.firstName} {item?.profile?.lastName}, {age}
                         </ThemedText>
-                    </TouchableOpacity>
 
-                    {item?.profile?.occupation && (
-                        <ThemedText type="default" style={styles.job}>
-                            {item.profile.occupation}
-                        </ThemedText>
-                    )}
-                </View>
+                        {item?.profile?.occupation && (
+                            <ThemedText type="default" style={styles.job}>
+                                {item.profile.occupation}
+                            </ThemedText>
+                        )}
+                    </View>
+                </TouchableOpacity>
             </View>
         );
     };
-
-    const renderNoMoreCards = () => (
-        <View style={styles.endContainer}>
-            <ThemedText style={styles.endText}>
-                No sparks nearby right now.
-            </ThemedText>
-            <ThemedText type="default" style={styles.endSubText}>
-                We're looking for more matches near you—check back soon!
-            </ThemedText>
-        </View>
-    );
 
     const hasCards = Array.isArray(data) && data.length > 0;
 

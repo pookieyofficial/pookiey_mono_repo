@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/Colors'
 import { ThemedText } from './ThemedText'
+import CustomBackButton from './CustomBackButton'
 import { DBUser } from '@/types/Auth'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
@@ -25,6 +26,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUserInteraction } from '@/hooks/userInteraction'
 import { messageAPI } from '@/APIs/messageAPIs'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -74,6 +76,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const { t } = useTranslation();
   const router = useRouter()
   const { returnToStory } = useLocalSearchParams<{ returnToStory?: string }>()
+  const insets = useSafeAreaInsets()
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' })
@@ -81,24 +84,21 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const { inbox, setInbox } = useMessagingStore()
   const { token } = useAuth()
   const { likeUser } = useUserInteraction()
-  
+
   const displayUser = user || DEFAULT_MOCK_USER
 
   const findOrCreateMatch = async (otherUserId: string): Promise<string | null> => {
     try {
-      // First, check if match exists in inbox
       let existingMatch = inbox.find(item => item.userId === otherUserId)
       if (existingMatch) {
         return existingMatch.matchId
       }
 
-      // Refresh inbox from backend to get latest matches
       if (token) {
         try {
           const updatedInbox = await messageAPI.getInbox(token)
           setInbox(updatedInbox)
-          
-          // Check again after refresh
+
           existingMatch = updatedInbox.find(item => item.userId === otherUserId)
           if (existingMatch) {
             return existingMatch.matchId
@@ -108,14 +108,10 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
         }
       }
 
-      // If no match found, try to create one by liking the user
-      // This will create a match if the other user already liked you
       if (token && currentUser?.user_id) {
         try {
           const interactionResult = await likeUser(otherUserId)
-          
-          // If interaction created a match, use the match ID
-          // The backend response may include matchId directly or in match._id
+
           if (interactionResult.isMatch) {
             const matchId = (interactionResult as any).matchId || interactionResult.match?._id
             if (matchId) {
@@ -123,12 +119,11 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
             }
           }
 
-          // Even if not a match, refresh inbox in case one was created
           if (token) {
             try {
               const updatedInbox = await messageAPI.getInbox(token)
               setInbox(updatedInbox)
-              
+
               const newMatch = updatedInbox.find(item => item.userId === otherUserId)
               if (newMatch) {
                 return newMatch.matchId
@@ -179,7 +174,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
     // Try to find or create a match
     const matchId = await findOrCreateMatch(displayUser.user_id)
-    
+
     if (!matchId) {
       const userName = displayUser.profile?.firstName || displayUser.displayName || displayUser.user_id || 'this user'
       setAlertMessage({
@@ -196,7 +191,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
     // First navigate to chat tab
     router.push('/(home)/(tabs)/(chats)/' as any)
-    
+
     // Then navigate to chat room after a brief delay to show the chat tab first
     setTimeout(() => {
       router.push({
@@ -227,7 +222,67 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const firstName = displayUser?.profile?.firstName || displayUser?.displayName || 'User'
   const occupation = displayUser?.profile?.occupation
   const location = displayUser?.profile?.location
-  const distance = 1 // mock distance
+  const currentUserLocation = currentUser?.profile?.location
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number => {
+    const R = 6371 // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180)
+    const dLon = (lon2 - lon1) * (Math.PI / 180)
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  // Calculate distance if both locations are available
+  const getDistance = (): number | null => {
+    if (
+      !currentUserLocation?.coordinates ||
+      !location?.coordinates ||
+      currentUserLocation.coordinates.length < 2 ||
+      location.coordinates.length < 2
+    ) {
+      return null
+    }
+
+    // Coordinates are stored as [longitude, latitude]
+    const [lon1, lat1] = currentUserLocation.coordinates
+    const [lon2, lat2] = location.coordinates
+
+    if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
+        typeof lat2 !== 'number' || typeof lon2 !== 'number') {
+      return null
+    }
+
+    // calculateDistance expects (lat1, lon1, lat2, lon2)
+    return calculateDistance(lat1, lon1, lat2, lon2)
+  }
+
+  const distance = getDistance()
+
+  // Format distance for display
+  const formatDistance = (dist: number): string => {
+    // For privacy: show "under 500 m" for distances under 0.5 km
+    if (dist < 0.5) {
+      return 'under 500 m'
+    } else if (dist < 1) {
+      return `${Math.round(dist * 1000)} m`
+    } else if (dist < 10) {
+      return `${dist.toFixed(1)} km`
+    } else {
+      return `${Math.round(dist)} km`
+    }
+  }
 
   const BIO_TRUNCATE_LENGTH = 100
   const isBioLong = bio.length > BIO_TRUNCATE_LENGTH
@@ -235,7 +290,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
   // Get current user's interests for comparison
   const currentUserInterests = currentUser?.profile?.interests || []
-  
+
   // Helper function to check if interest matches
   const isInterestMatch = (interest: string) => {
     return currentUserInterests.some(
@@ -244,76 +299,72 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.headerSection}>
+            {photos.length > 0 && photos.length > 1 ? (
+              <Image
+                source={{ uri: photos[1] || photos[0] }}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+                blurRadius={20}
+              />
+            ) : photos.length > 0 ? (
+              <Image
+                source={{ uri: photos[0] }}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+                blurRadius={20}
+              />
+            ) : (
+              <View style={styles.headerImagePlaceholder}>
+                <Ionicons name="person" size={80} color={Colors.primary.white} />
+              </View>
+            )}
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header with Two Layered Images */}
-        <View style={styles.headerSection}>
-          {/* Background Image (for gradient effect) */}
-          {photos.length > 0 && photos.length > 1 ? (
-            <Image
-              source={{ uri: photos[1] || photos[0] }}
-              style={styles.backgroundImage}
-              resizeMode="cover"
-              blurRadius={20}
+            {/* Foreground Image (main image) */}
+            {photos.length > 0 ? (
+              <Image
+                source={{ uri: photos[0] }}
+                style={styles.foregroundImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.headerImagePlaceholder}>
+                <Ionicons name="person" size={80} color={Colors.primary.white} />
+              </View>
+            )}
+
+            {/* Gradient overlay */}
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
+              style={styles.imageOverlay}
             />
-          ) : photos.length > 0 ? (
-            <Image
-              source={{ uri: photos[0] }}
-              style={styles.backgroundImage}
-              resizeMode="cover"
-              blurRadius={20}
+
+            {/* Back Button at top */}
+            <CustomBackButton
+              variant="overlay"
+              topOffset={8}
+              onPress={() => {
+                // Check if we came from story viewer
+                if (returnToStory === 'true') {
+                  router.push('/(home)/(tabs)/(story)/' as any);
+                } else {
+                  router.back();
+                }
+              }}
             />
-          ) : (
-            <View style={styles.headerImagePlaceholder}>
-              <Ionicons name="person" size={80} color={Colors.primary.white} />
-            </View>
-          )}
-
-          {/* Foreground Image (main image) */}
-          {photos.length > 0 ? (
-            <Image
-              source={{ uri: photos[0] }}
-              style={styles.foregroundImage}
-              resizeMode="contain"
-            />
-          ) : (
-            <View style={styles.headerImagePlaceholder}>
-              <Ionicons name="person" size={80} color={Colors.primary.white} />
-            </View>
-          )}
-
-          {/* Gradient overlay */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
-            style={styles.imageOverlay}
-          />
-
-          {/* Simple Back Button at top */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              // Check if we came from story viewer
-              if (returnToStory === 'true') {
-                router.push('/(home)/(tabs)/(story)/' as any);
-              } else {
-                router.back();
-              }
-            }}
-          >
-            <Ionicons name="chevron-back" size={24} color={Colors.primary.red} />
-          </TouchableOpacity>
 
           {/* Header content at bottom */}
           <View style={styles.headerContent}>
             <View style={styles.nameRow}>
               <View style={styles.nameContainer}>
-                <ThemedText style={styles.userName}>
+                <ThemedText type='bold' style={styles.userName}>
                   {firstName}{age ? `, ${age}` : ''}
                 </ThemedText>
                 {occupation && (
@@ -322,41 +373,35 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                   </ThemedText>
                 )}
               </View>
-
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity 
-                  style={styles.chatButton}
-                  onPress={handleChatPress}
-                >
-                  <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary.white} />
-                </TouchableOpacity>
-                {onMessage && (
-                  <TouchableOpacity 
-                    style={styles.messageButton}
-                    onPress={onMessage}
-                  >
-                    <Ionicons name="paper-plane" size={20} color={Colors.primary.white} />
-                  </TouchableOpacity>
-                )}
-              </View>
             </View>
           </View>
         </View>
 
         {/* Main Content */}
         <View style={styles.contentSection}>
-          {/* Location */}
-          {location && (
+          {/* Location - Distance Only */}
+          {location && distance !== null && (
             <View style={styles.section}>
               <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.location')}</ThemedText>
-              <View style={styles.locationRow}>
-                <ThemedText style={styles.locationText}>
-                  {location.city}{location.country ? `, ${location.country}` : ''}
-                </ThemedText>
-                <View style={styles.distanceBadge}>
-                  <Ionicons name="location" size={14} color={Colors.primary.white} style={{ marginRight: 4 }} />
-                  <ThemedText style={styles.distanceText}>{distance} km</ThemedText>
-                </View>
+              <View style={styles.locationCard}>
+                <LinearGradient
+                  colors={[Colors.primaryBackgroundColor, '#E94057DD']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.locationCardGradient}
+                >
+                  <View style={styles.locationCardContent}>
+                    <View style={styles.distanceIconWrapper}>
+                      <Ionicons name="navigate" size={24} color={Colors.primaryBackgroundColor} />
+                    </View>
+                    <View style={styles.distanceInfoContainer}>
+                      <ThemedText style={styles.distanceValue}>
+                        {formatDistance(distance)}
+                      </ThemedText>
+                      <ThemedText style={styles.distanceLabel}>away from you</ThemedText>
+                    </View>
+                  </View>
+                </LinearGradient>
               </View>
             </View>
           )}
@@ -435,8 +480,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                     }}
                     activeOpacity={0.8}
                   >
-                    <Image 
-                      source={{ uri: photoUrl }} 
+                    <Image
+                      source={{ uri: photoUrl }}
                       style={styles.galleryImage}
                       resizeMode="cover"
                     />
@@ -455,7 +500,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
         animationType="fade"
         onRequestClose={() => setShowAlert(false)}
       >
-        <Pressable 
+        <Pressable
           style={styles.modalOverlay}
           onPress={() => setShowAlert(false)}
         >
@@ -463,7 +508,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
             <View style={styles.alertHeader}>
               <ThemedText style={styles.alertTitle}>{alertMessage.title}</ThemedText>
             </View>
-            
+
             <View style={styles.alertContent}>
               <ThemedText style={styles.alertMessage}>{alertMessage.message}</ThemedText>
             </View>
@@ -480,7 +525,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+      </View>
+    </SafeAreaView>
   )
 }
 
@@ -528,17 +574,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 220,
     zIndex: 2,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 10,
-    left: 0,
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'd',
-    zIndex: 10,
   },
   headerContent: {
     position: 'absolute',
@@ -606,29 +641,49 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  locationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  locationText: {
-    fontSize: 16,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  distanceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryBackgroundColor,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  locationCard: {
     borderRadius: 16,
-    marginLeft: 12,
+    overflow: 'hidden',
+    marginTop: 4,
+    shadowColor: Colors.primaryBackgroundColor,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  distanceText: {
+  locationCardGradient: {
+    padding: 16,
+  },
+  locationCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  distanceIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  distanceInfoContainer: {
+    alignItems: 'flex-start',
+  },
+  distanceValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.primary.white,
+    marginBottom: 4,
+  },
+  distanceLabel: {
     fontSize: 14,
     color: Colors.primary.white,
-    fontWeight: '600',
+    opacity: 0.9,
   },
 
   bioText: {
@@ -654,12 +709,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: Colors.primary.red,
+    backgroundColor: Colors.primaryBackgroundColor,
     marginHorizontal: 5,
     marginBottom: 10,
   },
   tagSelectedText: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.primary.white,
     fontWeight: '600',
   },

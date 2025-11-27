@@ -39,7 +39,7 @@ const ImageGalleryViewer: React.FC<ImageGalleryViewerProps> = ({
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color={Colors.primary.red} />
+          <Ionicons name="chevron-back" size={24} color={Colors.primary.white} />
         </TouchableOpacity>
         <View style={styles.emptyContainer}>
           <Ionicons name="image-outline" size={80} color={Colors.text.tertiary} />
@@ -144,7 +144,7 @@ const ImageGalleryViewer: React.FC<ImageGalleryViewerProps> = ({
         style={styles.backButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="chevron-back" size={24} color={Colors.primary.red} />
+        <Ionicons name="chevron-back" size={24} color={Colors.primary.white} />
       </TouchableOpacity>
 
       {/* Image Counter - Centered */}

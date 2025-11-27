@@ -21,7 +21,6 @@ const UserProfile = () => {
     const loadUserData = async () => {
       setIsLoading(true)
       try {
-        // Parse userData from params
         if (userData) {
           try {
             const parsedUser = JSON.parse(userData)
@@ -46,7 +45,6 @@ const UserProfile = () => {
 
   const handleBack = () => {
     if (returnToStory === 'true') {
-      // Navigate to story tab if we came from story viewer
       router.push('/(home)/(tabs)/(story)/' as any);
     } else {
       router.back();
