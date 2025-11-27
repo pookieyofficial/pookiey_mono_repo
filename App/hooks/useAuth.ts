@@ -29,6 +29,7 @@ export function useAuth() {
 
     // Supabase auth methods
     signInWithLink,
+    verifyEmailOtp,
     signOut,
   } = useAuthStore();
 
@@ -61,6 +62,7 @@ export function useAuth() {
 
     // Supabase auth methods
     signInWithLink,
+    verifyEmailOtp,
     signOut,
   };
 }

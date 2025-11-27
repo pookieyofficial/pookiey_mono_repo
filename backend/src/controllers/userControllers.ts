@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { User } from "../models";
 import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 import { isValidLocation } from "../utils/validateCoordinates";
+import type { IUser } from "../models/User";
 
 export const getMe = async (req: Request, res: Response) => {
     try {
@@ -151,70 +152,76 @@ export const getUsers = async (req: Request, res: Response) => {
     try {
         console.info("getUsers controller");
 
-        const currentUserId = req.user?.user_id;
+        const authUser = req.user as IUser | undefined;
+        const currentUserId = authUser?.user_id;
 
-        // Validate location data
-        const longitude = parseFloat(req.query.longitude ? req.query.longitude as string : req.user?.profile?.location?.coordinates[0] as unknown as string);
-        const latitude = parseFloat(req.query.latitude ? req.query.latitude as string : req.user?.profile?.location?.coordinates[1] as unknown as string);
+        if (!authUser || !currentUserId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
 
-        if (isNaN(latitude) || isNaN(longitude)) {
+        const coordinates = authUser.profile?.location?.coordinates;
+        const longitude = typeof coordinates?.[0] === "number" ? coordinates[0] : undefined;
+        const latitude = typeof coordinates?.[1] === "number" ? coordinates[1] : undefined;
+
+        if (longitude === undefined || latitude === undefined) {
             return res.status(400).json({
                 success: false,
-                message: "Valid latitude and longitude are required"
+                message: "Valid latitude and longitude are required in your profile",
             });
         }
 
-        const userLocation = [longitude, latitude];
-        const radius = parseFloat(req.query.radius as string) || 5000;
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 100;
-        const minAge = parseInt(req.query.minAge as string) || 18;
-        const maxAge = parseInt(req.query.maxAge as string) || 30;
-        const interests = (req.query.interests as string)?.split(",") || [];
-
-        const skip = (page - 1) * limit;
-
-        console.log({ userLocation })
-        console.log({ radius })
-        console.log({ page })
-        console.log({ limit })
-        console.log({ minAge })
-        console.log({ maxAge })
-        console.log({ interests })
-        console.log({ currentUserId })
-
-        // Check if we have valid coordinates
-        if (!userLocation[0] || !userLocation[1]) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid location coordinates"
-            });
+        if (!isValidLocation(longitude, latitude)) {
+            return res.status(400).json({ success: false, message: "Incorrect longitude or latitude values" });
         }
 
-        if (!(isValidLocation(longitude, latitude))) {
-            return res.status(400).json({ success: false, message: "Incorrect longitude or latitude values" })
-        }
+        const userLocation: [number, number] = [longitude, latitude];
+        const radiusKm = authUser.preferences?.distanceMaxKm ?? 50;
+        const [minAge, maxAge] = authUser.preferences?.ageRange ?? [18, 99];
+        const showMe = authUser.preferences?.showMe;
+        const interests = Array.isArray(authUser.profile?.interests)
+            ? authUser.profile.interests.filter(Boolean)
+            : [];
 
-        const users = await User.aggregate([
+        /** ---------------------- AGGREGATE PIPELINE ---------------------- **/
+        const pipeline: any[] = [
             {
                 $geoNear: {
-                    near: { type: "Point", coordinates: userLocation as [number, number] },
-                    distanceField: "dist.calculated",
+                    near: { type: "Point", coordinates: userLocation },
+                    distanceField: "distanceInMeters",
                     spherical: true,
-                    maxDistance: radius * 1000,
+                    maxDistance: radiusKm * 1000,
                 },
             },
-            // 2. Exclude self
+            // Exclude self
             { $match: { user_id: { $ne: currentUserId } } },
-            // 3. Age filter
-            // { $match: { age: { $gte: minAge, $lte: maxAge } } },
-            // 4. Interest filter (at least one match)
-            // { $match: interests.length > 0 ? { interests: { $in: interests } } : {} },
-            // 5. Exclude already interacted users
+            // Compute age on the fly
+            {
+                $addFields: {
+                    age: {
+                        $dateDiff: {
+                            startDate: "$profile.dateOfBirth",
+                            endDate: "$$NOW",
+                            unit: "year",
+                        },
+                    },
+                },
+            },
+            { $match: { age: { $gte: minAge, $lte: maxAge } } },
+        ];
+
+        if (showMe?.length) {
+            pipeline.push({ $match: { "profile.gender": { $in: showMe } } });
+        }
+
+        if (interests.length) {
+            pipeline.push({ $match: { "profile.interests": { $in: interests } } });
+        }
+
+        pipeline.push(
             {
                 $lookup: {
                     from: "interactions",
-                    let: { targetId: "$_id" },
+                    let: { targetId: "$user_id" },
                     pipeline: [
                         {
                             $match: {
@@ -230,23 +237,44 @@ export const getUsers = async (req: Request, res: Response) => {
                     as: "alreadyInteracted",
                 },
             },
-            // { $match: { alreadyInteracted: { $size: 0 } } },
-            // // 6. Compute shared interests
-            // {
-            //     $addFields: {
-            //         sharedInterests: { $size: { $setIntersection: ["$interests", interests] } },
-            //         randomFactor: { $rand: {} },
-            //     },
-            // },
-            // // 7. Weighted sort: shared interests + random
-            // { $sort: { sharedInterests: -1, randomFactor: 1 } },
-            // 8. Pagination
-            { $skip: skip },
-            { $limit: limit },
-            { $project: { profile: 1, distance: 1, age: 1, displayName: 1, user_id: 1 } },
-        ]);
+            { $match: { $expr: { $eq: [{ $size: "$alreadyInteracted" }, 0] } } },
+        );
 
-        // console.log({ users });
+        if (interests.length) {
+            pipeline.push(
+                {
+                    $addFields: {
+                        sharedInterests: {
+                            $size: { $setIntersection: ["$profile.interests", interests] },
+                        },
+                    },
+                },
+                { $match: { sharedInterests: { $gte: 2 } } },
+                { $sort: { sharedInterests: -1 as const, distanceInMeters: 1 as const } },
+            );
+        } else {
+            pipeline.push({ $sort: { distanceInMeters: 1 as const } });
+        }
+
+        pipeline.push(
+            { $limit: 100 },
+            {
+                $project: {
+                    user_id: 1,
+                    displayName: 1,
+                    profile: 1,
+                    interests: 1,
+                    distanceInMeters: 1,
+                    age: 1,
+                    sharedInterests: 1,
+                },
+            },
+        );
+
+        const users = await User.aggregate(pipeline);
+        console.log("------------------------------------------------------")
+        console.log("------------------------------------------------------")
+        console.log(users)
         res.json({ success: true, data: users });
     } catch (error) {
         console.error("getUsers error:", error);

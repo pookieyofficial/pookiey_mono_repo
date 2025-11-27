@@ -39,10 +39,12 @@ export async function sendMessageNotification({
       type: 'message',
       matchId,
       userName,
-      userAvatar,
+      userAvatar: userAvatar || '',
       otherUserId,
+      userId: otherUserId, // Alias for consistency
       messageText: messageText || '',
       messageType: messageType || 'text',
+      route: '/(home)/(tabs)/(chats)/chatRoom',
     },
   }));
 

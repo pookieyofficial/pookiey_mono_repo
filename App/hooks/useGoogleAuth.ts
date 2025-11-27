@@ -24,7 +24,7 @@ export function useGoogleAuth() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUri,
+          redirectTo: "exp://192.168.1.15:8081",
           skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',

@@ -140,9 +140,39 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
     const renderNoMoreCards = () => (
         <View style={styles.endContainer}>
-            <ThemedText style={styles.endText}>No more users nearby</ThemedText>
+            <ThemedText style={styles.endText}>
+                No sparks nearby right now.
+            </ThemedText>
+            <ThemedText type="default" style={styles.endSubText}>
+                We're looking for more matches near you—check back soon!
+            </ThemedText>
         </View>
     );
+
+    const hasCards = Array.isArray(data) && data.length > 0;
+
+    if (!hasCards) {
+        return (
+            <View style={[styles.container, styles.emptyStateWrapper]}>
+                <View style={styles.emptyCard}>
+                    <View style={styles.emptyBadge}>
+                        <Heart
+                            width={32}
+                            height={32}
+                            color={Colors.primaryBackgroundColor}
+                            fill={`${Colors.primaryBackgroundColor}15`}
+                        />
+                    </View>
+                    <ThemedText type="title" style={styles.emptyTitle}>
+                        No nearby matches... yet
+                    </ThemedText>
+                    <ThemedText type="default" style={styles.emptySubtitle}>
+                        We couldn't find anyone around you right now. Come back again in some time.
+                    </ThemedText>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -306,8 +336,62 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         elevation: 10,
     },
-    endContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-    endText: { color: Colors.primaryForegroundColor },
+    endContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 24,
+    },
+    endText: {
+        color: Colors.titleColor,
+        fontSize: 20,
+        fontFamily: "HellixBold",
+        textAlign: "center",
+    },
+    endSubText: {
+        marginTop: 8,
+        color: Colors.text.secondary,
+        textAlign: "center",
+        lineHeight: 20,
+    },
+    emptyStateWrapper: {
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+    },
+    emptyCard: {
+        width: SCREEN_WIDTH * 0.85,
+        paddingVertical: 36,
+        paddingHorizontal: 24,
+        borderRadius: 24,
+        backgroundColor: Colors.primary.white,
+        borderWidth: 1,
+        borderColor: Colors.text.light,
+        shadowColor: Colors.primaryBackgroundColor,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 20,
+        elevation: 6,
+        alignItems: "center",
+        gap: 12,
+    },
+    emptyBadge: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: Colors.secondaryBackgroundColor,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    emptyTitle: {
+        color: Colors.titleColor,
+        textAlign: "center",
+    },
+    emptySubtitle: {
+        color: Colors.text.secondary,
+        textAlign: "center",
+        lineHeight: 20,
+    },
 });
 
 export default SwipeDeck;

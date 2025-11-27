@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
 import * as Linking from 'expo-linking';
+import * as Notifications from 'expo-notifications';
 import { deepLinkState } from '@/utils/deepLinkState';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 
+/* --------------------------------------------------------
+   🔎 Helper: Parse Hash Tokens (for Supabase magic links)
+-------------------------------------------------------- */
 const parseHashParams = (url: string): Record<string, string> => {
   const hashMatch = url.match(/#(.+)$/);
   const hashParams: Record<string, string> = {};
@@ -22,13 +26,13 @@ const parseHashParams = (url: string): Record<string, string> => {
   return hashParams;
 };
 
+/* --------------------------------------------------------
+   🔐 Supabase - Handle Magic Link Session Tokens
+-------------------------------------------------------- */
 const handleMagicLinkTokens = async (hashParams: Record<string, string>): Promise<boolean> => {
-  if (!hashParams.access_token || !hashParams.refresh_token) {
-    return false;
-  }
+  if (!hashParams.access_token || !hashParams.refresh_token) return false;
 
   deepLinkState.setProcessing(true);
-
   console.log('🔐 Magic link tokens detected, setting session...');
 
   try {
@@ -45,8 +49,7 @@ const handleMagicLinkTokens = async (hashParams: Record<string, string>): Promis
       return false;
     }
 
-    console.log('✅ Session set successfully!');
-    console.log('User:', data.user?.email);
+    console.log('✅ Session set successfully! User:', data.user?.email);
     deepLinkState.setProcessing(false);
     return true;
   } catch (error) {
@@ -56,6 +59,9 @@ const handleMagicLinkTokens = async (hashParams: Record<string, string>): Promis
   }
 };
 
+/* --------------------------------------------------------
+   👥 Referral Link Handler
+-------------------------------------------------------- */
 const handleReferralLink = (queryParams: Record<string, any>): boolean => {
   if (queryParams?.ref) {
     console.log('👥 Referral detected:', queryParams.ref);
@@ -64,8 +70,14 @@ const handleReferralLink = (queryParams: Record<string, any>): boolean => {
   return false;
 };
 
+/* --------------------------------------------------------
+   📌 MAIN HOOK — Deep Link & Notification Handling
+-------------------------------------------------------- */
 export const useDeepLinking = () => {
   useEffect(() => {
+    /* ---------------------
+       🔗 HANDLE ANY URL
+    ---------------------- */
     const handleDeepLink = async (event: { url: string }) => {
       console.log('🔗 Deep link received:', event.url);
 
@@ -76,71 +88,104 @@ export const useDeepLinking = () => {
       }
       deepLinkState.setLastHandledUrl?.(event.url);
 
+      // Parse URL
       const { queryParams } = Linking.parse(event.url);
       const hashParams = parseHashParams(event.url);
 
-      if (Object.keys(hashParams).length > 0) {
+      if (Object.keys(hashParams).length > 0)
         console.log('📦 Hash params:', Object.keys(hashParams));
-      }
-
 
       const parsed = Linking.parse(event.url);
+
+      /* 📍 Determine Target Route */
       let targetRoute: string | null = null;
-      
+
       if (queryParams?.route && typeof queryParams.route === 'string') {
-        targetRoute = queryParams.route;
-        if (!targetRoute.startsWith('/')) {
-          targetRoute = '/' + targetRoute;
-        }
+        targetRoute = queryParams.route.startsWith('/')
+          ? queryParams.route
+          : '/' + queryParams.route;
         console.log('📍 Route from query params:', targetRoute);
       } else if (parsed.path) {
-        targetRoute = parsed.path;
-        if (!targetRoute.startsWith('/')) {
-          targetRoute = '/' + targetRoute;
-        }
+        targetRoute = parsed.path.startsWith('/')
+          ? parsed.path
+          : '/' + parsed.path;
         console.log('📍 Route from path:', targetRoute);
       }
 
+      /* 🔐 Handle Magic Link Login */
       const hasMagicLinkTokens = await handleMagicLinkTokens(hashParams);
-      
       if (hasMagicLinkTokens && targetRoute) {
         console.log('🔐 Magic link detected, saving route for after auth:', targetRoute);
         deepLinkState.setPendingDeeplink(targetRoute);
         return;
       }
 
+      /* 👥 Referral */
       if (handleReferralLink(queryParams || {})) return;
 
+      /* 🚦 Normal routing with Auth Check */
       if (targetRoute) {
-        const isAuthenticated = useAuthStore.getState().isAuthenticated;
-        const dbUser = useAuthStore.getState().dbUser;
-        
+        const store = useAuthStore.getState();
+        const isAuthenticated = store.isAuthenticated;
+        const dbUser = store.dbUser;
+
         if (isAuthenticated && dbUser?.profile?.isOnboarded) {
-          console.log('✅ User is authenticated and onboarded, routing immediately to:', targetRoute);
+          console.log('🚀 Authenticated + onboarded → navigating:', targetRoute);
           router.push(targetRoute as any);
           deepLinkState.clearPendingDeeplink();
         } else if (isAuthenticated && !dbUser?.profile?.isOnboarded) {
-          console.log('⏳ User authenticated but not onboarded, saving pending deeplink for after onboarding');
+          console.log('⏳ Authenticated but not onboarded → save & wait:', targetRoute);
           deepLinkState.setPendingDeeplink(targetRoute);
         } else {
-          console.log('⏳ User not authenticated, saving pending deeplink for after login');
+          console.log('⏳ Not authenticated → save & wait:', targetRoute);
           deepLinkState.setPendingDeeplink(targetRoute);
         }
       }
-
     };
 
-    const subscription = Linking.addEventListener('url', handleDeepLink);
+    /* ------------------------------------------
+       📱 Listen to external app & link events
+    ------------------------------------------- */
+    const linkSubscription = Linking.addEventListener('url', handleDeepLink);
 
+    /* ------------------------------------------
+       🔔 LISTEN FOR NOTIFICATION CLICKS
+    ------------------------------------------- */
+    const notifSubscription = Notifications.addNotificationResponseReceivedListener(
+      response => {
+        const data = response.notification.request.content.data;
+        console.log('🔔 Notification tapped:', data);
+
+        if (data?.deepLink) {
+          console.log('📌 Route via deepLink:', data.deepLink);
+          handleDeepLink({ url: data.deepLink as string });
+        }
+
+        if (data?.route) {
+          let route = (data.route as string).startsWith('/') ? data.route : '/' + data.route;
+          console.log('📌 Route via data.route param:', route);
+          handleDeepLink({ url: `myapp://app${route}` });
+        }
+      }
+    );
+
+    /* ------------------------------------------
+       🚀 Check if app was opened via a link
+    ------------------------------------------- */
     Linking.getInitialURL().then((url) => {
       if (url) {
-        console.log('📱 Initial URL:', url);
+        console.log('🟢 Initial URL:', url);
         deepLinkState.setLastHandledUrl?.(url);
         handleDeepLink({ url });
       }
     });
 
-    return () => subscription.remove();
+    /* ------------------------------------------
+       🧹 Cleanup
+    ------------------------------------------- */
+    return () => {
+      linkSubscription.remove();
+      notifSubscription.remove();
+    };
   }, []);
 };
-

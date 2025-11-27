@@ -2,10 +2,9 @@
     "scripts": {
         "dev:backend": "cd backend && npm run dev",
         "dev:web": "cd web && npm run dev",
-        "dev:mobile": "cd app && npx expo start --go",
-        "cloudflare:tunnel": "cloudflared tunnel run localhosts",
+        "dev:mobile": "cd app && npx expo start --go --port 8082",
         "ngrok:tunnel": "ngrok http --url=https://deistic-alphabetically-lieselotte.ngrok-free.app 6969",
-        "dev:all-cf": "npm-run-all --parallel dev:backend dev:web dev:mobile cloudflare:tunnel",
+        "dev:all": "npm-run-all --parallel dev:backend dev:web dev:mobile",
         "dev:all-ng": "npm-run-all --parallel dev:backend dev:mobile ngrok:tunnel"
     },
     "dependencies": {

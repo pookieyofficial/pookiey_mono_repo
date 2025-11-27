@@ -42,6 +42,7 @@ interface AuthActions {
   setNotificationTokens: (tokens: string[]) => void;
 
   signInWithLink: (email: string) => Promise<{ data: any; error: AuthError | null }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<void>;
 
   setupAuthListener: () => void;
@@ -140,6 +141,25 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      verifyEmailOtp: async (email: string, token: string) => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email',
+          });
+          if (error) throw error;
+          return { data, error: null };
+        } catch (error) {
+          return { data: null, error: error as AuthError };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+
+
       signOut: async () => {
         try {
           set({ isLoading: true });
@@ -188,9 +208,7 @@ export const useAuthStore = create<AuthStore>()(
           login(supabaseUser);
           setIdToken(accessToken);
 
-          // Check for pending deeplink
           const pendingDeeplink = deepLinkState.getPendingDeeplink();
-          console.log('🔗 Pending deeplink:', pendingDeeplink);
 
           // Determine the target route
           let targetRoute: string;
@@ -199,7 +217,6 @@ export const useAuthStore = create<AuthStore>()(
             // User is onboarded - check for deeplink or go to home
             if (pendingDeeplink) {
               targetRoute = pendingDeeplink;
-              // Clear the pending deeplink after extracting it
               deepLinkState.clearPendingDeeplink();
             } else {
               targetRoute = '/(home)/(tabs)';
@@ -209,7 +226,6 @@ export const useAuthStore = create<AuthStore>()(
             targetRoute = '/(onboarding)/profile';
           }
 
-          console.log('🎯 Routing to:', targetRoute);
           router.replace(targetRoute as any);
           await get().hideSplashScreen();
         } catch (error) {
@@ -256,7 +272,6 @@ export const useAuthStore = create<AuthStore>()(
           const { lastAuthState, isInitialized, isLoading } = get();
           const isAuthenticated = !!session?.user;
 
-          console.log('🔔 Auth state change event:', event, 'From:', lastAuthState, 'To:', isAuthenticated);
 
           // Don't do anything if auth state hasn't changed, except on explicit SIGNED_IN
           if (event !== 'SIGNED_IN' && lastAuthState === isAuthenticated) {
@@ -274,14 +289,10 @@ export const useAuthStore = create<AuthStore>()(
             const shouldTriggerAuthSuccess = event === 'SIGNED_IN' || !lastAuthState || !isInitialized;
 
             if (shouldTriggerAuthSuccess) {
-              console.log('✅ Triggering handleAuthSuccess - new login or initial session');
               await handleAuthSuccess(session.user as SupabaseUser, session.access_token);
             } else {
-              console.log('⏭️ User already authenticated, skipping handleAuthSuccess to prevent duplicate routing');
               // Just update the session and user, don't route again
               const { initialize, hideSplashScreen } = get();
-
-              // Clear any stale pending deeplink since we're not routing
               deepLinkState.clearPendingDeeplink();
 
               if (!isInitialized) {
@@ -314,7 +325,7 @@ export const useAuthStore = create<AuthStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
-        dbUser: state.dbUser, // ✅ persist DB user
+        dbUser: state.dbUser,
         session: state.session,
         isAuthenticated: state.isAuthenticated,
         idToken: state.idToken,
