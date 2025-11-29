@@ -33,7 +33,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function CreateStoryScreen() {
   const router = useRouter();
   const { token } = useAuth();
-  const { setStories, setLoading } = useStoryStore();
+  const { setCategorizedStories, setLoading } = useStoryStore();
   const { dbUser } = useAuthStore();
   
   // Camera states
@@ -270,56 +270,80 @@ export default function CreateStoryScreen() {
       try {
         setLoading(true);
         const data = await storyAPI.getStories(token);
+        console.log('Stories refreshed after creation:', data);
         
-        // Ensure "Your Story" always appears first, even if empty
-        // Backend already sorts by latest story date, so we just need to ensure "Your Story" is first
-        let storiesList: StoryItem[] = data || []
-        
-        // Check if "Your Story" exists
-        const myStoryIndex = storiesList.findIndex(item => item.isMe)
-        
-        // Get current user info
-        const currentUserId = dbUser?.user_id
-        const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
-        const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
-        
-        if (myStoryIndex === -1 && currentUserId) {
-          // "Your Story" doesn't exist, create a placeholder
-          const myStory: StoryItem = {
+        // Handle new categorized structure
+        if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
+          // New structure with categorized stories
+          const categorizedStories = {
+            myStory: data.myStory || null,
+            friends: Array.isArray(data.friends) ? data.friends : [],
+            discover: Array.isArray(data.discover) ? data.discover : []
+          };
+          
+          // Ensure "Your Story" exists even if empty
+          if (!categorizedStories.myStory && dbUser?.user_id) {
+            categorizedStories.myStory = {
+              id: dbUser.user_id,
+              username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+              avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+              stories: [],
+              isMe: true
+            };
+          }
+          
+          setCategorizedStories(categorizedStories);
+        } else if (Array.isArray(data)) {
+          // Fallback to old structure (flat array)
+          const storiesList: StoryItem[] = data;
+          const myStoryIndex = storiesList.findIndex(item => item.isMe);
+          
+          const currentUserId = dbUser?.user_id;
+          const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You';
+          const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || '';
+          
+          if (myStoryIndex === -1 && currentUserId) {
+            const myStory: StoryItem = {
+              id: currentUserId,
+              username: currentUserName,
+              avatar: currentUserAvatar,
+              stories: [],
+              isMe: true
+            };
+            storiesList.unshift(myStory);
+          }
+          
+          // Convert to categorized structure
+          const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
             id: currentUserId,
             username: currentUserName,
             avatar: currentUserAvatar,
             stories: [],
             isMe: true
-          }
-          storiesList = [myStory, ...storiesList]
-        } else if (myStoryIndex > 0) {
-          // "Your Story" exists but not first, move it to first
-          const myStory = storiesList[myStoryIndex]
-          storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
+          } : null);
+          
+          const friends = storiesList.filter(item => !item.isMe);
+          
+          setCategorizedStories({
+            myStory: myStory as StoryItem | null,
+            friends: friends,
+            discover: []
+          });
+        } else {
+          // If data is neither object with myStory nor array, set empty structure
+          console.warn('Unexpected data format from stories API:', data);
+          setCategorizedStories({
+            myStory: dbUser?.user_id ? {
+              id: dbUser.user_id,
+              username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+              avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+              stories: [],
+              isMe: true
+            } : null,
+            friends: [],
+            discover: []
+          });
         }
-        
-        // Additional sorting by latest story date (backend should already do this, but ensure it)
-        // Sort other stories (not "Your Story") by latest story date
-        const myStory = storiesList.find(item => item.isMe);
-        const otherStories = storiesList.filter(item => !item.isMe);
-        
-        otherStories.sort((a, b) => {
-          const aLatest = a.stories.length > 0 
-            ? new Date(a.stories[0].createdAt).getTime() 
-            : 0;
-          const bLatest = b.stories.length > 0 
-            ? new Date(b.stories[0].createdAt).getTime() 
-            : 0;
-          return bLatest - aLatest; // Descending order (newest first)
-        });
-        
-        // Combine: "Your Story" first, then others sorted by latest
-        const finalStoriesList = myStory 
-          ? [myStory, ...otherStories]
-          : otherStories;
-        
-        setStories(finalStoriesList);
       } catch (refreshError) {
         console.error('Error refreshing stories:', refreshError);
       } finally {
