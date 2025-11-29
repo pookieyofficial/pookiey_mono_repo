@@ -47,10 +47,11 @@ export default function StoriesScreen() {
   const insets = useSafeAreaInsets(); // Move hook to top - must be called unconditionally
   
   // Get stories from store (loaded from home page)
-  const { stories, isLoading, setStories, setLoading, updateStoryViewStatus } = useStoryStore();
+  const { stories, categorizedStories, isLoading, setCategorizedStories, setLoading, updateStoryViewStatus } = useStoryStore();
   const { dbUser } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'myStory' | 'friends' | 'discover' | null>(null);
   const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [viewedStoryIds, setViewedStoryIds] = useState<Set<string>>(new Set());
@@ -73,55 +74,78 @@ export default function StoriesScreen() {
       const data = await storyAPI.getStories(token);
       console.log('Stories refreshed:', data);
       
-      // Ensure "Your Story" always appears first, even if empty
-      // Backend already sorts by latest story date, so we just need to ensure "Your Story" is first
-      let storiesList: StoryItem[] = data || []
-      
-      // Check if "Your Story" exists
-      const myStoryIndex = storiesList.findIndex(item => item.isMe)
-      
-      // Get current user info
-      const currentUserId = dbUser?.user_id
-      const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
-      const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
-      
-      if (myStoryIndex === -1 && currentUserId) {
-        // "Your Story" doesn't exist, create a placeholder
-        const myStory: StoryItem = {
+      // Handle new categorized structure
+      if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
+        // New structure with categorized stories
+        const categorizedStories = {
+          myStory: data.myStory || null,
+          friends: Array.isArray(data.friends) ? data.friends : [],
+          discover: Array.isArray(data.discover) ? data.discover : []
+        }
+        
+        // Ensure "Your Story" exists even if empty
+        if (!categorizedStories.myStory && dbUser?.user_id) {
+          categorizedStories.myStory = {
+            id: dbUser.user_id,
+            username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+            avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+            stories: [],
+            isMe: true
+          }
+        }
+        
+        setCategorizedStories(categorizedStories);
+      } else if (Array.isArray(data)) {
+        // Fallback to old structure (flat array)
+        const storiesList: StoryItem[] = data;
+        const myStoryIndex = storiesList.findIndex(item => item.isMe)
+        
+        const currentUserId = dbUser?.user_id
+        const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
+        const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
+        
+        if (myStoryIndex === -1 && currentUserId) {
+          const myStory: StoryItem = {
+            id: currentUserId,
+            username: currentUserName,
+            avatar: currentUserAvatar,
+            stories: [],
+            isMe: true
+          }
+          storiesList.unshift(myStory)
+        }
+        
+        // Convert to categorized structure for consistency
+        const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
           id: currentUserId,
           username: currentUserName,
           avatar: currentUserAvatar,
           stories: [],
           isMe: true
-        }
-        storiesList = [myStory, ...storiesList]
-      } else if (myStoryIndex > 0) {
-        // "Your Story" exists but not first, move it to first
-        const myStory = storiesList[myStoryIndex]
-        storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
+        } : null)
+        
+        const friends = storiesList.filter(item => !item.isMe)
+        
+        setCategorizedStories({
+          myStory: myStory as StoryItem | null,
+          friends: friends,
+          discover: []
+        })
+      } else {
+        // If data is neither object with myStory nor array, set empty structure
+        console.warn('Unexpected data format from stories API:', data);
+        setCategorizedStories({
+          myStory: dbUser?.user_id ? {
+            id: dbUser.user_id,
+            username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+            avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+            stories: [],
+            isMe: true
+          } : null,
+          friends: [],
+          discover: []
+        });
       }
-      
-      // Additional sorting by latest story date (backend should already do this, but ensure it)
-      // Sort other stories (not "Your Story") by latest story date
-      const myStory = storiesList.find(item => item.isMe);
-      const otherStories = storiesList.filter(item => !item.isMe);
-      
-      otherStories.sort((a, b) => {
-        const aLatest = a.stories.length > 0 
-          ? new Date(a.stories[0].createdAt).getTime() 
-          : 0;
-        const bLatest = b.stories.length > 0 
-          ? new Date(b.stories[0].createdAt).getTime() 
-          : 0;
-        return bLatest - aLatest; // Descending order (newest first)
-      });
-      
-      // Combine: "Your Story" first, then others sorted by latest
-      const finalStoriesList = myStory 
-        ? [myStory, ...otherStories]
-        : otherStories;
-      
-      setStories(finalStoriesList);
     } catch (error: any) {
       console.error('Error loading stories:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load stories';
@@ -135,31 +159,35 @@ export default function StoriesScreen() {
           stories: [],
           isMe: true
         }
-        setStories([myStory]);
+        setCategorizedStories({
+          myStory,
+          friends: [],
+          discover: []
+        });
       } else {
-      setStories([]);
+        setCategorizedStories({
+          myStory: null,
+          friends: [],
+          discover: []
+        });
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token, setStories, setLoading, dbUser]);
+  }, [token, setCategorizedStories, setLoading, dbUser]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadStories();
   }, [loadStories]);
 
-  const handleStoryPress = (index: number, isAddButton: boolean = false) => {
-    if (isAddButton) {
-      // If clicking the + icon, navigate to create story
-      router.push('/(home)/(tabs)/(story)/create' as any);
-    } else {
-      // If clicking the story circle, show the story directly
-    if (stories[index] && stories[index].stories.length > 0) {
-      setSelectedStoryIndex(index);
-      }
-    }
+  const handleStoryPress = (item: StoryItem, category: 'myStory' | 'friends' | 'discover', indexInCategory: number) => {
+    if (!categorizedStories) return;
+    
+    // Set the category and index within that category
+    setSelectedCategory(category);
+    setSelectedStoryIndex(indexInCategory);
   };
 
   const handleAddStory = () => {
@@ -183,6 +211,7 @@ export default function StoriesScreen() {
     progressAnim.setValue(0);
     progressAnim.stopAnimation();
     setSelectedStoryIndex(null);
+    setSelectedCategory(null);
     setCurrentUserIndex(0);
     setCurrentStoryIndex(0);
     setViewedStoryIds(new Set());
@@ -210,6 +239,7 @@ export default function StoriesScreen() {
     progressAnim.setValue(0);
     progressAnim.stopAnimation();
     setSelectedStoryIndex(null);
+    setSelectedCategory(null);
     setCurrentUserIndex(0);
     setCurrentStoryIndex(0);
     setViewedStoryIds(new Set());
@@ -317,12 +347,29 @@ export default function StoriesScreen() {
     }
   }, [token, loadStories, viewedStoryIds, updateStoryViewStatus]);
 
-  // Get stories starting from selected user onwards (don't show previous users)
+  // Get all stories in a flat list for story viewer (only from selected category)
   const getAllStories = useCallback(() => {
-    if (selectedStoryIndex === null) return [];
+    if (!categorizedStories || !selectedCategory) {
+      // Fallback to old stories array
+      if (selectedStoryIndex === null) return [];
+      return stories.slice(selectedStoryIndex);
+    }
+    
+    // Only return stories from the selected category
+    let categoryStories: StoryItem[] = [];
+    
+    if (selectedCategory === 'myStory' && categorizedStories.myStory) {
+      categoryStories = [categorizedStories.myStory];
+    } else if (selectedCategory === 'friends') {
+      categoryStories = categorizedStories.friends;
+    } else if (selectedCategory === 'discover') {
+      categoryStories = categorizedStories.discover;
+    }
+    
+    if (selectedStoryIndex === null) return categoryStories;
     // Show stories from selected index onwards (including selected)
-    return stories.slice(selectedStoryIndex);
-  }, [stories, selectedStoryIndex]);
+    return categoryStories.slice(selectedStoryIndex);
+  }, [categorizedStories, stories, selectedStoryIndex, selectedCategory]);
 
   // Get current story data
   const getCurrentStory = useCallback(() => {
@@ -439,7 +486,8 @@ export default function StoriesScreen() {
   // Handle story selection
   useEffect(() => {
     if (selectedStoryIndex !== null) {
-      setCurrentUserIndex(0);
+      // selectedStoryIndex is the index within the category, so set currentUserIndex to that
+      setCurrentUserIndex(selectedStoryIndex);
       setCurrentStoryIndex(0);
       progressAnim.setValue(0);
       setWasViewingStory(null); // Clear the flag when starting a new story
@@ -550,86 +598,6 @@ export default function StoriesScreen() {
   ).current;
 
 
-  const renderStoryItem = ({ item, index }: { item: StoryItem; index: number }) => {
-    const hasUnviewed = item.stories.some(story => !story.isSeen && !item.isMe);
-    
-    // Extract first name from username
-    // Username can be: "FirstName LastName", "DisplayName", or "You"
-    const getFirstName = () => {
-      if (item.isMe) {
-        return 'Your Story';
-      }
-      // Split by space and take the first part
-      const nameParts = item.username.trim().split(/\s+/);
-      return nameParts[0] || item.username;
-    };
-    
-    const displayName = getFirstName();
-
-    return (
-      <View style={styles.storyItem}>
-      <TouchableOpacity
-          style={styles.storyCircleContainer}
-          onPress={() => {
-            if (item.isMe && item.stories.length === 0) {
-              // If it's "Your Story" with no stories, clicking anywhere should add story
-              handleAddStory();
-            } else {
-              // Otherwise, show the story
-              handleStoryPress(index);
-            }
-          }}
-        activeOpacity={0.7}
-      >
-          {/* Gradient border for unviewed stories */}
-          {hasUnviewed ? (
-            <LinearGradient
-              colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor, Colors.primaryBackgroundColor]}
-              style={styles.gradientBorder}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.storyCircleInner}>
-                <Image
-                  source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                  style={styles.storyAvatar}
-                />
-              </View>
-            </LinearGradient>
-          ) : (
-            <View style={[styles.storyCircleInner, { borderWidth: item.isMe ? 2 : 0, borderColor: Colors.primary.white }]}>
-              <Image
-                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                style={styles.storyAvatar}
-              />
-            </View>
-          )}
-
-          {/* Add story icon for my story - only show if there are stories, clicking this adds a new story */}
-          {item.isMe && (
-            <TouchableOpacity
-              style={styles.addIconContainer}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleAddStory();
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.addIcon}>
-                <Ionicons name="add" size={Math.max(20, STORY_CIRCLE_SIZE * 0.22)} color={Colors.primary.white} />
-              </View>
-            </TouchableOpacity>
-          )}
-
-        </TouchableOpacity>
-        
-        {/* Display first name below the story profile */}
-        <ThemedText style={styles.storyName} numberOfLines={1}>
-          {displayName}
-        </ThemedText>
-      </View>
-    );
-  };
 
   // If story is selected, show story viewer directly (no modal)
   if (selectedStoryIndex !== null) {
@@ -838,7 +806,60 @@ export default function StoriesScreen() {
     );
   }
 
-  if (isLoading && stories.length === 0) {
+  // Render discover story card (Snapchat-style) - Enhanced design
+  const renderDiscoverCard = ({ item, index }: { item: StoryItem; index: number }) => {
+    const hasUnviewed = item.stories.some(story => !story.isSeen);
+    const firstStory = item.stories[0];
+    const storyCount = item.stories.length;
+    
+    return (
+      <TouchableOpacity
+        style={styles.discoverCard}
+        onPress={() => {
+          if (item.stories.length > 0) {
+            handleStoryPress(item, 'discover', index);
+          }
+        }}
+        activeOpacity={0.85}
+      >
+        <Image
+          source={{ uri: firstStory?.url || item.avatar || 'https://via.placeholder.com/200' }}
+          style={styles.discoverCardImage}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.85)']}
+          style={styles.discoverCardGradient}
+        >
+          <View style={styles.discoverCardContent}>
+            <View style={styles.discoverCardUserInfo}>
+              <Image
+                source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
+                style={styles.discoverCardAvatar}
+              />
+              <View style={styles.discoverCardText}>
+                <ThemedText style={styles.discoverCardName} numberOfLines={1}>
+                  {item.username}
+                </ThemedText>
+                {storyCount > 1 && (
+                  <ThemedText style={styles.discoverCardStoryCount}>
+                    {storyCount} stories
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+            {hasUnviewed && (
+              <View style={styles.discoverCardBadge}>
+                <ThemedText style={styles.discoverCardBadgeText}>New</ThemedText>
+              </View>
+            )}
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
+
+  if (isLoading && !categorizedStories) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -848,13 +869,25 @@ export default function StoriesScreen() {
     );
   }
 
+  const hasAnyStories = categorizedStories && (
+    (categorizedStories.myStory && categorizedStories.myStory.stories.length > 0) ||
+    categorizedStories.friends.length > 0 ||
+    categorizedStories.discover.length > 0
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.headerTitle}>Stories</ThemedText>
-      </View>
+      {/* Enhanced Header with gradient */}
+      <LinearGradient
+        colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + '80', 'transparent']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <ThemedText type="title" style={styles.headerTitle}>Stories</ThemedText>
+        </View>
+      </LinearGradient>
 
-      {stories.length === 0 && !isLoading ? (
+      {!hasAnyStories && !isLoading ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
           <ThemedText type="subtitle" style={styles.emptyText}>No stories yet</ThemedText>
@@ -867,17 +900,177 @@ export default function StoriesScreen() {
             </TouchableOpacity>
           )}
         </View>
-      ) : (
+      ) : categorizedStories ? (
         <FlatList
-          data={stories}
-          renderItem={renderStoryItem}
-          keyExtractor={(item, index) => `story-${item.id}-${index}`}
-          numColumns={4}
-          contentContainerStyle={styles.listContainer}
+          data={[]}
+          renderItem={() => null}
+          keyExtractor={() => 'main-list'}
+          ListHeaderComponent={
+            <>
+              {/* Your Story Section */}
+              {categorizedStories.myStory && (
+                <View style={styles.sectionContainer}>
+                  <FlatList
+                    horizontal
+                    data={[categorizedStories.myStory]}
+                    renderItem={({ item }) => {
+                      const getFirstName = () => {
+                        if (item.isMe) {
+                          return 'Your Story';
+                        }
+                        const nameParts = item.username.trim().split(/\s+/);
+                        return nameParts[0] || item.username;
+                      };
+                      
+                      return (
+                        <View style={styles.storyItem}>
+                          <TouchableOpacity
+                            style={styles.storyCircleContainer}
+                            onPress={() => {
+                              if (item.isMe && item.stories.length === 0) {
+                                handleAddStory();
+                              } else if (item.stories.length > 0) {
+                                handleStoryPress(item, 'myStory', 0);
+                              } else {
+                                handleAddStory();
+                              }
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <LinearGradient
+                              colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD']}
+                              style={[styles.storyCircleInner, { borderWidth: 2.5, borderColor: Colors.primary.white, padding: 2 }]}
+                            >
+                              <Image
+                                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                style={styles.storyAvatar}
+                              />
+                            </LinearGradient>
+                            {item.isMe && (
+                              <TouchableOpacity
+                                style={styles.addIconContainer}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  handleAddStory();
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <View style={styles.addIcon}>
+                                  <Ionicons name="add" size={Math.max(20, STORY_CIRCLE_SIZE * 0.22)} color={Colors.primary.white} />
+                                </View>
+                              </TouchableOpacity>
+                            )}
+                          </TouchableOpacity>
+                          <ThemedText style={styles.storyName} numberOfLines={1}>
+                            {getFirstName()}
+                          </ThemedText>
+                        </View>
+                      );
+                    }}
+                    keyExtractor={() => 'my-story'}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalListContainer}
+                  />
+                </View>
+              )}
+
+              {/* Friends Section - Horizontal Scroll */}
+              {categorizedStories.friends.length > 0 && (
+                <View style={styles.sectionContainer}>
+                  <View style={styles.friendsHeader}>
+                    <ThemedText type="subtitle" style={styles.sectionTitle}>Friends</ThemedText>
+                    <ThemedText style={styles.friendsSubtitle}>
+                      {categorizedStories.friends.length} {categorizedStories.friends.length === 1 ? 'friend' : 'friends'}
+                    </ThemedText>
+                  </View>
+                  <FlatList
+                    horizontal
+                    data={categorizedStories.friends}
+                    renderItem={({ item, index }) => {
+                      const hasUnviewed = item.stories.some(story => !story.isSeen);
+                      const getFirstName = () => {
+                        const nameParts = item.username.trim().split(/\s+/);
+                        return nameParts[0] || item.username;
+                      };
+                      
+                      return (
+                        <View style={styles.storyItem}>
+                          <TouchableOpacity
+                            style={styles.storyCircleContainer}
+                            onPress={() => {
+                              if (item.stories.length > 0) {
+                                handleStoryPress(item, 'friends', index);
+                              }
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            {hasUnviewed ? (
+                              <LinearGradient
+                                colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD', Colors.primaryBackgroundColor]}
+                                style={styles.gradientBorder}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                              >
+                                <View style={styles.storyCircleInner}>
+                                  <Image
+                                    source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                    style={styles.storyAvatar}
+                                  />
+                                </View>
+                              </LinearGradient>
+                            ) : (
+                              <View style={[styles.storyCircleInner, { borderWidth: 1.5, borderColor: Colors.text.light }]}>
+                                <Image
+                                  source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                  style={styles.storyAvatar}
+                                />
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                          <ThemedText style={styles.storyName} numberOfLines={1}>
+                            {getFirstName()}
+                          </ThemedText>
+                        </View>
+                      );
+                    }}
+                    keyExtractor={(item, index) => `friend-${item.id}-${index}`}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalListContainer}
+                  />
+                </View>
+              )}
+
+              {/* Discover Section - Vertical scrollable */}
+              {categorizedStories.discover.length > 0 && (
+                <View style={styles.sectionContainer}>
+                  <View style={styles.discoverHeader}>
+                    <ThemedText type="subtitle" style={styles.sectionTitle}>Discover</ThemedText>
+                    <ThemedText style={styles.discoverSubtitle}>
+                      {categorizedStories.discover.length} {categorizedStories.discover.length === 1 ? 'story' : 'stories'} to explore
+                    </ThemedText>
+                  </View>
+                  <FlatList
+                    data={categorizedStories.discover}
+                    renderItem={renderDiscoverCard}
+                    keyExtractor={(item, index) => `discover-${item.id}-${index}`}
+                    numColumns={2}
+                    contentContainerStyle={styles.discoverListContainer}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={true}
+                  />
+                </View>
+              )}
+            </>
+          }
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
           }
         />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
+          <ThemedText type="subtitle" style={styles.emptyText}>No stories yet</ThemedText>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -893,20 +1086,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerGradient: {
+    paddingBottom: 8,
+  },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.primary.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.text.light,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.titleColor,
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.primary.white,
+    letterSpacing: 0.5,
   },
   listContainer: {
     padding: 12,
@@ -987,11 +1182,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   storyName: {
-    fontSize: 12,
+    fontSize: 10,
     color: Colors.text.primary,
     textAlign: 'center',
     maxWidth: 80,
     marginTop: 4,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
@@ -1144,4 +1340,124 @@ const styles = StyleSheet.create({
   tapAreaRight: {
     // Right half for next
   },
+  sectionContainer: {
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.titleColor,
+    letterSpacing: 0.3,
+  },
+  friendsHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  friendsSubtitle: {
+    fontSize: 11,
+    color: Colors.text.secondary,
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  discoverHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  discoverSubtitle: {
+    fontSize: 11,
+    color: Colors.text.secondary,
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  horizontalListContainer: {
+    paddingHorizontal: 12,
+  },
+  discoverListContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+  },
+  discoverCard: {
+    width: (SCREEN_WIDTH - 36) / 2, // 2 columns with padding
+    height: 280,
+    margin: 6,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: Colors.primary.white,
+    shadowColor: Colors.primaryBackgroundColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  discoverCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  discoverCardGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+  },
+  discoverCardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  discoverCardUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  discoverCardAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    borderColor: Colors.primary.white,
+    marginRight: 10,
+  },
+  discoverCardText: {
+    flex: 1,
+  },
+  discoverCardName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary.white,
+    marginBottom: 2,
+    letterSpacing: 0.2,
+  },
+  discoverCardStoryCount: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '400',
+  },
+  discoverCardBadge: {
+    backgroundColor: Colors.primaryBackgroundColor,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  discoverCardBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.primary.white,
+    letterSpacing: 0.5,
+  },
 });
+
+

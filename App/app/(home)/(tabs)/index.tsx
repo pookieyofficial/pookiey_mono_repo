@@ -27,7 +27,7 @@ export default function index() {
   const [isLoading, setIsLoading] = useState(true)
 
   // Story store
-  const { setStories, setLoading: setStoryLoading } = useStoryStore()
+  const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
   const { dbUser } = useAuthStore()
 
   // Load stories when component mounts
@@ -42,34 +42,78 @@ export default function index() {
       const data = await storyAPI.getStories(token)
       console.log('Stories loaded from home page:', data)
       
-      // Ensure "Your Story" always appears first, even if empty
-      let storiesList: StoryItem[] = data || []
-      
-      // Check if "Your Story" exists
-      const myStoryIndex = storiesList.findIndex(item => item.isMe)
-      
-      // Get current user info
-      const currentUserId = dbUser?.user_id
-      const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
-      const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
-      
-      if (myStoryIndex === -1 && currentUserId) {
-        // "Your Story" doesn't exist, create a placeholder
-        const myStory: StoryItem = {
+      // Handle new categorized structure
+      if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
+        // New structure with categorized stories
+        const categorizedStories = {
+          myStory: data.myStory || null,
+          friends: Array.isArray(data.friends) ? data.friends : [],
+          discover: Array.isArray(data.discover) ? data.discover : []
+        }
+        
+        // Ensure "Your Story" exists even if empty
+        if (!categorizedStories.myStory && dbUser?.user_id) {
+          categorizedStories.myStory = {
+            id: dbUser.user_id,
+            username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+            avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+            stories: [],
+            isMe: true
+          }
+        }
+        
+        setCategorizedStories(categorizedStories)
+      } else if (Array.isArray(data)) {
+        // Fallback to old structure (flat array)
+        const storiesList: StoryItem[] = data;
+        const myStoryIndex = storiesList.findIndex(item => item.isMe)
+        
+        const currentUserId = dbUser?.user_id
+        const currentUserName = dbUser?.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You'
+        const currentUserAvatar = dbUser?.photoURL || dbUser.profile?.photos?.[0]?.url || ''
+        
+        if (myStoryIndex === -1 && currentUserId) {
+          const myStory: StoryItem = {
+            id: currentUserId,
+            username: currentUserName,
+            avatar: currentUserAvatar,
+            stories: [],
+            isMe: true
+          }
+          storiesList.unshift(myStory)
+        }
+        
+        // Convert to categorized structure for consistency
+        const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
           id: currentUserId,
           username: currentUserName,
           avatar: currentUserAvatar,
           stories: [],
           isMe: true
-        }
-        storiesList = [myStory, ...storiesList]
-      } else if (myStoryIndex > 0) {
-        // "Your Story" exists but not first, move it to first
-        const myStory = storiesList[myStoryIndex]
-        storiesList = [myStory, ...storiesList.filter((_, idx) => idx !== myStoryIndex)]
+        } : null)
+        
+        const friends = storiesList.filter(item => !item.isMe)
+        
+        setCategorizedStories({
+          myStory: myStory as StoryItem | null,
+          friends: friends,
+          discover: []
+        })
+      } else {
+        // If data is neither object with myStory nor array, set empty structure
+        console.warn('Unexpected data format from stories API:', data);
+        setCategorizedStories({
+          myStory: dbUser?.user_id ? {
+            id: dbUser.user_id,
+            username: dbUser.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You',
+            avatar: dbUser.photoURL || dbUser.profile?.photos?.[0]?.url || '',
+            stories: [],
+            isMe: true
+          } : null,
+          friends: [],
+          discover: []
+        });
       }
-      
-      setStories(storiesList)
     } catch (error: any) {
       console.error('Error loading stories:', error)
       // Even on error, ensure "Your Story" exists if we have user info
@@ -81,14 +125,22 @@ export default function index() {
           stories: [],
           isMe: true
         }
-        setStories([myStory])
+        setCategorizedStories({
+          myStory,
+          friends: [],
+          discover: []
+        })
       } else {
-        setStories([])
+        setCategorizedStories({
+          myStory: null,
+          friends: [],
+          discover: []
+        })
       }
     } finally {
       setStoryLoading(false)
     }
-  }, [token, setStories, setStoryLoading, dbUser])
+  }, [token, setCategorizedStories, setStoryLoading, dbUser])
 
   const onSwiped = async (item: RecommendedUser, action: SwipeAction) => {
     console.log(`Swiped ${action} on`, item)
