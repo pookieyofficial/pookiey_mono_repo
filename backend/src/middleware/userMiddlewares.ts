@@ -4,6 +4,7 @@ import { verifySupabaseToken } from "../config/supabase";
 
 export const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log({ headers: req.headers })
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             return res.status(401).json({ message: "Unauthorized - No token provided" });
