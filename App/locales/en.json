@@ -106,6 +106,8 @@
     "skip": "Skip"
   },
   "language": {
+    "title": "Choose Your Language",
+    "subtitle": "Select your preferred language to continue",
     "selectLanguage": "Select Language",
     "english": "English",
     "mandarin": "Mandarin Chinese (Simplified)",
@@ -138,6 +140,9 @@
     "thai": "Thai",
     "persian": "Persian (Farsi)",
     "nepali": "Nepali"
+  },
+  "common": {
+    "continue": "Continue"
   },
   "auth": {
     "swipeMatchConnect": "Swipe, Match, Connect",

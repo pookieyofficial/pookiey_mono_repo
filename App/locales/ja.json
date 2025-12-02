@@ -31,6 +31,13 @@
     "man": "男性",
     "continue": "続ける"
   },
+  "occupation": {
+    "title": "あなたの職業は？",
+    "subtitle": "他の人にあなたの職業を知らせましょう",
+    "continue": "続ける",
+    "noneOfAbove": "上記のいずれでもない",
+    "enterCustom": "職業を入力してください"
+  },
   "interest": {
     "title": "興味",
     "subtitle": "あなたの情熱をみんなに知らせましょう。",

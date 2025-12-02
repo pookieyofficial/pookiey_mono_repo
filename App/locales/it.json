@@ -31,6 +31,13 @@
     "man": "Uomo",
     "continue": "Continua"
   },
+  "occupation": {
+    "title": "Cosa fai?",
+    "subtitle": "Fai sapere agli altri la tua professione",
+    "continue": "Continua",
+    "noneOfAbove": "Nessuna delle sopra",
+    "enterCustom": "Inserisci la tua occupazione"
+  },
   "interest": {
     "title": "Interessi",
     "subtitle": "Fai sapere a tutti le tue passioni.",

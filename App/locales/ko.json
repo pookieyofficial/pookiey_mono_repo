@@ -31,6 +31,13 @@
     "man": "남성",
     "continue": "계속"
   },
+  "occupation": {
+    "title": "무엇을 하시나요?",
+    "subtitle": "다른 사람들에게 당신의 직업을 알려주세요",
+    "continue": "계속",
+    "noneOfAbove": "위의 항목 없음",
+    "enterCustom": "직업을 입력하세요"
+  },
   "interest": {
     "title": "관심사",
     "subtitle": "모두에게 당신의 열정을 알려주세요.",

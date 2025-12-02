@@ -31,6 +31,13 @@
     "man": "Mann",
     "continue": "Weiter"
   },
+  "occupation": {
+    "title": "Was machen Sie?",
+    "subtitle": "Lassen Sie andere über Ihren Beruf wissen",
+    "continue": "Weiter",
+    "noneOfAbove": "Keine der oben genannten",
+    "enterCustom": "Geben Sie Ihren Beruf ein"
+  },
   "interest": {
     "title": "Interessen",
     "subtitle": "Lassen Sie alle wissen, wofür Sie sich begeistern.",
