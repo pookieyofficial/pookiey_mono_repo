@@ -534,43 +534,40 @@ export default function StoriesScreen() {
 
   // Start progress when story changes
   useEffect(() => {
-    if (selectedStoryIndex !== null) {
-      const current = getCurrentStory();
-      
-      // Reset progress
-      progressAnim.setValue(0);
-      
-      // For videos, start playback after a short delay to ensure video is loaded
-      if (current?.story.type === 'video') {
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.playAsync().catch((error) => {
-              console.error('Error playing video:', error);
-            });
-          }
-        }, 100);
-      } else {
-        // For images, start animation
-        const cleanup = startStoryProgress();
-        return () => {
-          cleanup?.();
-        };
-      }
+    if (selectedStoryIndex === null) return;
+    
+    const current = getCurrentStory();
+    if (!current) return;
+    
+    // Reset progress
+    progressAnim.setValue(0);
+    
+    // For videos, we rely on shouldPlay={true} and onLoad callback
+    // For images, start the timer animation
+    if (current.story.type !== 'video') {
+      const cleanup = startStoryProgress();
+      return () => {
+        cleanup?.();
+      };
     }
+    
     return () => {
       if (storyTimer.current) {
         clearTimeout(storyTimer.current);
         storyTimer.current = null;
       }
       progressAnim.stopAnimation();
-      // Ensure video is stopped and unloaded when component unmounts or story changes
-      if (videoRef.current) {
-        videoRef.current.pauseAsync()
-          .then(() => videoRef.current?.unloadAsync())
-          .catch(() => {});
-      }
     };
-  }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim, getCurrentStory]);
+  }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim]);
+  
+  // Separate cleanup for when story viewer closes completely
+  useEffect(() => {
+    if (selectedStoryIndex === null && videoRef.current) {
+      videoRef.current.pauseAsync()
+        .then(() => videoRef.current?.unloadAsync())
+        .catch(() => {});
+    }
+  }, [selectedStoryIndex]);
 
   // Pan responder for swipe gestures
   const panResponder = useRef(
@@ -709,6 +706,14 @@ export default function StoriesScreen() {
               // Mark story as viewed when video starts loading
               if (!story.isSeen && !user.isMe) {
                 handleStorySeen(story.id);
+              }
+            }}
+            onLoad={() => {
+              // Ensure video plays after it's fully loaded
+              if (videoRef.current) {
+                videoRef.current.playAsync().catch((error) => {
+                  console.error('Error playing video on load:', error);
+                });
               }
             }}
           />
