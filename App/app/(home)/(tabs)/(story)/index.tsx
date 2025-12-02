@@ -194,7 +194,7 @@ export default function StoriesScreen() {
     router.push('/(home)/(tabs)/(story)/create' as any);
   };
 
-  const handleCloseStory = async () => {
+  const handleCloseStory = useCallback(async () => {
     if (storyTimer.current) {
       clearTimeout(storyTimer.current);
       storyTimer.current = null;
@@ -219,7 +219,7 @@ export default function StoriesScreen() {
     // No need to navigate - setting selectedStoryIndex to null will show the list view
     // Refresh stories to update view status
     loadStories();
-  };
+  }, [progressAnim, loadStories]);
 
   const handleBackButton = async () => {
     // Clean up story resources
@@ -486,8 +486,8 @@ export default function StoriesScreen() {
   // Handle story selection
   useEffect(() => {
     if (selectedStoryIndex !== null) {
-      // selectedStoryIndex is the index within the category, so set currentUserIndex to that
-      setCurrentUserIndex(selectedStoryIndex);
+      // getAllStories already slices from selectedStoryIndex, so start at 0
+      setCurrentUserIndex(0);
       setCurrentStoryIndex(0);
       progressAnim.setValue(0);
       setWasViewingStory(null); // Clear the flag when starting a new story
@@ -534,43 +534,40 @@ export default function StoriesScreen() {
 
   // Start progress when story changes
   useEffect(() => {
-    if (selectedStoryIndex !== null) {
-      const current = getCurrentStory();
-      
-      // Reset progress
-      progressAnim.setValue(0);
-      
-      // For videos, start playback after a short delay to ensure video is loaded
-      if (current?.story.type === 'video') {
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.playAsync().catch((error) => {
-              console.error('Error playing video:', error);
-            });
-          }
-        }, 100);
-      } else {
-        // For images, start animation
-        const cleanup = startStoryProgress();
-        return () => {
-          cleanup?.();
-        };
-      }
+    if (selectedStoryIndex === null) return;
+    
+    const current = getCurrentStory();
+    if (!current) return;
+    
+    // Reset progress
+    progressAnim.setValue(0);
+    
+    // For videos, we rely on shouldPlay={true} and onLoad callback
+    // For images, start the timer animation
+    if (current.story.type !== 'video') {
+      const cleanup = startStoryProgress();
+      return () => {
+        cleanup?.();
+      };
     }
+    
     return () => {
       if (storyTimer.current) {
         clearTimeout(storyTimer.current);
         storyTimer.current = null;
       }
       progressAnim.stopAnimation();
-      // Ensure video is stopped and unloaded when component unmounts or story changes
-      if (videoRef.current) {
-        videoRef.current.pauseAsync()
-          .then(() => videoRef.current?.unloadAsync())
-          .catch(() => {});
-      }
     };
-  }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim, getCurrentStory]);
+  }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim]);
+  
+  // Separate cleanup for when story viewer closes completely
+  useEffect(() => {
+    if (selectedStoryIndex === null && videoRef.current) {
+      videoRef.current.pauseAsync()
+        .then(() => videoRef.current?.unloadAsync())
+        .catch(() => {});
+    }
+  }, [selectedStoryIndex]);
 
   // Pan responder for swipe gestures
   const panResponder = useRef(
@@ -599,13 +596,27 @@ export default function StoriesScreen() {
 
 
 
+  // Handle case when story becomes invalid during viewing
+  useEffect(() => {
+    if (selectedStoryIndex !== null) {
+      const current = getCurrentStory();
+      if (!current) {
+        // Use setTimeout to avoid setState during render
+        const timer = setTimeout(() => {
+          handleCloseStory();
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [selectedStoryIndex, getCurrentStory, handleCloseStory]);
+
   // If story is selected, show story viewer directly (no modal)
   if (selectedStoryIndex !== null) {
     const allStories = getAllStories();
     const current = getCurrentStory();
 
+    // Return null while waiting for the useEffect to close
     if (!current) {
-      handleCloseStory();
       return null;
     }
 
@@ -695,6 +706,14 @@ export default function StoriesScreen() {
               // Mark story as viewed when video starts loading
               if (!story.isSeen && !user.isMe) {
                 handleStorySeen(story.id);
+              }
+            }}
+            onLoad={() => {
+              // Ensure video plays after it's fully loaded
+              if (videoRef.current) {
+                videoRef.current.playAsync().catch((error) => {
+                  console.error('Error playing video on load:', error);
+                });
               }
             }}
           />
@@ -848,11 +867,6 @@ export default function StoriesScreen() {
                 )}
               </View>
             </View>
-            {hasUnviewed && (
-              <View style={styles.discoverCardBadge}>
-                <ThemedText style={styles.discoverCardBadgeText}>New</ThemedText>
-              </View>
-            )}
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -878,14 +892,9 @@ export default function StoriesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Enhanced Header with gradient */}
-      <LinearGradient
-        colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + '80', 'transparent']}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.headerTitle}>Stories</ThemedText>
-        </View>
-      </LinearGradient>
+      <View style={styles.headerSection}>
+        <ThemedText type='title' style={styles.headerTitle}>{('Stories')}</ThemedText>
+      </View>
 
       {!hasAnyStories && !isLoading ? (
         <View style={styles.emptyContainer}>
@@ -907,147 +916,123 @@ export default function StoriesScreen() {
           keyExtractor={() => 'main-list'}
           ListHeaderComponent={
             <>
-              {/* Your Story Section */}
-              {categorizedStories.myStory && (
-                <View style={styles.sectionContainer}>
-                  <FlatList
-                    horizontal
-                    data={[categorizedStories.myStory]}
-                    renderItem={({ item }) => {
-                      const getFirstName = () => {
-                        if (item.isMe) {
-                          return 'Your Story';
-                        }
-                        const nameParts = item.username.trim().split(/\s+/);
-                        return nameParts[0] || item.username;
-                      };
-                      
-                      return (
-                        <View style={styles.storyItem}>
-                          <TouchableOpacity
-                            style={styles.storyCircleContainer}
-                            onPress={() => {
-                              if (item.isMe && item.stories.length === 0) {
-                                handleAddStory();
-                              } else if (item.stories.length > 0) {
-                                handleStoryPress(item, 'myStory', 0);
-                              } else {
-                                handleAddStory();
-                              }
-                            }}
-                            activeOpacity={0.7}
+              {/* Stories - Your Story + Friends in one horizontal scroll */}
+              <FlatList
+                horizontal
+                data={[
+                  ...(categorizedStories.myStory ? [categorizedStories.myStory] : []),
+                  ...categorizedStories.friends
+                ]}
+                extraData={categorizedStories} // Force re-render when stories change
+                renderItem={({ item, index }) => {
+                  const isMyStory = item.isMe;
+                  const hasStories = item.stories.length > 0;
+                  // Check if any story from this user hasn't been viewed
+                  const hasUnviewed = hasStories && item.stories.some(story => !story.isSeen);
+                  
+                  const getFirstName = () => {
+                    if (isMyStory) return 'Your Story';
+                    const nameParts = item.username.trim().split(/\s+/);
+                    return nameParts[0] || item.username;
+                  };
+                  
+                  return (
+                    <View style={styles.storyItem}>
+                      <TouchableOpacity
+                        style={styles.storyCircleContainer}
+                        onPress={() => {
+                          if (isMyStory) {
+                            if (hasStories) {
+                              handleStoryPress(item, 'myStory', 0);
+                            } else {
+                              handleAddStory();
+                            }
+                          } else {
+                            if (hasStories) {
+                              const friendIndex = categorizedStories.myStory ? index - 1 : index;
+                              handleStoryPress(item, 'friends', friendIndex);
+                            }
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        {isMyStory ? (
+                          // Your Story - always show with gradient
+                          <LinearGradient
+                            colors={hasStories 
+                              ? [Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD']
+                              : [Colors.text.tertiary, Colors.text.light]
+                            }
+                            style={styles.gradientBorder}
                           >
-                            <LinearGradient
-                              colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD']}
-                              style={[styles.storyCircleInner, { borderWidth: 2.5, borderColor: Colors.primary.white, padding: 2 }]}
-                            >
+                            <View style={styles.storyCircleInner}>
                               <Image
                                 source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
                                 style={styles.storyAvatar}
                               />
-                            </LinearGradient>
-                            {item.isMe && (
-                              <TouchableOpacity
-                                style={styles.addIconContainer}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  handleAddStory();
-                                }}
-                                activeOpacity={0.7}
-                              >
-                                <View style={styles.addIcon}>
-                                  <Ionicons name="add" size={Math.max(20, STORY_CIRCLE_SIZE * 0.22)} color={Colors.primary.white} />
-                                </View>
-                              </TouchableOpacity>
-                            )}
-                          </TouchableOpacity>
-                          <ThemedText style={styles.storyName} numberOfLines={1}>
-                            {getFirstName()}
-                          </ThemedText>
-                        </View>
-                      );
-                    }}
-                    keyExtractor={() => 'my-story'}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalListContainer}
-                  />
-                </View>
-              )}
-
-              {/* Friends Section - Horizontal Scroll */}
-              {categorizedStories.friends.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <View style={styles.friendsHeader}>
-                    <ThemedText type="subtitle" style={styles.sectionTitle}>Friends</ThemedText>
-                    <ThemedText style={styles.friendsSubtitle}>
-                      {categorizedStories.friends.length} {categorizedStories.friends.length === 1 ? 'friend' : 'friends'}
-                    </ThemedText>
-                  </View>
-                  <FlatList
-                    horizontal
-                    data={categorizedStories.friends}
-                    renderItem={({ item, index }) => {
-                      const hasUnviewed = item.stories.some(story => !story.isSeen);
-                      const getFirstName = () => {
-                        const nameParts = item.username.trim().split(/\s+/);
-                        return nameParts[0] || item.username;
-                      };
-                      
-                      return (
-                        <View style={styles.storyItem}>
+                            </View>
+                          </LinearGradient>
+                        ) : hasUnviewed ? (
+                          // Friend with unviewed stories
+                          <LinearGradient
+                            colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD', Colors.primaryBackgroundColor]}
+                            style={styles.gradientBorder}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                          >
+                            <View style={styles.storyCircleInner}>
+                              <Image
+                                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                style={styles.storyAvatar}
+                              />
+                            </View>
+                          </LinearGradient>
+                        ) : (
+                          // Friend with viewed stories
+                          <View style={styles.storyCircleViewed}>
+                            <Image
+                              source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                              style={styles.storyAvatar}
+                            />
+                          </View>
+                        )}
+                        
+                        {/* Add button for Your Story */}
+                        {isMyStory && (
                           <TouchableOpacity
-                            style={styles.storyCircleContainer}
-                            onPress={() => {
-                              if (item.stories.length > 0) {
-                                handleStoryPress(item, 'friends', index);
-                              }
+                            style={styles.addIconContainer}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleAddStory();
                             }}
                             activeOpacity={0.7}
                           >
-                            {hasUnviewed ? (
-                              <LinearGradient
-                                colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD', Colors.primaryBackgroundColor]}
-                                style={styles.gradientBorder}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                              >
-                                <View style={styles.storyCircleInner}>
-                                  <Image
-                                    source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                                    style={styles.storyAvatar}
-                                  />
-                                </View>
-                              </LinearGradient>
-                            ) : (
-                              <View style={[styles.storyCircleInner, { borderWidth: 1.5, borderColor: Colors.text.light }]}>
-                                <Image
-                                  source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                                  style={styles.storyAvatar}
-                                />
-                              </View>
-                            )}
+                            <View style={styles.addIcon}>
+                              <Ionicons name="add" size={Math.max(16, STORY_CIRCLE_SIZE * 0.20)} color={Colors.primary.white} />
+                            </View>
                           </TouchableOpacity>
-                          <ThemedText style={styles.storyName} numberOfLines={1}>
-                            {getFirstName()}
-                          </ThemedText>
-                        </View>
-                      );
-                    }}
-                    keyExtractor={(item, index) => `friend-${item.id}-${index}`}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalListContainer}
-                  />
-                </View>
-              )}
+                        )}
+                      </TouchableOpacity>
+                      <ThemedText style={styles.storyName} numberOfLines={1}>
+                        {getFirstName()}
+                      </ThemedText>
+                    </View>
+                  );
+                }}
+                keyExtractor={(item, index) => {
+                  // Include viewed status in key to force re-render when status changes
+                  const viewedCount = item.stories.filter(s => s.isSeen).length;
+                  return `story-${item.id}-${index}-viewed-${viewedCount}`;
+                }}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalListContainer}
+              />
 
               {/* Discover Section - Vertical scrollable */}
               {categorizedStories.discover.length > 0 && (
                 <View style={styles.sectionContainer}>
                   <View style={styles.discoverHeader}>
-                    <ThemedText type="subtitle" style={styles.sectionTitle}>Discover</ThemedText>
-                    <ThemedText style={styles.discoverSubtitle}>
-                      {categorizedStories.discover.length} {categorizedStories.discover.length === 1 ? 'story' : 'stories'} to explore
-                    </ThemedText>
+                    <ThemedText >Discover </ThemedText>
                   </View>
                   <FlatList
                     data={categorizedStories.discover}
@@ -1091,26 +1076,28 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.primary.white,
-    letterSpacing: 0.5,
+    color: Colors.primary.black,
   },
   listContainer: {
     padding: 12,
   },
+  headerSection: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginBottom: 20,
+  },
   storyItem: {
     width: ITEM_WIDTH,
     alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
+    marginBottom: 1,
+    paddingHorizontal: 2,
   },
   storyCircleContainer: {
     position: 'relative',
@@ -1132,6 +1119,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.white,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  storyCircleViewed: {
+    width: STORY_CIRCLE_SIZE,
+    height: STORY_CIRCLE_SIZE,
+    borderRadius: STORY_CIRCLE_SIZE / 2,
+    borderWidth: 2.5,
+    borderColor: '#CCCCCC', // Gray border for viewed stories
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.primary.white,
+    padding: 3,
   },
   storyAvatar: {
     width: STORY_AVATAR_SIZE,

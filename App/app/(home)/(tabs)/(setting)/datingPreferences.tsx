@@ -37,7 +37,7 @@ const DatingPreferences = () => {
   const [minAge, setMinAge] = useState(18)
   const [maxAge, setMaxAge] = useState(50)
   const [distance, setDistance] = useState(50)
-  const [showMe, setShowMe] = useState<("male" | "female")[]>(['male', 'female'])
+  const [showMe, setShowMe] = useState<"male" | "female">('male')
   const [showLocationDialog, setShowLocationDialog] = useState(false)
 
   useEffect(() => {
@@ -46,11 +46,10 @@ const DatingPreferences = () => {
       setMinAge(dbUser.preferences.ageRange?.[0] || 18)
       setMaxAge(dbUser.preferences.ageRange?.[1] || 50)
       setDistance(dbUser.preferences.distanceMaxKm || 50)
-      // Filter out 'other' from existing preferences
-      const filteredShowMe = (dbUser.preferences.showMe || ['male', 'female']).filter(
-        (g) => g === 'male' || g === 'female'
-      ) as ("male" | "female")[]
-      setShowMe(filteredShowMe.length > 0 ? filteredShowMe : ['male', 'female'])
+      // Get the first valid gender preference or default to 'male'
+      const existingShowMe = dbUser.preferences.showMe || []
+      const firstValidGender = existingShowMe.find((g) => g === 'male' || g === 'female')
+      setShowMe(firstValidGender || 'male')
     }
   }, [dbUser])
 
@@ -107,11 +106,6 @@ const DatingPreferences = () => {
       return
     }
 
-    if (showMe.length === 0) {
-      Alert.alert(t('datingPreferences.invalidSelection'), t('datingPreferences.selectAtLeastOneGender'))
-      return
-    }
-
     setIsLoading(true)
     try {
 
@@ -119,7 +113,7 @@ const DatingPreferences = () => {
         preferences: {
           ageRange: [minAge, maxAge],
           distanceMaxKm: distance,
-          showMe: showMe
+          showMe: [showMe]
         }
       }
 
@@ -169,7 +163,7 @@ const DatingPreferences = () => {
 
             <View style={styles.genderOptions}>
               {(['male', 'female'] as const).map((gender) => {
-                const isSelected = showMe.includes(gender)
+                const isSelected = showMe === gender
                 return (
                   <TouchableOpacity
                     key={gender}
@@ -177,24 +171,15 @@ const DatingPreferences = () => {
                       styles.genderOption,
                       isSelected && styles.genderOptionSelected
                     ]}
-                    onPress={() => {
-                      if (isSelected) {
-                        // Don't allow deselecting if it's the last one
-                        if (showMe.length > 1) {
-                          setShowMe(showMe.filter(g => g !== gender))
-                        }
-                      } else {
-                        setShowMe([...showMe, gender])
-                      }
-                    }}
+                    onPress={() => setShowMe(gender)}
                     activeOpacity={0.7}
                   >
                     <View style={[
-                      styles.genderCheckbox,
-                      isSelected && styles.genderCheckboxSelected
+                      styles.genderRadio,
+                      isSelected && styles.genderRadioSelected
                     ]}>
                       {isSelected && (
-                        <Ionicons name="checkmark" size={16} color={Colors.primary.white} />
+                        <View style={styles.genderRadioInner} />
                       )}
                     </View>
                     <ThemedText style={[
@@ -485,10 +470,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary.red,
     backgroundColor: Colors.primary.red + '10',
   },
-  genderCheckbox: {
+  genderRadio: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.text.light,
     marginRight: 12,
@@ -496,8 +481,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.primary.white,
   },
-  genderCheckboxSelected: {
+  genderRadioSelected: {
     borderColor: Colors.primary.red,
+  },
+  genderRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: Colors.primary.red,
   },
   genderLabel: {
