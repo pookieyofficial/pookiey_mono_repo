@@ -31,6 +31,13 @@
     "man": "男性",
     "continue": "继续"
   },
+  "occupation": {
+    "title": "你做什么工作？",
+    "subtitle": "让别人了解你的职业",
+    "continue": "继续",
+    "noneOfAbove": "以上都不是",
+    "enterCustom": "输入你的职业"
+  },
   "interest": {
     "title": "兴趣爱好",
     "subtitle": "让每个人都知道您的热情所在。",

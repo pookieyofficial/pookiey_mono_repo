@@ -31,6 +31,13 @@
     "man": "Homme",
     "continue": "Continuer"
   },
+  "occupation": {
+    "title": "Que faites-vous ?",
+    "subtitle": "Faites savoir aux autres votre profession",
+    "continue": "Continuer",
+    "noneOfAbove": "Aucune des réponses ci-dessus",
+    "enterCustom": "Entrez votre profession"
+  },
   "interest": {
     "title": "Centres d'intérêt",
     "subtitle": "Faites savoir à tous ce qui vous passionne.",

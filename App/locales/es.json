@@ -31,6 +31,13 @@
     "man": "Hombre",
     "continue": "Continuar"
   },
+  "occupation": {
+    "title": "¿A qué te dedicas?",
+    "subtitle": "Déjales saber a otros sobre tu profesión",
+    "continue": "Continuar",
+    "noneOfAbove": "Ninguna de las anteriores",
+    "enterCustom": "Ingresa tu ocupación"
+  },
   "interest": {
     "title": "Intereses",
     "subtitle": "Déjale saber a todos sobre tus pasiones.",

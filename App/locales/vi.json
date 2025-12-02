@@ -31,6 +31,13 @@
     "man": "Nam",
     "continue": "Tiếp tục"
   },
+  "occupation": {
+    "title": "Bạn làm nghề gì?",
+    "subtitle": "Cho người khác biết về nghề nghiệp của bạn",
+    "continue": "Tiếp tục",
+    "noneOfAbove": "Không có ở trên",
+    "enterCustom": "Nhập nghề nghiệp của bạn"
+  },
   "interest": {
     "title": "Sở thích",
     "subtitle": "Hãy cho mọi người biết điều bạn đam mê.",

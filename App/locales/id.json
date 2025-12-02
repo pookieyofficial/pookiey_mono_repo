@@ -31,6 +31,13 @@
     "man": "Laki-laki",
     "continue": "Lanjutkan"
   },
+  "occupation": {
+    "title": "Apa pekerjaan Anda?",
+    "subtitle": "Beritahu orang lain tentang profesi Anda",
+    "continue": "Lanjutkan",
+    "noneOfAbove": "Tidak ada di atas",
+    "enterCustom": "Masukkan pekerjaan Anda"
+  },
   "interest": {
     "title": "Minat",
     "subtitle": "Biarkan semua orang tahu apa yang Anda sukai.",

@@ -31,6 +31,13 @@
     "man": "رجل",
     "continue": "متابعة"
   },
+  "occupation": {
+    "title": "ماذا تعمل؟",
+    "subtitle": "دع الآخرين يعرفون عن مهنتك",
+    "continue": "متابعة",
+    "noneOfAbove": "لا شيء مما سبق",
+    "enterCustom": "أدخل مهنتك"
+  },
   "interest": {
     "title": "الاهتمامات",
     "subtitle": "دع الجميع يعرفون ما أنت شغوف به.",

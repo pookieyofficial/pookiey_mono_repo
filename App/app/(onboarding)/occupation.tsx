@@ -17,25 +17,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const commonOccupations = [
-    { id: 'software-engineer', name: 'Software Engineer', icon: 'code' },
-    { id: 'student', name: 'student', icon: 'book' },
+    { id: 'student', name: 'Student', icon: 'book' },
+    { id: 'developer', name: 'Developer', icon: 'code' },
+    { id: 'designer', name: 'Designer', icon: 'brush' },
     { id: 'teacher', name: 'Teacher', icon: 'school' },
     { id: 'doctor', name: 'Doctor', icon: 'medical' },
     { id: 'nurse', name: 'Nurse', icon: 'heart' },
     { id: 'engineer', name: 'Engineer', icon: 'build' },
-    { id: 'designer', name: 'Designer', icon: 'brush' },
     { id: 'lawyer', name: 'Lawyer', icon: 'scale' },
-    { id: 'accountant', name: 'Accountant', icon: 'calculator' },
-    { id: 'marketing-manager', name: 'Marketing Manager', icon: 'megaphone' },
-    { id: 'sales-representative', name: 'Sales Representative', icon: 'trending-up' },
+    { id: 'finance', name: 'Finance', icon: 'calculator' },
+    { id: 'marketing', name: 'Marketing', icon: 'megaphone' },
+    { id: 'sales', name: 'Sales', icon: 'trending-up' },
     { id: 'consultant', name: 'Consultant', icon: 'briefcase' },
-    { id: 'student', name: 'Student', icon: 'book' },
-    { id: 'entrepreneur', name: 'Entrepreneur', icon: 'rocket' },
+    { id: 'founder', name: 'Founder', icon: 'rocket' },
     { id: 'artist', name: 'Artist', icon: 'color-palette' },
     { id: 'writer', name: 'Writer', icon: 'create' },
     { id: 'chef', name: 'Chef', icon: 'restaurant' },
-    { id: 'photographer', name: 'Photographer', icon: 'camera' },
-    
 ];
 
 export default function OccupationScreen() {
@@ -90,13 +87,13 @@ export default function OccupationScreen() {
             >
                 <Ionicons
                     name={occ.icon as any}
-                    size={18}
+                    size={16}
                     color={isSelected ? '#ffffff' : '#666666'}
                 />
-                <ThemedText type='defaultSemiBold' style={[
+                <ThemedText style={[
                     styles.occupationText,
                     isSelected && styles.occupationTextSelected,
-                ]}>
+                ]} numberOfLines={1}>
                     {occ.name}
                 </ThemedText>
             </TouchableOpacity>
@@ -210,33 +207,32 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     customInputContainer: {
-        marginBottom: 24,
+        marginBottom: 20,
         paddingHorizontal: 8,
     },
     customInputChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         backgroundColor: '#ffffff',
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: Colors.primaryBackgroundColor,
         borderStyle: 'dashed',
-        borderRadius: 20,
+        borderRadius: 25,
         paddingHorizontal: 16,
-        paddingVertical: 16,
-        gap: 12,
-        height: 56,
+        paddingVertical: 12,
+        gap: 8,
         shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1,
         },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowRadius: 3,
+        elevation: 1,
     },
     customInputButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: Colors.primaryBackgroundColor,
     },
@@ -244,25 +240,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#ffffff',
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: Colors.primaryBackgroundColor,
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 12,
-        minHeight: 56,
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        gap: 8,
         shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1,
         },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowRadius: 3,
+        elevation: 1,
     },
     customInput: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: '#1a1a1a',
         paddingVertical: 0,
@@ -273,32 +268,29 @@ const styles = StyleSheet.create({
     occupationsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        gap: 12,
+        gap: 10,
         marginBottom: 32,
         paddingHorizontal: 8,
     },
     occupationChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.05)',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        gap: 12,
-        height: 56,
-        width: '48%',
+        borderColor: 'rgba(0, 0, 0, 0.08)',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        gap: 6,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1,
         },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        elevation: 1,
     },
     occupationChipSelected: {
         backgroundColor: Colors.primaryBackgroundColor,
@@ -306,16 +298,16 @@ const styles = StyleSheet.create({
         shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
-            height: 4,
+            height: 3,
         },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 4,
     },
     occupationText: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: '600',
-        color: '#1a1a1a',
+        color: '#444',
     },
     occupationTextSelected: {
         color: '#ffffff',

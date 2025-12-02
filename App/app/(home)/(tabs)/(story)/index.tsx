@@ -831,6 +831,11 @@ export default function StoriesScreen() {
     const firstStory = item.stories[0];
     const storyCount = item.stories.length;
     
+    // If first story is a video, use user's avatar as thumbnail
+    const thumbnailUrl = firstStory?.type === 'video' 
+      ? (item.avatar || 'https://via.placeholder.com/200')
+      : (firstStory?.url || item.avatar || 'https://via.placeholder.com/200');
+    
     return (
       <TouchableOpacity
         style={styles.discoverCard}
@@ -842,7 +847,7 @@ export default function StoriesScreen() {
         activeOpacity={0.85}
       >
         <Image
-          source={{ uri: firstStory?.url || item.avatar || 'https://via.placeholder.com/200' }}
+          source={{ uri: thumbnailUrl }}
           style={styles.discoverCardImage}
           resizeMode="cover"
         />

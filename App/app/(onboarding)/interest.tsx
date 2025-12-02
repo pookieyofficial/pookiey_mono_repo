@@ -17,20 +17,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interests = [
-    { id: 'photography', key: 'photography', icon: 'camera' },
-    { id: 'shopping', key: 'shopping', icon: 'bag' },
-    { id: 'karaoke', key: 'karaoke', icon: 'mic' },
-    { id: 'yoga', key: 'yoga', icon: 'body' },
-    { id: 'cooking', key: 'cooking', icon: 'restaurant' },
-    { id: 'tennis', key: 'tennis', icon: 'tennisball' },
-    { id: 'run', key: 'run', icon: 'walk' },
-    { id: 'swimming', key: 'swimming', icon: 'water' },
-    { id: 'art', key: 'art', icon: 'brush' },
-    { id: 'traveling', key: 'traveling', icon: 'airplane' },
-    { id: 'extreme', key: 'extreme', icon: 'trail-sign' },
-    { id: 'music', key: 'music', icon: 'musical-notes' },
-    { id: 'drink', key: 'drink', icon: 'wine' },
-    { id: 'videogames', key: 'videogames', icon: 'game-controller' },
+    { id: 'photography', key: 'photography', icon: 'camera', label: 'Photos' },
+    { id: 'shopping', key: 'shopping', icon: 'bag', label: 'Shopping' },
+    { id: 'karaoke', key: 'karaoke', icon: 'mic', label: 'Singing' },
+    { id: 'yoga', key: 'yoga', icon: 'body', label: 'Yoga' },
+    { id: 'cooking', key: 'cooking', icon: 'restaurant', label: 'Cooking' },
+    { id: 'tennis', key: 'tennis', icon: 'tennisball', label: 'Sports' },
+    { id: 'run', key: 'run', icon: 'walk', label: 'Fitness' },
+    { id: 'swimming', key: 'swimming', icon: 'water', label: 'Swimming' },
+    { id: 'art', key: 'art', icon: 'brush', label: 'Art' },
+    { id: 'traveling', key: 'traveling', icon: 'airplane', label: 'Travel' },
+    { id: 'extreme', key: 'extreme', icon: 'trail-sign', label: 'Adventure' },
+    { id: 'music', key: 'music', icon: 'musical-notes', label: 'Music' },
+    { id: 'drink', key: 'drink', icon: 'wine', label: 'Drinks' },
+    { id: 'videogames', key: 'videogames', icon: 'game-controller', label: 'Gaming' },
+    { id: 'movies', key: 'movies', icon: 'film', label: 'Movies' },
+    { id: 'reading', key: 'reading', icon: 'book', label: 'Reading' },
 ];
 
 export default function InterestScreen() {
@@ -42,7 +44,7 @@ export default function InterestScreen() {
     };
 
     const handleContinue = () => {
-        router.push('/(onboarding)/location');
+        router.push('/(onboarding)/notification');
     };
 
     const toggleInterest = (interestKey: string) => {
@@ -75,14 +77,14 @@ export default function InterestScreen() {
             >
                 <Ionicons
                     name={interest.icon as any}
-                    size={18}
+                    size={16}
                     color={isSelected ? '#ffffff' : '#666666'}
                 />
-                <ThemedText type='defaultSemiBold' style={[
+                <ThemedText style={[
                     styles.interestText,
                     isSelected && styles.interestTextSelected,
-                ]}>
-                    {t(`interest.${interest.key}`)}
+                ]} numberOfLines={1}>
+                    {interest.label}
                 </ThemedText>
             </TouchableOpacity>
         );
@@ -175,31 +177,28 @@ const styles = StyleSheet.create({
     interestsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        gap: 12,
+        gap: 10,
         marginBottom: 32,
     },
     interestChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.05)',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        gap: 12,
-        height: 56,
-        width: '48%',
+        borderColor: 'rgba(0, 0, 0, 0.08)',
+        borderRadius: 25,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        gap: 6,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1,
         },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        elevation: 1,
     },
     interestChipSelected: {
         backgroundColor: Colors.primaryBackgroundColor,
@@ -207,16 +206,16 @@ const styles = StyleSheet.create({
         shadowColor: Colors.primaryBackgroundColor,
         shadowOffset: {
             width: 0,
-            height: 4,
+            height: 3,
         },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 4,
     },
     interestText: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: '600',
-        color: '#1a1a1a',
+        color: '#444',
     },
     interestTextSelected: {
         color: '#ffffff',

@@ -31,6 +31,13 @@
     "man": "Erkek",
     "continue": "Devam"
   },
+  "occupation": {
+    "title": "Ne iş yapıyorsunuz?",
+    "subtitle": "Diğerlerine mesleğinizi bildirin",
+    "continue": "Devam",
+    "noneOfAbove": "Yukarıdakilerden hiçbiri",
+    "enterCustom": "Mesleğinizi girin"
+  },
   "interest": {
     "title": "İlgi alanları",
     "subtitle": "Herkesin tutkulu olduğunuz şeyleri bilmesini sağlayın.",

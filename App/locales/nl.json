@@ -31,6 +31,13 @@
     "man": "Man",
     "continue": "Doorgaan"
   },
+  "occupation": {
+    "title": "Wat doe je?",
+    "subtitle": "Laat anderen weten over je beroep",
+    "continue": "Doorgaan",
+    "noneOfAbove": "Geen van bovenstaande",
+    "enterCustom": "Voer je beroep in"
+  },
   "interest": {
     "title": "Interesses",
     "subtitle": "Laat iedereen weten waar je gepassioneerd over bent.",
