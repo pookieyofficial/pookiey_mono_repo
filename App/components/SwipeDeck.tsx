@@ -75,9 +75,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     });
                 }
             }
+            if (!response?.success) {
+                if (response?.showPriceModal) {
+                    router.push("/(home)/pricePlans");
+                    return;
+                }
+            }
         } catch (err) {
-            console.error("Error during interaction:", err);
-            Alert.alert("Error", "Failed to record interaction");
+            Alert.alert("Error", "Something went wrong");
+            return;
         }
     };
 

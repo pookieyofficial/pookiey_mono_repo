@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { PaymentTransaction, Subscription, User } from "../models";
 import { razorpayClient } from "../config/razorpay";
 import {
@@ -274,3 +274,79 @@ export const getPaymentHistory = async (userMongoId: Types.ObjectId) => {
         .limit(20);
 };
 
+
+export const getUserSubsriptionPlan = async (user_id: string) => {
+    const user = await User.findOne({ user_id });
+    if (!user) {
+        throw new Error("User not found");
+    }
+    return user.subscription?.plan;
+};
+
+export const checkAndUpdateInteractionLimit = async (
+    userMongoId: Types.ObjectId,
+    session?: mongoose.ClientSession
+): Promise<{ allowed: boolean; remaining: number; limit: number }> => {
+    const user = session 
+        ? await User.findById(userMongoId).session(session)
+        : await User.findById(userMongoId);
+    
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    const now = new Date();
+    const lastReset = user.lastInteractionResetAt || user.createdAt;
+    const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
+
+    let currentCount = user.dailyInteractionCount || 0;
+
+    if (hoursSinceReset >= 24) {
+        currentCount = 0;
+        if (session) {
+            await User.findByIdAndUpdate(
+                userMongoId,
+                {
+                    dailyInteractionCount: 0,
+                    lastInteractionResetAt: now,
+                },
+                { session }
+            );
+        } else {
+            await User.findByIdAndUpdate(
+                userMongoId,
+                {
+                    dailyInteractionCount: 0,
+                    lastInteractionResetAt: now,
+                }
+            );
+        }
+    }
+
+    let planId: SubscriptionPlanId = "free";
+    if (user.subscription?.plan && ["basic", "premium", "super", "free"].includes(user.subscription.plan)) {
+        planId = user.subscription.plan as SubscriptionPlanId;
+    }
+    const planConfig = getPlanConfig(planId);
+    const limit = planConfig.interaction_per_day;
+
+    if (currentCount >= limit) {
+        return { allowed: false, remaining: 0, limit };
+    }
+
+    const newCount = currentCount + 1;
+    if (session) {
+        await User.findByIdAndUpdate(
+            userMongoId,
+            { dailyInteractionCount: newCount },
+            { session }
+        );
+    } else {
+        await User.findByIdAndUpdate(
+            userMongoId,
+            { dailyInteractionCount: newCount }
+        );
+    }
+
+    return { allowed: true, remaining: limit - newCount, limit };
+};

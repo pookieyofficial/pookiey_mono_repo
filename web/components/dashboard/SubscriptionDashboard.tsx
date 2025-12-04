@@ -28,6 +28,7 @@ export default function SubscriptionDashboard() {
   const { isReady: isRazorpayReady, error: razorpayError } = useRazorpay();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
   const subscriptionEnabled = Boolean(user);
   const { plans, current, payments } = useSubscriptionData(subscriptionEnabled);
@@ -50,6 +51,7 @@ export default function SubscriptionDashboard() {
 
   const handleCheckout = async (plan: SubscriptionPlan) => {
     setIsProcessing(true);
+    setProcessingPlanId(plan.id);
     setCheckoutError(null);
 
     try {
@@ -124,6 +126,7 @@ export default function SubscriptionDashboard() {
       );
     } finally {
       setIsProcessing(false);
+      setProcessingPlanId(null);
     }
   };
 
@@ -313,7 +316,9 @@ export default function SubscriptionDashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {plans.data?.map((plan) => (
+          {plans.data
+            ?.filter((plan) => plan.id !== "free")
+            .map((plan) => (
             <article
               key={plan.id}
               className="group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-[#E94057]/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
@@ -337,6 +342,10 @@ export default function SubscriptionDashboard() {
                   <span className="text-sm font-normal text-[#6F6077]">
                     {" "}
                     · {plan.durationDays} days
+                    {typeof plan.interaction_per_day === "number" &&
+                      plan.interaction_per_day > 0 && (
+                        <> · {plan.interaction_per_day} interactions/day</>
+                      )}
                   </span>
                 </p>
                 <ul className="space-y-2 text-sm text-[#6F6077]">
@@ -355,10 +364,16 @@ export default function SubscriptionDashboard() {
               </div>
               <button
                 onClick={() => handleCheckout(plan)}
-                disabled={!isRazorpayReady || isProcessing}
+                disabled={
+                  !isRazorpayReady ||
+                  isProcessing ||
+                  Boolean(processingPlanId && processingPlanId !== plan.id)
+                }
                 className="mt-6 inline-flex items-center justify-center rounded-2xl bg-[#2A1F2D] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#2A1F2D]/20 transition hover:scale-[1.01] hover:bg-[#201523] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isProcessing ? "Processing..." : "Choose plan"}
+                {isProcessing && processingPlanId === plan.id
+                  ? "Processing..."
+                  : "Choose plan"}
               </button>
             </article>
           ))}

@@ -41,7 +41,7 @@ export default function index() {
       setStoryLoading(true)
       const data = await storyAPI.getStories(token)
       console.log('Stories loaded from home page:', data)
-      
+
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
         // New structure with categorized stories
@@ -50,7 +50,7 @@ export default function index() {
           friends: Array.isArray(data.friends) ? data.friends : [],
           discover: Array.isArray(data.discover) ? data.discover : []
         }
-        
+
         // Ensure "Your Story" exists even if empty
         if (!categorizedStories.myStory && dbUser?.user_id) {
           categorizedStories.myStory = {
@@ -61,17 +61,17 @@ export default function index() {
             isMe: true
           }
         }
-        
+
         setCategorizedStories(categorizedStories)
       } else if (Array.isArray(data)) {
         // Fallback to old structure (flat array)
         const storiesList: StoryItem[] = data;
         const myStoryIndex = storiesList.findIndex(item => item.isMe)
-        
+
         const currentUserId = dbUser?.user_id
-        const currentUserName = dbUser?.displayName || `${dbUser.profile?.firstName || ''} ${dbUser.profile?.lastName || ''}`.trim() || 'You'
-        const currentUserAvatar = dbUser?.photoURL || dbUser.profile?.photos?.[0]?.url || ''
-        
+        const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
+        const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
+
         if (myStoryIndex === -1 && currentUserId) {
           const myStory: StoryItem = {
             id: currentUserId,
@@ -82,8 +82,7 @@ export default function index() {
           }
           storiesList.unshift(myStory)
         }
-        
-        // Convert to categorized structure for consistency
+
         const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
           id: currentUserId,
           username: currentUserName,
@@ -91,16 +90,15 @@ export default function index() {
           stories: [],
           isMe: true
         } : null)
-        
+
         const friends = storiesList.filter(item => !item.isMe)
-        
+
         setCategorizedStories({
           myStory: myStory as StoryItem | null,
           friends: friends,
           discover: []
         })
       } else {
-        // If data is neither object with myStory nor array, set empty structure
         console.warn('Unexpected data format from stories API:', data);
         setCategorizedStories({
           myStory: dbUser?.user_id ? {
@@ -115,8 +113,6 @@ export default function index() {
         });
       }
     } catch (error: any) {
-      console.error('Error loading stories:', error)
-      // Even on error, ensure "Your Story" exists if we have user info
       if (dbUser?.user_id) {
         const myStory: StoryItem = {
           id: dbUser.user_id,
@@ -143,7 +139,6 @@ export default function index() {
   }, [token, setCategorizedStories, setStoryLoading, dbUser])
 
   const onSwiped = async (item: RecommendedUser, action: SwipeAction) => {
-    console.log(`Swiped ${action} on`, item)
     const nextConsumed = consumed + 1
     setConsumed(nextConsumed)
     const remaining = profiles.length - nextConsumed
@@ -151,8 +146,6 @@ export default function index() {
   }
 
   const onMatch = (match: any) => {
-    console.log('🎉 New match received:', match)
-    // Navigate to matching screen with match data
     router.push({
       pathname: '/matchingScreen',
       params: {
@@ -163,7 +156,6 @@ export default function index() {
   }
 
   const onCardPress = (user: RecommendedUser) => {
-    // Navigate to user profile view screen
     router.push({
       pathname: '/userProfile' as any,
       params: {
@@ -177,7 +169,7 @@ export default function index() {
   }, [idToken])
 
   useEffect(() => {
-    loadStories() // Load stories when home page loads
+    loadStories()
   }, [loadStories])
 
   const initializeProfiles = async () => {
@@ -238,16 +230,6 @@ export default function index() {
           :
           <SwipeDeck key={deckKey} data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
         }
-
-        <TouchableOpacity onPress={() => router.push('/matchingScreen')} style={{ position: 'absolute', top: 12, right: 12 }}>
-          <ThemedText>{t('home.goToMatchingScreen')}</ThemedText>
-        </TouchableOpacity>
-
-
-
-        {/* <TouchableOpacity onPress={() => signOut()} style={{ position: 'absolute', top: 12, left: 12 }}>
-          <ThemedText>Sign Out</ThemedText>
-        </TouchableOpacity> */}
 
       </View>
     </SafeAreaView>

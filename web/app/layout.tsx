@@ -31,7 +31,7 @@ const hellix = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Pookiey Premium",
+  title: "Pookiey",
   description:
     "Manage your Pookiey dating subscription, track payments, and unlock premium perks.",
 };

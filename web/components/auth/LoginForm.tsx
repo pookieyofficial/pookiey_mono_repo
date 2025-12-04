@@ -7,6 +7,10 @@ export default function LoginForm() {
   const supabase = useSupabaseClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -39,7 +43,8 @@ export default function LoginForm() {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+          redirectTo:
+            typeof window !== "undefined" ? window.location.origin : undefined,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
@@ -60,6 +65,72 @@ export default function LoginForm() {
     }
   };
 
+  const handleSendOtp = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Please enter your email.");
+      return;
+    }
+
+    setOtpLoading(true);
+    setError(null);
+
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      setOtpSent(true);
+    } catch (authError) {
+      if (authError instanceof Error) {
+        setError(authError.message);
+      } else {
+        setError("Failed to send OTP. Please try again.");
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const trimmedEmail = email.trim();
+    const trimmedOtp = otp.trim();
+
+    if (!trimmedEmail || !trimmedOtp) {
+      setError("Enter both email and OTP.");
+      return;
+    }
+
+    setOtpLoading(true);
+    setError(null);
+
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: trimmedEmail,
+        token: trimmedOtp,
+        type: "email",
+      });
+
+      if (verifyError) {
+        throw verifyError;
+      }
+
+      // Session will be set by Supabase; page will re-render with logged-in state.
+    } catch (verifyError) {
+      if (verifyError instanceof Error) {
+        setError(verifyError.message);
+      } else {
+        setError("OTP verification failed. Please try again.");
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   return (
     <div className="glass-card w-full max-w-lg rounded-3xl px-8 py-10">
       <div className="space-y-4 text-center">
@@ -69,12 +140,12 @@ export default function LoginForm() {
         <h2 className="text-3xl font-semibold leading-[1.15] text-[#2A1F2D] md:text-4xl">
           Welcome to{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E94057] to-[#FF7EB3]">
-            Pookiey Premium
+            Pookiey
           </span>
         </h2>
         <p className="text-sm text-[#6F6077] md:text-base">
-          Continue with Google to manage your subscription and unlock adorable
-          experiences tailored to your vibe.
+          Continue with Google or email OTP to manage your subscription and
+          unlock adorable experiences tailored to your vibe.
         </p>
       </div>
 
@@ -106,6 +177,58 @@ export default function LoginForm() {
         </span>
         {loading ? "Redirecting to Google..." : "Continue with Google"}
       </button>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-[#B49CC4]">
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#E5D7F0] to-transparent" />
+        <span className="uppercase tracking-[0.2em]">
+          or continue with email OTP
+        </span>
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#E5D7F0] to-transparent" />
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-left text-xs font-medium text-[#6F6077]">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="mt-1 w-full rounded-2xl border border-[#E3D7F1] bg-white/80 px-3 py-2 text-sm text-[#2A1F2D] placeholder:text-[#C0AECF] focus:border-[#E94057] focus:outline-none focus:ring-2 focus:ring-[#E94057]/20"
+          />
+        </label>
+
+        {otpSent && (
+          <label className="block text-left text-xs font-medium text-[#6F6077]">
+            Enter OTP
+            <input
+              type="text"
+              value={otp}
+              maxLength={6}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="6-digit code"
+              className="mt-1 w-full rounded-2xl border border-[#E3D7F1] bg-white/80 px-3 py-2 text-sm text-[#2A1F2D] placeholder:text-[#C0AECF] focus:border-[#E94057] focus:outline-none focus:ring-2 focus:ring-[#E94057]/20"
+            />
+          </label>
+        )}
+
+        <div className="mt-2 flex gap-3">
+          <button
+            type="button"
+            onClick={otpSent ? handleVerifyOtp : handleSendOtp}
+            disabled={otpLoading}
+            className="inline-flex flex-1 items-center justify-center rounded-2xl border border-[#E3D7F1] bg-white px-4 py-3 text-sm font-semibold text-[#2A1F2D] shadow-sm transition hover:bg-[#F9F5FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {otpLoading
+              ? otpSent
+                ? "Verifying..."
+                : "Sending..."
+              : otpSent
+                ? "Verify OTP"
+                : "Send OTP"}
+          </button>
+        </div>
+      </div>
 
       <div className="mt-8 space-y-3 text-left text-xs text-[#9383A3] md:text-sm">
         <div className="flex items-center gap-3">

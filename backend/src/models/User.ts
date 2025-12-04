@@ -15,6 +15,8 @@ export interface IUser extends Document {
     profile?: IUserProfile;
     preferences?: IUserPreferences;
     subscription?: IUserSubscriptionSnapshot;
+    dailyInteractionCount?: number;
+    lastInteractionResetAt?: Date;
     createdAt: Date;
     updatedAt: Date;
     lastLoginAt?: Date;
@@ -127,8 +129,8 @@ const UserSchema = new Schema<IUser>(
             },
             plan: {
                 type: String,
-                enum: ["basic", "premium", "super", null],
-                default: null,
+                enum: ["basic", "premium", "super", "free"],
+                default: "free",
             },
             startDate: { type: Date, default: null },
             endDate: { type: Date, default: null },
@@ -141,6 +143,8 @@ const UserSchema = new Schema<IUser>(
             },
             updatedAt: { type: Date, default: null },
         },
+        dailyInteractionCount: { type: Number, default: 0 },
+        lastInteractionResetAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, default: Date.now },
         lastLoginAt: { type: Date, default: Date.now },

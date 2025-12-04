@@ -67,7 +67,7 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 md:flex-row md:items-center md:gap-20 md:px-8 lg:px-12">
           <div className="max-w-xl space-y-6 text-center md:text-left">
             <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-              Pookiey Premium
+              Pookiey
             </span>
             <h1 className="text-4xl font-semibold leading-[1.1] text-[#2A1F2D] md:text-5xl">
               Your vibe deserves an{" "}
@@ -105,12 +105,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen pb-20">
       <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute right-[-80px] top-[-120px] h-80 w-80 rounded-full bg-[#E94057]/20 blur-3xl md:h-[420px] md:w-[420px]" />
-          <div className="absolute left-[-120px] top-32 h-96 w-96 rounded-full bg-[#4B164C]/20 blur-3xl md:h-[480px] md:w-[480px]" />
-        </div>
-
-        <header className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-10 md:px-8 lg:px-12">
+        <header className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-10 pb-6 md:px-8 lg:px-12">
           <div className="flex flex-col gap-6 rounded-3xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-6 py-8 text-white shadow-2xl shadow-[#E94057]/20 md:flex-row md:items-center md:justify-between md:px-10 md:py-12">
             <div className="max-w-xl space-y-3">
               <span className="pill inline-flex bg-white/25 text-white">

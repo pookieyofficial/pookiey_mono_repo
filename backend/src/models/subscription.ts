@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { SubscriptionPlanId } from "../config/subscriptionPlans";
+import { SUBSCRIPTION_PLANS, SubscriptionPlanId } from "../config/subscriptionPlans";
 
 export type SubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
 
@@ -21,7 +21,7 @@ export interface ISubscription extends Document {
 const SubscriptionSchema = new Schema<ISubscription>(
     {
         userId: { type: Schema.Types.ObjectId, ref: "Users", required: true, index: true },
-        plan: { type: String, enum: ["basic", "premium", "super"], required: true },
+        plan: { type: String, enum: Object.keys(SUBSCRIPTION_PLANS) as SubscriptionPlanId[], required: true, default: "free" },
         status: {
             type: String,
             enum: ["active", "expired", "cancelled", "pending"],

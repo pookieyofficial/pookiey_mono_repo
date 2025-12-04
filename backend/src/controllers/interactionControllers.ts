@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { Interaction } from "../models/Interactions";
 import { Matches } from "../models/Matches";
 import { User } from "../models";
+import { SUBSCRIPTION_PLANS, SubscriptionPlanId } from "../config/subscriptionPlans";
+import { checkAndUpdateInteractionLimit } from "../services/subscriptionService";
 
 // This function is used to handle the interaction between two users and check if they are matched
 export const interaction = async (req: Request, res: Response) => {
@@ -34,7 +36,24 @@ export const interaction = async (req: Request, res: Response) => {
             return;
         }
 
-        // Otherwise create a new interaction
+        const user = await User.findOne({ user_id: fromUser }).session(session);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const limitCheck = await checkAndUpdateInteractionLimit(user._id as mongoose.Types.ObjectId, session);
+        
+        if (!limitCheck.allowed) {
+            await session.abortTransaction();
+            return res.json({
+                success: false,
+                message: "Daily interaction limit reached",
+                showPriceModal: true,
+                limit: limitCheck.limit,
+                remaining: limitCheck.remaining
+            });
+        }
+
         const newInteraction = await Interaction.create([{ fromUser, toUser, type }], { session });
 
         // Check if other user has interacted with this user
@@ -56,10 +75,10 @@ export const interaction = async (req: Request, res: Response) => {
             ]);
 
             await session.commitTransaction();
-            
-            return res.json({ 
-                success: true, 
-                match: match[0], 
+
+            return res.json({
+                success: true,
+                match: match[0],
                 isMatch: true,
                 matchId: match[0]._id,
                 user1: {

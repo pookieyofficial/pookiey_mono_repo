@@ -5,12 +5,13 @@ import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { callBackend } from "../lib/api";
 
 export interface SubscriptionPlan {
-  id: "basic" | "premium" | "super";
+  id: "free" | "basic" | "premium" | "super";
   title: string;
   amountInPaise: number;
   currency: "INR";
   durationDays: number;
   features: string[];
+  interaction_per_day: number;
 }
 
 interface SubscriptionResponse {
