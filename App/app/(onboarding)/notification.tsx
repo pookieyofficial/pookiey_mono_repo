@@ -81,12 +81,12 @@ export default function NotificationScreen() {
     };
 
     const handleSkip = () => {
-        router.push('/(onboarding)/location');
+        router.push('/(onboarding)/language');
     };
 
     const handleContinue = () => {
         if (hasPermission) {
-            router.push('/(onboarding)/location');
+            router.push('/(onboarding)/language');
         } else {
             requestNotificationPermission();
         }
@@ -95,7 +95,7 @@ export default function NotificationScreen() {
     if (hasPermission) {
         return (
             <SafeAreaView style={styles.container}>
-                <CustomBackButton skipButtonRoute="/(onboarding)/location" />
+                <CustomBackButton skipButtonRoute="/(onboarding)/language" />
                 <View style={styles.content}>
                     <View style={styles.illustrationContainer}>
                         <View style={styles.illustration}>

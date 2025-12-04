@@ -11,6 +11,7 @@ export default function _layout() {
                 <Stack.Screen name="interest" />
                 <Stack.Screen name="image" />
                 <Stack.Screen name="notification" />
+                <Stack.Screen name="language" />
                 <Stack.Screen name="location" />
             </Stack>
         </>

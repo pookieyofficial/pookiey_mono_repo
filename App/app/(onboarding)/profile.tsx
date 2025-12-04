@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from '@/components/LanguageSelector';
 import {
   Image,
   KeyboardAvoidingView,
@@ -54,7 +53,7 @@ const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture, setLanguage } = useOnboardingStore();
+  const { fullName, setFullName, birthday, setBirthday, profilePicture, setProfilePicture } = useOnboardingStore();
   const { dbUser, idToken, setDBUser } = useAuthStore();
   const { updateUser, getUser } = useUser();
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -313,9 +312,6 @@ export default function ProfileScreen() {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <View style={styles.languageSelectorContainer}>
-                <LanguageSelector store={{ setLanguage }} />
-              </View>
               <ThemedText type="title" style={styles.title}>{t('profile.title')}</ThemedText>
               <ThemedText type='subtitle' style={styles.subtitle}>{t('profile.subtitle')}</ThemedText>
             </View>
@@ -464,10 +460,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     paddingTop: 10,
-  },
-  languageSelectorContainer: {
-    alignSelf: 'flex-end',
-    marginBottom: 16,
   },
   title: {
     fontSize: 28,

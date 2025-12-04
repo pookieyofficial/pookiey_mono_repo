@@ -220,7 +220,13 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const interests = displayUser?.profile?.interests || []
   const bio = displayUser?.profile?.bio || ''
   const firstName = displayUser?.profile?.firstName || displayUser?.displayName || 'User'
-  const occupation = displayUser?.profile?.occupation
+  // Handle occupation as both string and array
+  const occupationData = displayUser?.profile?.occupation
+  const occupations = Array.isArray(occupationData) 
+    ? occupationData.filter(occ => occ && occ.trim()) 
+    : occupationData 
+      ? [occupationData] 
+      : []
   const location = displayUser?.profile?.location
   const currentUserLocation = currentUser?.profile?.location
 
@@ -299,7 +305,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.safeAreaContainer} edges={[]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <View style={styles.container}>
         <ScrollView
           style={styles.scrollView}
@@ -367,10 +374,14 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                 <ThemedText type='bold' style={styles.userName}>
                   {firstName}{age ? `, ${age}` : ''}
                 </ThemedText>
-                {occupation && (
-                  <ThemedText style={styles.occupation}>
-                    {occupation}
-                  </ThemedText>
+                {occupations.length > 0 && (
+                  <View style={styles.occupationContainer}>
+                    {occupations.map((occ, index) => (
+                      <ThemedText key={index} style={styles.occupation}>
+                        {occ}
+                      </ThemedText>
+                    ))}
+                  </View>
                 )}
               </View>
             </View>
@@ -402,6 +413,23 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                     </View>
                   </View>
                 </LinearGradient>
+              </View>
+            </View>
+          )}
+
+          {/* Occupation Section */}
+          {occupations.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="bold" style={styles.sectionTitle}>
+                {t('profilePage.occupation') || 'Occupation'}
+              </ThemedText>
+              <View style={styles.occupationTagsContainer}>
+                {occupations.map((occ, index) => (
+                  <View key={index} style={styles.occupationTag}>
+                    <Ionicons name="briefcase" size={14} color={Colors.primaryBackgroundColor} style={{ marginRight: 6 }} />
+                    <ThemedText style={styles.occupationTagText}>{occ}</ThemedText>
+                  </View>
+                ))}
               </View>
             </View>
           )}
@@ -531,6 +559,10 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 }
 
 const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: Colors.primary.black,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.primary.white,
@@ -593,12 +625,42 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  occupationContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+    gap: 6,
+  },
   occupation: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.primary.white,
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    opacity: 0.95,
+  },
+  occupationTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -6,
+    marginTop: 4,
+  },
+  occupationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryBackgroundColor + '15',
+    borderWidth: 1.5,
+    borderColor: Colors.primaryBackgroundColor + '40',
+    marginHorizontal: 6,
+    marginBottom: 10,
+  },
+  occupationTagText: {
+    fontSize: 14,
+    color: Colors.primaryBackgroundColor,
+    fontWeight: '600',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
