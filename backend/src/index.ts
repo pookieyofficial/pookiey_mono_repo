@@ -12,6 +12,7 @@ import requestIp from "request-ip";
 import { initializeSocket } from "./socket/socketHandler";
 import cors from "cors";
 import subscriptionRouter from "./routes/subscriptionRoutes";
+import callRouter from "./routes/callRoutes";
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/v1/aws', awsRouter);
 app.use('/api/v1/messages', messageRouter);
 app.use('/api/v1/stories', storyRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
+app.use('/api/v1/call', callRouter);
 
 httpServer.listen(PORT as number, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);

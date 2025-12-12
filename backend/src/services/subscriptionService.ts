@@ -174,7 +174,9 @@ export const markPaymentAsCaptured = async ({
         throw new Error("User not found");
     }
 
-    const subscription = await Subscription.findOne({ userId: user._id });
+    const subscription = await Subscription.findOne({
+        $or: [{ user_id: user.user_id }, { userId: user._id }],
+    });
     const startDate = new Date();
 
     const endDate = subscription && subscription.status === "active" && subscription.endDate > new Date()
@@ -182,8 +184,12 @@ export const markPaymentAsCaptured = async ({
         : new Date(startDate.getTime() + planConfig.durationDays * 24 * 60 * 60 * 1000);
 
     const updatedSubscription = await Subscription.findOneAndUpdate(
-        { userId: user._id },
         {
+            $or: [{ user_id: user.user_id }, { userId: user._id }],
+        },
+        {
+            user_id: user.user_id,
+            userId: user._id,
             plan: payment.plan,
             status: "active",
             startDate,
@@ -217,11 +223,14 @@ export const markPaymentAsCaptured = async ({
     };
 };
 
-export const getActiveSubscription = async (userMongoId: Types.ObjectId) => {
+export const getActiveSubscription = async (
+    userMongoId: Types.ObjectId,
+    userId: string
+) => {
     const user = await User.findById(userMongoId).select("subscription");
 
     const subscription = await Subscription.findOne({
-        userId: userMongoId,
+        $or: [{ user_id: userId }, { userId: userMongoId }],
         status: "active",
     }).sort({ updatedAt: -1 });
 

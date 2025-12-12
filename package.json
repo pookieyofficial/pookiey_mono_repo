@@ -2,7 +2,7 @@
     "scripts": {
         "backend": "cd backend && npm run dev",
         "web": "cd web && npm run dev",
-        "mobile": "cd app && npx expo start --go --port 8082",
+        "mobile": "cd app && npx expo start -c --go --port 8082",
         "start:backend-first": "npm-run-all backend",
         "dev:web": "npm-run-all --sequential backend web",
         "dev:mobile": "npm-run-all --sequential backend mobile",

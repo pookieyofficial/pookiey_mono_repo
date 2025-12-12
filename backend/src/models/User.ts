@@ -4,6 +4,7 @@ import { SubscriptionPlanId } from "../config/subscriptionPlans";
 
 export interface IUser extends Document {
     user_id: string;
+    referralCode?: string;
     email: string;
     phoneNumber?: string;
     displayName?: string;
@@ -72,6 +73,7 @@ export interface IUserSubscriptionSnapshot {
 const UserSchema = new Schema<IUser>(
     {
         user_id: { type: String, required: true, unique: true, index: true },
+        referralCode: { type: String, unique: true, sparse: true, index: true },
         email: { type: String, required: true, unique: true, index: true },
         phoneNumber: { type: String, unique: true, sparse: true, index: true, },
         displayName: { type: String, default: "" },

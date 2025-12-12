@@ -4,7 +4,8 @@ import { SUBSCRIPTION_PLANS, SubscriptionPlanId } from "../config/subscriptionPl
 export type SubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
 
 export interface ISubscription extends Document {
-    userId: mongoose.Types.ObjectId;
+    user_id: string;
+    userId?: mongoose.Types.ObjectId;
     plan: SubscriptionPlanId;
     status: SubscriptionStatus;
     startDate: Date;
@@ -20,7 +21,8 @@ export interface ISubscription extends Document {
 
 const SubscriptionSchema = new Schema<ISubscription>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "Users", required: true, index: true },
+        user_id: { type: String, required: true, index: true },
+        userId: { type: Schema.Types.ObjectId, ref: "Users", index: true },
         plan: { type: String, enum: Object.keys(SUBSCRIPTION_PLANS) as SubscriptionPlanId[], required: true, default: "free" },
         status: {
             type: String,
@@ -42,8 +44,8 @@ const SubscriptionSchema = new Schema<ISubscription>(
     { timestamps: true }
 );
 
-SubscriptionSchema.index({ userId: 1, status: 1 });
-SubscriptionSchema.index({ userId: 1, plan: 1, status: 1 });
+SubscriptionSchema.index({ user_id: 1, status: 1 });
+SubscriptionSchema.index({ user_id: 1, plan: 1, status: 1 });
 
 export const Subscription = mongoose.model<ISubscription>(
     "Subscription",

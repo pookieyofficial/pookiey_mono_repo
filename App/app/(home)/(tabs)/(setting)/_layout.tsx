@@ -5,6 +5,7 @@ export default function _layout() {
         <Stack screenOptions={{headerShown:false}}>
             <Stack.Screen name="index"/>
             <Stack.Screen name="profile"/>
+            <Stack.Screen name="refer_screen"/>
         </Stack>
     )
 }

@@ -56,6 +56,7 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
+      "@ashworthhub/twilio-voice-expo",
 
       [
         "expo-audio",

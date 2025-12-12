@@ -28,6 +28,9 @@ const Settings = () => {
     if (buttonName === 'Dating Preference') {
       router.push('/(home)/(tabs)/(setting)/datingPreferences')
     }
+    if (buttonName === 'Refer') {
+      router.push('/(home)/(tabs)/(setting)/refer_screen')
+    }
     // Add navigation logic for other buttons here
   }
 
@@ -99,6 +102,22 @@ const Settings = () => {
             </View>
 
             <ThemedText style={styles.settingText}>{t('settings.datingPreference')}</ThemedText>
+
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.decorativeBorder} />
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => handleButtonPress('Refer')}
+            activeOpacity={0.7}>
+
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="gift-outline" size={24} color={Colors.primary.red} />
+            </View>
+
+            <ThemedText style={styles.settingText}>Invite & Refer</ThemedText>
 
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>

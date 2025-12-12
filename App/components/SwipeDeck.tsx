@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import Swiper from "react-native-deck-swiper";
 import { BlurView } from "expo-blur";
-import { Heart, Star, Plus } from "react-native-feather";
+import { Heart, Star, Plus, X } from "react-native-feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "./ThemedText";
 import { Colors } from "../constants/Colors";
@@ -186,12 +186,61 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 }}
                 stackSize={3}
                 useViewOverflow={false}
-                animateCardOpacity
                 backgroundColor="transparent"
-                marginBottom={insets.bottom + 120}
+                marginBottom={insets.bottom + 130}
+                overlayLabels={{
+                    left: {
+                        element: (
+                            <View style={styles.overlayIconContainer}>
+                                <X width={72} height={72} color="#FF6B6B" strokeWidth={3.5} />
+                            </View>
+                        ),
+                        style: {
+                            wrapper: styles.overlayWrapperCenter,
+                        },
+                    },
+                    right: {
+                        element: (
+                            <View style={styles.overlayIconContainer}>
+                                <Heart
+                                    width={72}
+                                    height={72}
+                                    color={Colors.primaryBackgroundColor}
+                                    fill={Colors.primaryBackgroundColor}
+                                    strokeWidth={3}
+                                />
+                            </View>
+                        ),
+                        style: {
+                            wrapper: styles.overlayWrapperCenter,
+                        },
+                    },
+                    top: {
+                        element: (
+                            <View style={styles.overlayIconContainer}>
+                                <Star
+                                    width={72}
+                                    height={72}
+                                    color={Colors.primaryBackgroundColor}
+                                    fill={Colors.primaryBackgroundColor}
+                                    strokeWidth={3}
+                                />
+                            </View>
+                        ),
+                        style: {
+                            wrapper: styles.overlayWrapperCenter,
+                        },
+                    },
+                }}
+                animateOverlayLabelsOpacity
             />
             {/* Bottom buttons */}
-            <View style={[styles.bottomSection, { bottom: Math.max(insets.bottom + 16, 12) }]}>
+            <View
+                style={[
+                    styles.bottomSection,
+                    { bottom: Math.max(insets.bottom + 8, 16) },
+                ]}
+            >
                 <ActionRow
                     onLeft={() => swiperRef.current?.swipeLeft()}
                     onRight={() => swiperRef.current?.swipeRight()}
@@ -273,6 +322,19 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 120,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    overlayIconContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    overlayWrapperCenter: {
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
         alignItems: "center",
         justifyContent: "center",
     },

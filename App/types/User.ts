@@ -3,6 +3,7 @@
 export interface User {
     _id?: string;
     user_id: string;
+    referralCode?: string;
     email: string;
     phoneNumber?: string;
     displayName?: string;

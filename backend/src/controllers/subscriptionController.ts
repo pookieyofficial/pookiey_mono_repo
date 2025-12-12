@@ -26,7 +26,10 @@ export const getCurrentSubscription = async (req: Request, res: Response) => {
         return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const subscription = await getActiveSubscription(new ObjectId(user._id.toString()));
+    const subscription = await getActiveSubscription(
+        new ObjectId(user._id.toString()),
+        user.user_id
+    );
 
     res.json({
         success: true,

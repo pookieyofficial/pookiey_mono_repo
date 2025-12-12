@@ -218,6 +218,81 @@ export const initializeSocket = (httpServer: HTTPServer) => {
             }
         });
 
+        // Voice call events
+        socket.on("call_initiate", async (data: { matchId: string; receiverId: string }) => {
+            try {
+                const { matchId, receiverId } = data;
+
+                if (!userId) {
+                    socket.emit("error", { message: "Unauthorized" });
+                    return;
+                }
+
+                // Verify the match exists and user is part of it
+                const match = await Matches.findById(matchId);
+                if (!match || (match.user1Id !== userId && match.user2Id !== userId)) {
+                    socket.emit("error", { message: "Access denied to this match" });
+                    return;
+                }
+
+                // Verify receiver is the other user in the match
+                const otherUserId = match.user1Id === userId ? match.user2Id : match.user1Id;
+                if (otherUserId !== receiverId) {
+                    socket.emit("error", { message: "Receiver is not part of this match" });
+                    return;
+                }
+
+                // Notify the receiver about incoming call
+                io.to(`user:${receiverId}`).emit("call_incoming", {
+                    matchId,
+                    callerId: userId,
+                    callerIdentity: userId, // Twilio client identity
+                });
+
+                // Confirm to caller
+                socket.emit("call_initiated", {
+                    matchId,
+                    receiverId,
+                });
+
+                console.log(`Call initiated: ${userId} -> ${receiverId} (match: ${matchId})`);
+            } catch (error) {
+                console.error("Error initiating call:", error);
+                socket.emit("error", { message: "Failed to initiate call" });
+            }
+        });
+
+        socket.on("call_answer", (data: { matchId: string; callerId: string }) => {
+            const { matchId, callerId } = data;
+            // Notify caller that call was answered
+            io.to(`user:${callerId}`).emit("call_answered", {
+                matchId,
+                receiverId: userId,
+                receiverIdentity: userId,
+            });
+            console.log(`Call answered: ${userId} answered call from ${callerId}`);
+        });
+
+        socket.on("call_reject", (data: { matchId: string; callerId: string }) => {
+            const { matchId, callerId } = data;
+            // Notify caller that call was rejected
+            io.to(`user:${callerId}`).emit("call_rejected", {
+                matchId,
+                receiverId: userId,
+            });
+            console.log(`Call rejected: ${userId} rejected call from ${callerId}`);
+        });
+
+        socket.on("call_end", (data: { matchId: string; otherUserId: string }) => {
+            const { matchId, otherUserId } = data;
+            // Notify the other user that call ended
+            io.to(`user:${otherUserId}`).emit("call_ended", {
+                matchId,
+                endedBy: userId,
+            });
+            console.log(`Call ended: ${userId} ended call in match ${matchId}`);
+        });
+
         socket.on("disconnect", () => {
             console.log(`User disconnected: ${userId}`);
         });

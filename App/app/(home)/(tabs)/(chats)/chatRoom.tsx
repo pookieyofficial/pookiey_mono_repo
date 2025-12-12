@@ -26,6 +26,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio, InterruptionModeIOS } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
+import { useTwilioVoice } from '@/hooks/useTwilioVoice';
+import { VoiceCallUI } from '@/components/VoiceCallUI';
 
 export default function ChatRoom() {
   const params = useLocalSearchParams();
@@ -63,6 +65,16 @@ export default function ChatRoom() {
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const navigation = useNavigation();
+
+  // Twilio Voice calling
+  const {
+    callStatus,
+    incomingCall,
+    makeCall,
+    answerCall,
+    rejectCall,
+    endCall,
+  } = useTwilioVoice();
 
   const matchId = params.matchId as string;
   const userName = params.userName as string;
@@ -121,6 +133,18 @@ export default function ChatRoom() {
             )}
           </View>
         </View>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => {
+            if (dbUser?.user_id && otherUserId) {
+              makeCall(matchId, otherUserId, otherUserId);
+            }
+          }}
+          style={{ padding: 8, marginRight: 8 }}
+        >
+          <Ionicons name="call" size={24} color="#FF3B30" />
+        </TouchableOpacity>
       ),
       headerStyle: {
         backgroundColor: Colors.parentBackgroundColor,
@@ -815,6 +839,24 @@ export default function ChatRoom() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Voice Call UI */}
+      <VoiceCallUI
+        visible={
+          callStatus.isCalling ||
+          callStatus.isRinging ||
+          callStatus.isConnected ||
+          !!incomingCall
+        }
+        isIncoming={!!incomingCall}
+        isConnected={callStatus.isConnected}
+        isRinging={callStatus.isRinging}
+        userName={userName}
+        userAvatar={userAvatar}
+        onAnswer={answerCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+      />
     </KeyboardAvoidingView>
   );
 }

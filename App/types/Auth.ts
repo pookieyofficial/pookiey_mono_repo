@@ -19,6 +19,7 @@ export interface SupabaseUser {
 export interface DBUser {
   _id?: string;
   user_id: string;
+  referralCode?: string;
   email: string;
   phoneNumber?: string;
   displayName?: string;

@@ -4,6 +4,29 @@ import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 import { isValidLocation } from "../utils/validateCoordinates";
 import type { IUser } from "../models/User";
 
+const REFERRAL_CODE_LENGTH = 6;
+const REFERRAL_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+const generateReferralCode = (): string => {
+    let code = "";
+    for (let i = 0; i < REFERRAL_CODE_LENGTH; i++) {
+        const index = Math.floor(Math.random() * REFERRAL_CHARSET.length);
+        code += REFERRAL_CHARSET.charAt(index);
+    }
+    return code;
+};
+
+const generateUniqueReferralCode = async (): Promise<string> => {
+    for (let attempt = 0; attempt < 8; attempt++) {
+        const code = generateReferralCode();
+        const exists = await User.exists({ referralCode: code });
+        if (!exists) {
+            return code;
+        }
+    }
+    throw new Error("Unable to generate unique referral code");
+};
+
 export const getMe = async (req: Request, res: Response) => {
     try {
         console.info("getMe controller");
@@ -89,6 +112,41 @@ export const createUser = async (req: Request, res: Response) => {
     catch (error: any) {
         console.log("Create user error:", error);
         res.status(400).json({ success: false, message: "Create user failed", error: error.message });
+    }
+};
+
+export const getReferralCode = async (req: Request, res: Response) => {
+    try {
+        const user = req.user as IUser | undefined;
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        if (user.referralCode) {
+            return res.json({
+                success: true,
+                data: { referralCode: user.referralCode },
+            });
+        }
+
+        const referralCode = await generateUniqueReferralCode();
+        const updatedUser = await User.findOneAndUpdate(
+            { user_id: user.user_id },
+            { $set: { referralCode } },
+            { new: true }
+        ).select("referralCode");
+
+        res.json({
+            success: true,
+            data: { referralCode: updatedUser?.referralCode || referralCode },
+        });
+    } catch (error: any) {
+        console.error("getReferralCode error:", error);
+        res.status(400).json({
+            success: false,
+            message: error?.message || "Could not fetch referral code",
+        });
     }
 };
 
