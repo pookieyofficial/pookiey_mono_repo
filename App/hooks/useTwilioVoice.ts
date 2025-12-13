@@ -1,378 +1,277 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
-import {
-  TwilioVoice,
-  Call,
-  CallInvite,
-  CallState,
-} from '@ashworthhub/twilio-voice-expo';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Call, Voice } from '@twilio/voice-react-native-sdk';
 import axios from 'axios';
-import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/config/supabaseConfig';
 import { useSocket } from './useSocket';
+import { Audio } from 'expo-av';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_API_URL || 'http://localhost:6969/api/v1';
+// Ensure we always have a valid base URL (prevents "Invalid URL: //")
+const API_URL = "https://api.thedevpiyush.com/api/v1";
 
-export interface CallStatus {
+type Status = 'idle' | 'calling' | 'ringing' | 'connected';
+
+type CallStatus = {
   isCalling: boolean;
   isRinging: boolean;
   isConnected: boolean;
   isEnded: boolean;
-  callSid?: string;
   error?: string;
-}
+};
 
-export const useTwilioVoice = () => {
-  const { idToken, getIdToken, dbUser } = useAuthStore();
+export function useTwilioVoice() {
   const { socket, isConnected } = useSocket();
-  const [callStatus, setCallStatus] = useState<CallStatus>({
-    isCalling: false,
-    isRinging: false,
-    isConnected: false,
-    isEnded: false,
-  });
+
+  const [status, setStatus] = useState<Status>('idle');
   const [incomingCall, setIncomingCall] = useState<{
     matchId: string;
     callerId: string;
     callerIdentity: string;
   } | null>(null);
+
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const callRef = useRef<Call | null>(null);
-  const tokenRef = useRef<string | null>(null);
 
-  const token = idToken || getIdToken();
+  // Track who to notify on end
+  const otherUserIdRef = useRef<string | null>(null);
+  const matchIdRef = useRef<string | null>(null);
 
-  // Initialize Twilio Voice
-  useEffect(() => {
-    const initializeTwilio = async () => {
-      try {
-        // Note: The register method might need an access token
-        // We'll register when we get the token
-        console.log('Twilio Voice ready');
-      } catch (error) {
-        console.error('Failed to initialize Twilio Voice:', error);
-      }
-    };
+  // Online-only calls: DO NOT call voice.register() (avoids Firebase dependency on Android).
+  // We create one Voice instance and reuse it.
+  const voiceRef = useRef<Voice | null>(null);
+  if (!voiceRef.current) {
+    voiceRef.current = new Voice();
+  }
+  const voice = voiceRef.current;
 
-    initializeTwilio();
-
-    return () => {
-      if (callRef.current) {
-        try {
-          callRef.current.disconnect();
-        } catch (error) {
-          console.error('Error disconnecting call:', error);
-        }
-      }
-    };
+  const ensureMicPermission = useCallback(async () => {
+    const perm = await Audio.requestPermissionsAsync();
+    if (perm.status !== 'granted') {
+      throw new Error('Microphone permission is required to place/answer calls.');
+    }
   }, []);
 
-  // Fetch Twilio access token from backend
-  const fetchAccessToken = useCallback(async (): Promise<string> => {
-    try {
-      const response = await axios.get(`${API_URL}/call/token`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.data.success && response.data.data.token) {
-        tokenRef.current = response.data.data.token;
-        return response.data.data.token;
-      }
-      throw new Error('Failed to get access token');
-    } catch (error: any) {
-      console.error('Error fetching access token:', error);
-      throw new Error(error?.response?.data?.message || 'Failed to get access token');
+  // 🔐 Fetch token
+  const fetchToken = async (): Promise<string> => {
+    if (!API_URL) {
+      throw new Error('Backend API URL is not configured');
     }
-  }, [token]);
 
-  // Listen for incoming calls via socket
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+
+    if (!accessToken) {
+      throw new Error('User session is missing. Please sign in again.');
+    }
+
+    const res = await axios.get(`${API_URL}/call/token`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const token = res?.data?.data?.token;
+    if (!token) {
+      throw new Error('Failed to get access token from backend');
+    }
+
+    return token;
+  };
+
+  const cleanup = useCallback(() => {
+    callRef.current = null;
+    setActiveCall(null);
+    setIncomingCall(null);
+    setStatus('idle');
+    otherUserIdRef.current = null;
+    matchIdRef.current = null;
+  }, []);
+
+  // Socket listeners for "online-only" call signaling
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    const handleIncomingCall = (data: {
-      matchId: string;
-      callerId: string;
-      callerIdentity: string;
-    }) => {
-      console.log('Incoming call:', data);
+    const onIncoming = (data: { matchId: string; callerId: string; callerIdentity: string }) => {
       setIncomingCall(data);
-      setCallStatus({
-        isCalling: false,
-        isRinging: true,
-        isConnected: false,
-        isEnded: false,
-      });
+      setStatus('ringing');
     };
 
-    const handleCallAnswered = (data: {
-      matchId: string;
-      receiverId: string;
-      receiverIdentity: string;
-    }) => {
-      console.log('Call answered:', data);
-      setCallStatus((prev) => ({
-        ...prev,
-        isRinging: false,
-        isConnected: true,
-      }));
+    const onAnswered = (_data: { matchId: string; receiverId: string; receiverIdentity: string }) => {
+      // caller UI
+      setStatus('connected');
     };
 
-    const handleCallRejected = (data: { matchId: string; receiverId: string }) => {
-      console.log('Call rejected:', data);
-      setIncomingCall(null);
-      setCallStatus({
-        isCalling: false,
-        isRinging: false,
-        isConnected: false,
-        isEnded: true,
-      });
+    const onRejected = (_data: { matchId: string; receiverId: string }) => {
+      callRef.current?.disconnect();
+      cleanup();
     };
 
-    const handleCallEnded = (data: { matchId: string; endedBy: string }) => {
-      console.log('Call ended:', data);
-      if (callRef.current) {
-        callRef.current.disconnect();
-        callRef.current = null;
-      }
-      setActiveCall(null);
-      setIncomingCall(null);
-      setCallStatus({
-        isCalling: false,
-        isRinging: false,
-        isConnected: false,
-        isEnded: true,
-      });
+    const onEnded = (_data: { matchId: string; endedBy: string }) => {
+      callRef.current?.disconnect();
+      cleanup();
     };
 
-    socket.on('call_incoming', handleIncomingCall);
-    socket.on('call_answered', handleCallAnswered);
-    socket.on('call_rejected', handleCallRejected);
-    socket.on('call_ended', handleCallEnded);
+    const onUnavailable = (_data: { matchId: string; receiverId: string; reason: string }) => {
+      // receiver offline/unavailable
+      callRef.current?.disconnect();
+      setStatus('idle');
+    };
+
+    socket.on('call_incoming', onIncoming);
+    socket.on('call_answered', onAnswered);
+    socket.on('call_rejected', onRejected);
+    socket.on('call_ended', onEnded);
+    socket.on('call_unavailable', onUnavailable);
 
     return () => {
-      socket.off('call_incoming', handleIncomingCall);
-      socket.off('call_answered', handleCallAnswered);
-      socket.off('call_rejected', handleCallRejected);
-      socket.off('call_ended', handleCallEnded);
+      socket.off('call_incoming', onIncoming);
+      socket.off('call_answered', onAnswered);
+      socket.off('call_rejected', onRejected);
+      socket.off('call_ended', onEnded);
+      socket.off('call_unavailable', onUnavailable);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, cleanup]);
 
-  // Listen for Twilio call events
-  useEffect(() => {
-    if (!activeCall) return;
-
-    const handleCallStateChange = (call: Call, state: CallState) => {
-      console.log('Call state changed:', state);
-      setActiveCall(call);
-
-      switch (state) {
-        case CallState.Connecting:
-          setCallStatus((prev) => ({
-            ...prev,
-            isCalling: true,
-            isRinging: true,
-          }));
-          break;
-        case CallState.Connected:
-          setCallStatus((prev) => ({
-            ...prev,
-            isCalling: false,
-            isRinging: false,
-            isConnected: true,
-            isEnded: false,
-          }));
-          break;
-        case CallState.Disconnected:
-          setCallStatus({
-            isCalling: false,
-            isRinging: false,
-            isConnected: false,
-            isEnded: true,
-          });
-          setActiveCall(null);
-          callRef.current = null;
-          break;
-        default:
-          break;
-      }
-    };
-
-    const handleCallError = (call: Call, error: Error) => {
-      console.error('Call error:', error);
-      setCallStatus((prev) => ({
-        ...prev,
-        error: error.message,
-        isEnded: true,
-      }));
-      setActiveCall(null);
-      callRef.current = null;
-    };
-
-    activeCall.on('stateChanged', handleCallStateChange);
-    activeCall.on('error', handleCallError);
-
-    return () => {
-      activeCall.off('stateChanged', handleCallStateChange);
-      activeCall.off('error', handleCallError);
-    };
-  }, [activeCall]);
-
-  // Make a call
+  // ▶️ Make call
+  // Signature matches existing usage: (matchId, receiverId, receiverIdentity)
+  // receiverIdentity is not needed for conference-based calling; we use room=matchId.
   const makeCall = useCallback(
-    async (matchId: string, receiverId: string, receiverIdentity: string) => {
+    async (matchId: string, receiverId: string, _receiverIdentity: string) => {
       try {
         if (!socket || !isConnected) {
           throw new Error('Socket not connected');
         }
 
-        setCallStatus({
-          isCalling: true,
-          isRinging: false,
-          isConnected: false,
-          isEnded: false,
-        });
+        await ensureMicPermission();
 
-        // Emit call initiation event
+        setStatus('calling');
+        matchIdRef.current = matchId;
+        otherUserIdRef.current = receiverId;
+
+        // Ask server to signal receiver. Server will emit call_unavailable if receiver is offline.
         socket.emit('call_initiate', { matchId, receiverId });
 
-        // Get access token
-        const accessToken = await fetchAccessToken();
+        // Wait briefly for offline/unavailable.
+        const ok = await new Promise<boolean>((resolve) => {
+          const timer = setTimeout(() => {
+            cleanupListeners();
+            resolve(true);
+          }, 800); // short grace window; receiver may still answer later
 
-        // Register with Twilio first (if needed)
-        try {
-          await TwilioVoice.register(accessToken);
-        } catch (regError) {
-          console.log('Register error (may be already registered):', regError);
+          const onUnavailable = () => {
+            clearTimeout(timer);
+            cleanupListeners();
+            resolve(false);
+          };
+
+          const onInitiated = () => {
+            clearTimeout(timer);
+            cleanupListeners();
+            resolve(true);
+          };
+
+          const cleanupListeners = () => {
+            socket.off('call_unavailable', onUnavailable);
+            socket.off('call_initiated', onInitiated);
+          };
+
+          socket.on('call_unavailable', onUnavailable);
+          socket.on('call_initiated', onInitiated);
+        });
+
+        if (!ok) {
+          setStatus('idle');
+          return;
         }
 
-        // Make the call using Twilio
-        const call = await TwilioVoice.connect({
-          accessToken,
-          params: {
-            To: receiverIdentity, // Twilio client identity
-          },
+        // Connect caller into conference room via TwiML App Voice URL
+        const token = await fetchToken();
+        const call = await voice.connect(token, {
+          // Include both `room` and `To` (some TwiML apps read `To`)
+          params: { room: matchId, To: matchId, role: 'caller' },
         });
 
         callRef.current = call;
         setActiveCall(call);
-      } catch (error: any) {
-        console.error('Error making call:', error);
-        setCallStatus((prev) => ({
-          ...prev,
-          error: error.message || 'Failed to make call',
-          isCalling: false,
-          isEnded: true,
-        }));
+
+        call.on(Call.Event.Connected, () => setStatus('connected'));
+        call.on(Call.Event.Disconnected, () => cleanup());
+        call.on(Call.Event.ConnectFailure, (err: any) => {
+          console.error('Call connect failure:', err);
+          cleanup();
+        });
+      } catch (e: any) {
+        console.error('Error making call:', e);
+        cleanup();
       }
     },
-    [socket, isConnected, fetchAccessToken]
+    [socket, isConnected, voice, cleanup, ensureMicPermission]
   );
 
-  // Answer incoming call
+  // ✅ Answer call
   const answerCall = useCallback(async () => {
     try {
-      if (!incomingCall || !socket) {
-        throw new Error('No incoming call');
-      }
+      if (!incomingCall || !socket || !isConnected) return;
 
-      const accessToken = await fetchAccessToken();
+      await ensureMicPermission();
 
-      // Register with Twilio first (if needed)
-      try {
-        await TwilioVoice.register(accessToken);
-      } catch (regError) {
-        console.log('Register error (may be already registered):', regError);
-      }
+      const token = await fetchToken();
+      matchIdRef.current = incomingCall.matchId;
+      otherUserIdRef.current = incomingCall.callerId;
 
-      // Answer the call
-      // Note: The exact API may vary - check @ashworthhub/twilio-voice-expo docs
-      const call = await TwilioVoice.accept({
-        accessToken,
-        callInvite: incomingCall as any, // Type assertion - adjust based on actual API
-      });
-
-      // Notify caller via socket
-      socket.emit('call_answer', {
-        matchId: incomingCall.matchId,
-        callerId: incomingCall.callerId,
+      // Connect receiver into the same conference room
+      const call = await voice.connect(token, {
+        params: { room: incomingCall.matchId, To: incomingCall.matchId, role: 'receiver' },
       });
 
       callRef.current = call;
       setActiveCall(call);
       setIncomingCall(null);
-      setCallStatus({
-        isCalling: false,
-        isRinging: false,
-        isConnected: true,
-        isEnded: false,
-      });
-    } catch (error: any) {
-      console.error('Error answering call:', error);
-      setCallStatus((prev) => ({
-        ...prev,
-        error: error.message || 'Failed to answer call',
-        isEnded: true,
-      }));
-      setIncomingCall(null);
-    }
-  }, [incomingCall, socket, fetchAccessToken]);
+      setStatus('connected');
 
-  // Reject incoming call
+      // Notify caller for UI state
+      socket.emit('call_answer', { matchId: matchIdRef.current, callerId: otherUserIdRef.current });
+
+      call.on(Call.Event.Disconnected, () => cleanup());
+      call.on(Call.Event.ConnectFailure, () => cleanup());
+    } catch (e: any) {
+      console.error('Error answering call:', e);
+      cleanup();
+    }
+  }, [incomingCall, socket, isConnected, voice, cleanup, ensureMicPermission]);
+
+  // ❌ Reject call
   const rejectCall = useCallback(() => {
     if (!incomingCall || !socket) return;
-
-    socket.emit('call_reject', {
-      matchId: incomingCall.matchId,
-      callerId: incomingCall.callerId,
-    });
-
+    socket.emit('call_reject', { matchId: incomingCall.matchId, callerId: incomingCall.callerId });
     setIncomingCall(null);
-    setCallStatus({
-      isCalling: false,
-      isRinging: false,
-      isConnected: false,
-      isEnded: true,
-    });
+    setStatus('idle');
   }, [incomingCall, socket]);
 
-  // End active call
+  // 🔚 End call
   const endCall = useCallback(() => {
-    if (callRef.current) {
-      callRef.current.disconnect();
-      callRef.current = null;
+    callRef.current?.disconnect();
+    if (socket && matchIdRef.current && otherUserIdRef.current) {
+      socket.emit('call_end', { matchId: matchIdRef.current, otherUserId: otherUserIdRef.current });
     }
+    cleanup();
+  }, [socket, cleanup]);
 
-    if (activeCall) {
-      activeCall.disconnect();
-      setActiveCall(null);
-    }
-
-    if (socket && incomingCall) {
-      socket.emit('call_end', {
-        matchId: incomingCall.matchId,
-        otherUserId: incomingCall.callerId,
-      });
-    }
-
-    setIncomingCall(null);
-    setCallStatus({
-      isCalling: false,
-      isRinging: false,
-      isConnected: false,
-      isEnded: true,
-    });
-  }, [activeCall, incomingCall, socket]);
+  const callStatus: CallStatus = {
+    isCalling: status === 'calling',
+    isRinging: status === 'ringing',
+    isConnected: status === 'connected',
+    isEnded: status === 'idle',
+    error: status === 'idle' ? undefined : undefined,
+  };
 
   return {
+    status,
     callStatus,
-    incomingCall,
     activeCall,
+    incomingCall,
     makeCall,
     answerCall,
     rejectCall,
     endCall,
   };
-};
-
+}

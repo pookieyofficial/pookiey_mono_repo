@@ -7,7 +7,7 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "https://pookiey.com",
+    scheme: "pookiey",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     platforms: ["ios", "android"],

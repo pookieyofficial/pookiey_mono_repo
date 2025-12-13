@@ -242,6 +242,21 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                     return;
                 }
 
+                // Online-only calling: if receiver is not currently connected, tell the caller immediately.
+                const receiverRoom = `user:${receiverId}`;
+                const roomInfo = io.sockets.adapter.rooms.get(receiverRoom);
+                const receiverOnline = !!roomInfo && roomInfo.size > 0;
+
+                if (!receiverOnline) {
+                    socket.emit("call_unavailable", {
+                        matchId,
+                        receiverId,
+                        reason: "offline",
+                    });
+                    console.log(`Call unavailable (offline): ${userId} -> ${receiverId} (match: ${matchId})`);
+                    return;
+                }
+
                 // Notify the receiver about incoming call
                 io.to(`user:${receiverId}`).emit("call_incoming", {
                     matchId,

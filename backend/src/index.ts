@@ -23,6 +23,8 @@ const PORT = process.env.PORT || 6969;
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Twilio webhooks send application/x-www-form-urlencoded by default
+app.use(express.urlencoded({ extended: false }));
 app.use(requestIp.mw());
 
 connectDB();

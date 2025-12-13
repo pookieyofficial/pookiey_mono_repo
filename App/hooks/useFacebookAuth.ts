@@ -18,7 +18,7 @@ export function useFacebookAuth() {
     try {
       setLoading(true);
 
-      const redirectUri = AuthSession.makeRedirectUri({native: 'thedatingapp://auth/callback', preferLocalhost: false});
+      const redirectUri = AuthSession.makeRedirectUri({native: 'pookiey://auth/callback', preferLocalhost: false});
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',

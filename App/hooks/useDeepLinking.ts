@@ -164,7 +164,7 @@ export const useDeepLinking = () => {
         if (data?.route) {
           let route = (data.route as string).startsWith('/') ? data.route : '/' + data.route;
           console.log('📌 Route via data.route param:', route);
-          handleDeepLink({ url: `myapp://app${route}` });
+          handleDeepLink({ url: `pookiey://app${route}` });
         }
       }
     );

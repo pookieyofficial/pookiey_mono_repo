@@ -64,6 +64,41 @@ export const createTwiMLResponse = (to: string): string => {
 };
 
 /**
+ * Create a TwiML response that connects the caller into a conference.
+ * Used for "online-only" in-app calls where BOTH devices join the same room.
+ *
+ * Twilio Voice SDK clients will call the TwiML App's Voice URL and pass custom params.
+ * We read `room` and `role` to decide whether to end the conference when the user leaves.
+ */
+export const createConferenceTwiMLResponse = (
+  room: string,
+  role: "caller" | "receiver" = "caller"
+): string => {
+  const VoiceResponse = twilio.twiml.VoiceResponse;
+  const response = new VoiceResponse();
+
+  if (!room) {
+    response.say("Missing room.");
+    response.hangup();
+    return response.toString();
+  }
+
+  // Only the caller ends the conference on exit so the room ends when caller hangs up.
+  const endConferenceOnExit = role === "caller";
+
+  const dial = response.dial();
+  dial.conference(
+    {
+      endConferenceOnExit,
+      startConferenceOnEnter: true,
+    },
+    room
+  );
+
+  return response.toString();
+};
+
+/**
  * Check if Twilio is properly configured
  */
 export const isTwilioConfigured = (): boolean => {

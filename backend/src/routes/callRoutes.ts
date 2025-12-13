@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { verifyUser } from "../middleware/userMiddlewares";
-import { generateVoiceToken, isTwilioConfigured } from "../services/twilioService";
+import { createConferenceTwiMLResponse, generateVoiceToken, isTwilioConfigured } from "../services/twilioService";
 import { Matches } from "../models";
 
 const callRouter = Router();
@@ -43,6 +43,54 @@ callRouter.get("/token", verifyUser, async (req: Request, res: Response) => {
       success: false,
       message: error.message || "Failed to generate voice token",
     });
+  }
+});
+
+/**
+ * ALL /api/v1/call/twiml
+ * Twilio Voice webhook (TwiML App Voice URL).
+ *
+ * This is intentionally NOT behind verifyUser (Twilio will call it).
+ * For online-only calls, both clients connect with params { room: matchId, role: caller|receiver }.
+ *
+ * Twilio may call with form-encoded body; we also accept query params.
+ */
+callRouter.all("/twiml", async (req: Request, res: Response) => {
+  try {
+    // Helpful logging while integrating (safe: no auth tokens expected from Twilio)
+    console.log("[twiml] incoming", {
+      method: req.method,
+      contentType: req.headers["content-type"],
+      userAgent: req.headers["user-agent"],
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+      queryKeys: req.query ? Object.keys(req.query) : [],
+    });
+
+    const rawRoom =
+      req.body?.room ??
+      req.body?.Room ??
+      req.query?.room ??
+      req.query?.Room ??
+      // fallback: some integrations pass matchId as To
+      req.body?.To ??
+      req.body?.to ??
+      req.query?.To ??
+      req.query?.to ??
+      "";
+
+    const room = rawRoom.toString();
+    const role = (req.body?.role || req.query?.role || "caller").toString() as "caller" | "receiver";
+
+    console.log("[twiml] resolved", { room, role });
+
+    const twiml = createConferenceTwiMLResponse(room, role);
+    res.type("text/xml");
+    res.status(200).send(twiml);
+  } catch (error: any) {
+    console.error("Error generating call TwiML:", error);
+    // Return valid TwiML so Twilio doesn't just say "application error" with no clue
+    res.type("text/xml");
+    res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Application error.</Say><Hangup/></Response>`);
   }
 });
 
