@@ -6,6 +6,7 @@ export default function _layout() {
         <>
             <Stack initialRouteName="profile" screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="profile" />
+                <Stack.Screen name="referral" />
                 <Stack.Screen name="gender" />
                 <Stack.Screen name="occupation" />
                 <Stack.Screen name="interest" />
@@ -13,6 +14,7 @@ export default function _layout() {
                 <Stack.Screen name="notification" />
                 <Stack.Screen name="language" />
                 <Stack.Screen name="location" />
+                <Stack.Screen name="microphone" />
             </Stack>
         </>
     )

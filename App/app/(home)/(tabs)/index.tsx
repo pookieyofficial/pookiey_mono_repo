@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
@@ -12,6 +12,10 @@ import { storyAPI } from '@/APIs/storyAPIs'
 import { useStoryStore, StoryItem } from '@/store/storyStore'
 import { useAuthStore } from '@/store/authStore'
 import { useTranslation } from 'react-i18next'
+import * as Location from 'expo-location'
+import * as Notifications from 'expo-notifications'
+import { Audio } from 'expo-av'
+import { useFocusEffect } from '@react-navigation/native'
 
 export default function index() {
   const { t } = useTranslation();
@@ -25,10 +29,49 @@ export default function index() {
   const [consumed, setConsumed] = useState(0)
   const [deckKey, setDeckKey] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [permissionsChecked, setPermissionsChecked] = useState(false)
+  const isRefreshingRef = useRef(false)
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
   const { dbUser } = useAuthStore()
+
+  // Check permissions when component mounts
+  useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        // Check location permission
+        const locationPermission = await Location.getForegroundPermissionsAsync()
+        if (locationPermission.status !== 'granted') {
+          router.replace('/(onboarding)/location?fromHome=true')
+          return
+        }
+
+        // Check notification permission
+        const notificationPermission = await Notifications.getPermissionsAsync()
+        if (notificationPermission.status !== 'granted') {
+          router.replace('/(onboarding)/notification?fromHome=true')
+          return
+        }
+
+        // Check microphone permission
+        const microphonePermission = await Audio.getPermissionsAsync()
+        if (microphonePermission.status !== 'granted') {
+          router.replace('/(onboarding)/microphone?fromHome=true')
+          return
+        }
+
+        // All permissions granted
+        setPermissionsChecked(true)
+      } catch (error) {
+        console.error('Error checking permissions:', error)
+        // If there's an error, allow the user to continue
+        setPermissionsChecked(true)
+      }
+    }
+
+    checkPermissions()
+  }, [router])
 
   // Load stories when component mounts
   const loadStories = useCallback(async () => {
@@ -164,15 +207,8 @@ export default function index() {
     })
   }
 
-  useEffect(() => {
-    initializeProfiles()
-  }, [idToken])
-
-  useEffect(() => {
-    loadStories()
-  }, [loadStories])
-
-  const initializeProfiles = async () => {
+  const initializeProfiles = useCallback(async () => {
+    if (!idToken) return
     setIsLoading(true)
     try {
       const recommendedUsers = await getRecommendedUsers(idToken as string, {
@@ -189,7 +225,35 @@ export default function index() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [idToken, getRecommendedUsers])
+
+  // Store initializeProfiles in ref to avoid dependency issues
+  const initializeProfilesRef = useRef(initializeProfiles)
+  initializeProfilesRef.current = initializeProfiles
+
+  useEffect(() => {
+    // Only initialize profiles if permissions are checked and granted
+    if (permissionsChecked && idToken) {
+      initializeProfilesRef.current()
+    }
+  }, [idToken, permissionsChecked])
+
+  useEffect(() => {
+    // Only load stories if permissions are checked
+    if (permissionsChecked) {
+      loadStories()
+    }
+  }, [loadStories, permissionsChecked])
+
+  // Refresh profiles when screen comes into focus (e.g., after updating dating preferences)
+  // Only refresh if we already have profiles (user returned from another screen, not initial load)
+  useFocusEffect(
+    useCallback(() => {
+      if (permissionsChecked && idToken && profiles.length > 0 && !isRefreshingRef.current) {
+        initializeProfilesRef.current()
+      }
+    }, [permissionsChecked, idToken, profiles.length])
+  )
 
   const loadMoreProfiles = async () => {
     try {
@@ -216,6 +280,17 @@ export default function index() {
   const handleRefreshProfiles = async () => {
     setIsLoading(true)
     await initializeProfiles()
+  }
+
+  // Don't render content until permissions are checked
+  if (!permissionsChecked) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ThemedText>{t('home.loadingProfiles')}</ThemedText>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (

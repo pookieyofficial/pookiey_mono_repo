@@ -78,7 +78,7 @@ export default function LanguageScreen() {
     }, []);
 
     const handleContinue = () => {
-        router.push('/(onboarding)/location');
+        router.push('/(onboarding)/microphone');
     };
 
     const handleLanguageSelect = (langCode: string) => {

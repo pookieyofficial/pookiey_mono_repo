@@ -11,6 +11,8 @@ export const createUserAPI = BASE_URL + "/user/me";
 export const updateUserAPI = BASE_URL + "/user/me";
 export const getRecommendedUsersAPI = BASE_URL + "/user/get-users";
 export const getReferralCodeAPI = BASE_URL + "/user/referral/code";
+export const validateReferralAPI = BASE_URL + "/user/referral/validate";
+export const deleteAccountAPI = BASE_URL + "/user/me";
 
 // Log the constructed URLs
 console.log('🔍 [userAPIs.ts] getUserAPI:', getUserAPI);
