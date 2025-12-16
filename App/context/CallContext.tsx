@@ -41,7 +41,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     audioDevices,
     selectedAudioDevice,
     selectAudioDevice,
-    refreshAudioDevices,
   } = useTwilioVoice();
   const [outgoingMatchId, setOutgoingMatchId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
@@ -90,16 +89,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     (selectedAudioDevice?.name || '').toLowerCase().includes('speaker');
 
   const onAudioDevicePress = useCallback(async () => {
-    // Always refresh on press (BT devices can appear after call connects)
-    let devices = audioDevices || [];
+    const devices = audioDevices || [];
     if (!devices.length) {
-      try {
-        const res = await refreshAudioDevices();
-        devices = res.audioDevices || [];
-      } catch {}
-    }
-    if (!devices.length) {
-      Alert.alert('Audio output', 'Audio devices are not ready yet. Please try again in a moment.');
+      Alert.alert('Audio output', 'No audio devices found.');
       return;
     }
 

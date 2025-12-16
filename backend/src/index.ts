@@ -37,6 +37,11 @@ app.get("/", async (req, res) => {
   res.send(RootAPIResponse);
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" })
+})
+
+
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/interaction', interactionRouter);
 app.use('/api/v1/aws', awsRouter);

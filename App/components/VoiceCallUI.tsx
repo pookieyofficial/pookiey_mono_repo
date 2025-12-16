@@ -4,6 +4,7 @@ import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 
 interface VoiceCallUIProps {
   visible: boolean;
@@ -12,6 +13,10 @@ interface VoiceCallUIProps {
   isRinging: boolean;
   userName?: string;
   userAvatar?: string;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
+  isSpeakerOn?: boolean;
+  onAudioDevicePress?: () => void;
   onAnswer?: () => void;
   onReject?: () => void;
   onEnd?: () => void;
@@ -24,78 +29,110 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
   isRinging,
   userName = 'User',
   userAvatar,
+  isMuted = false,
+  onToggleMute,
+  isSpeakerOn = false,
+  onAudioDevicePress,
   onAnswer,
   onReject,
   onEnd,
 }) => {
+  const statusText = isConnected
+    ? 'Connected'
+    : isRinging
+      ? isIncoming
+        ? 'Incoming call...'
+        : 'Ringing...'
+      : 'Calling...';
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
       statusBarTranslucent
+      onRequestClose={() => {
+        // Android back button: don't just hide the UI while keeping the call alive.
+        if (isIncoming && !isConnected) {
+          onReject?.();
+        } else {
+          onEnd?.();
+        }
+      }}
     >
       <LinearGradient
-        colors={['#E94057', '#FF7A7A']}
+        // More color stops to reduce visible banding on OLED/low-bit gradients
+        colors={['#070B14', '#0B1220', '#17162A', '#2B1230', '#4A1737', '#7A1F3D']}
+        locations={[0, 0.22, 0.42, 0.62, 0.82, 1]}
         style={styles.container}
       >
         <View style={styles.content}>
-          {/* Avatar/Icon */}
-          <View style={styles.avatarContainer}>
-            {userAvatar ? (
-              <View style={styles.avatarCircle}>
-                <ThemedText style={styles.avatarText}>
-                  {userName.charAt(0).toUpperCase()}
-                </ThemedText>
-              </View>
-            ) : (
-              <View style={styles.avatarCircle}>
-                <Ionicons name="person" size={60} color={Colors.primary.white} />
-              </View>
-            )}
+          {/* Top: Name + status */}
+          <View style={styles.topBar}>
+            <ThemedText style={styles.userName} numberOfLines={1}>
+              {userName}
+            </ThemedText>
+            <ThemedText style={styles.statusText}>{statusText}</ThemedText>
           </View>
 
-          {/* Status Text */}
-          <ThemedText style={styles.userName}>{userName}</ThemedText>
-          <ThemedText style={styles.statusText}>
-            {isConnected
-              ? 'Connected'
-              : isRinging
-              ? isIncoming
-                ? 'Incoming call...'
-                : 'Ringing...'
-              : 'Calling...'}
-          </ThemedText>
+          {/* Middle: Avatar */}
+          <View style={styles.middleSection}>
+            <View style={styles.avatarCircle}>
+              {userAvatar ? (
+                <Image source={{ uri: userAvatar }} style={styles.avatarImage} contentFit="cover" />
+              ) : (
+                <ThemedText style={styles.avatarText}>
+                  {userName?.trim()?.charAt(0)?.toUpperCase() || 'U'}
+                </ThemedText>
+              )}
+            </View>
+          </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionsContainer}>
+          {/* Bottom: Controls */}
+          <View style={styles.bottomControls}>
             {isIncoming && !isConnected ? (
-              <>
-                {/* Reject Button */}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.rejectButton]}
-                  onPress={onReject}
-                >
-                  <Ionicons name="call" size={28} color={Colors.primary.white} />
+              // Incoming: show reject/answer centered
+              <View style={styles.centerRow}>
+                <TouchableOpacity style={[styles.fab, styles.fabReject]} onPress={onReject}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
                 </TouchableOpacity>
-                {/* Answer Button */}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.answerButton]}
-                  onPress={onAnswer}
-                >
-                  <Ionicons name="call" size={28} color={Colors.primary.white} />
+                <TouchableOpacity style={[styles.fab, styles.fabAnswer]} onPress={onAnswer}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
                 </TouchableOpacity>
-              </>
+              </View>
             ) : (
-              <>
-                {/* End Call Button */}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.endButton]}
-                  onPress={onEnd}
-                >
-                  <Ionicons name="call" size={28} color={Colors.primary.white} />
+              // Outgoing/connected: keep mic + hangup together in center
+              <View style={styles.centerRow}>
+                {isConnected ? (
+                  <TouchableOpacity
+                    style={[styles.controlButton, isMuted ? styles.muteOn : styles.muteOff]}
+                    onPress={onToggleMute}
+                  >
+                    <Ionicons
+                      name={'mic-off'}
+                      size={22}
+                      color={isMuted ? '#EF4444' : Colors.primary.white}
+                    />
+                  </TouchableOpacity>
+                ) : null}
+
+                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
                 </TouchableOpacity>
-              </>
+
+                {isConnected ? (
+                  <TouchableOpacity
+                    style={[styles.controlButton, isSpeakerOn ? styles.speakerOn : styles.speakerOff]}
+                    onPress={onAudioDevicePress}
+                  >
+                    <Ionicons
+                      name={'volume-high'}
+                      size={22}
+                      color={isSpeakerOn ? '#EF4444' : Colors.primary.white}
+                    />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             )}
           </View>
         </View>
@@ -111,21 +148,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
+    flex: 1,
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingTop: 52,
+    paddingBottom: 40,
+    justifyContent: 'space-between',
+  },
+  topBar: {
     alignItems: 'center',
-    padding: 40,
+    paddingHorizontal: 12,
+    marginTop: 30,
   },
-  avatarContainer: {
-    marginBottom: 30,
-  },
-  avatarCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  middleSection: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  avatarImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
   },
   avatarText: {
     fontSize: 48,
@@ -133,43 +186,80 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   userName: {
-    fontSize: 28,
+    fontSize: 30,
     color: Colors.primary.white,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   statusText: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 60,
+    color: 'rgba(255, 255, 255, 0.78)',
   },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 40,
+  bottomControls: {
     alignItems: 'center',
+    paddingBottom: 40,
   },
-  actionButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  centerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 18,
+  },
+  controlButton: {
+    width: 75,
+    height: 75,
+    borderRadius: 38,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.30,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  muteOff: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  muteOn: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(255, 255, 255, 0.55)',
+  },
+  speakerOff: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  speakerOn: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(255, 255, 255, 0.55)',
+  },
+  controlLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.90)',
+  },
+  fab: {
+    width: 75,
+    height: 75,
+    borderRadius: 38,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.30,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  answerButton: {
-    backgroundColor: '#4CAF50',
+  fabAnswer: {
+    backgroundColor: '#22C55E',
     transform: [{ rotate: '135deg' }],
   },
-  rejectButton: {
-    backgroundColor: '#FF3B30',
+  fabReject: {
+    backgroundColor: '#EF4444',
     transform: [{ rotate: '135deg' }],
   },
-  endButton: {
-    backgroundColor: '#FF3B30',
+  fabEnd: {
+    backgroundColor: '#EF4444',
     transform: [{ rotate: '135deg' }],
   },
 });

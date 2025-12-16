@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Call, Voice } from '@twilio/voice-react-native-sdk';
+import { AudioDevice, Call, Voice } from '@twilio/voice-react-native-sdk';
 import axios from 'axios';
 import { supabase } from '@/config/supabaseConfig';
 import { useSocket } from './useSocket';
@@ -19,9 +19,12 @@ type CallStatus = {
 };
 
 export function useTwilioVoice() {
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, waitForConnection } = useSocket();
 
   const [status, setStatus] = useState<Status>('idle');
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<AudioDevice | undefined>(undefined);
   const [incomingCall, setIncomingCall] = useState<{
     matchId: string;
     callerId: string;
@@ -82,8 +85,63 @@ export function useTwilioVoice() {
     setActiveCall(null);
     setIncomingCall(null);
     setStatus('idle');
+    setIsMuted(false);
+    setAudioDevices([]);
+    setSelectedAudioDevice(undefined);
     otherUserIdRef.current = null;
     matchIdRef.current = null;
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const call: any = callRef.current;
+    if (!call) return;
+
+    // Twilio RN Voice SDK supports muting; use defensive access to avoid runtime issues.
+    const next = !isMuted;
+    try {
+      if (typeof call.mute === 'function') {
+        call.mute(next);
+        setIsMuted(next);
+      } else if (typeof call.setMuted === 'function') {
+        call.setMuted(next);
+        setIsMuted(next);
+      }
+    } catch (e) {
+      console.error('Error toggling mute:', e);
+    }
+  }, [isMuted]);
+
+  // Keep audio devices in sync with the native layer (speaker / bluetooth / earpiece)
+  useEffect(() => {
+    // Initial fetch
+    (async () => {
+      try {
+        const res = await voice.getAudioDevices();
+        setAudioDevices(res.audioDevices || []);
+        setSelectedAudioDevice(res.selectedDevice);
+      } catch {
+        // non-fatal
+      }
+    })();
+
+    const handler = (devices: AudioDevice[], selected?: AudioDevice) => {
+      setAudioDevices(devices || []);
+      setSelectedAudioDevice(selected);
+    };
+
+    voice.on(Voice.Event.AudioDevicesUpdated, handler);
+    return () => {
+      voice.off(Voice.Event.AudioDevicesUpdated, handler);
+    };
+  }, [voice]);
+
+  const selectAudioDevice = useCallback(async (device: AudioDevice) => {
+    try {
+      // Correct API: AudioDevice.select() triggers native routing + emits AudioDevicesUpdated
+      await device.select();
+    } catch (e) {
+      console.error('Error selecting audio device:', e);
+    }
   }, []);
 
   // Socket listeners for "online-only" call signaling
@@ -132,12 +190,14 @@ export function useTwilioVoice() {
   }, [socket, isConnected, cleanup]);
 
   // ▶️ Make call
-  // Signature matches existing usage: (matchId, receiverId, receiverIdentity)
   // receiverIdentity is not needed for conference-based calling; we use room=matchId.
   const makeCall = useCallback(
     async (matchId: string, receiverId: string, _receiverIdentity: string) => {
       try {
-        if (!socket || !isConnected) {
+        // Socket can be briefly disconnected when user just opened the chat screen.
+        // Wait a moment for Socket.IO to connect instead of failing the first call attempt.
+        const s = socket?.connected ? socket : await waitForConnection(2500);
+        if (!s?.connected) {
           throw new Error('Socket not connected');
         }
 
@@ -148,7 +208,7 @@ export function useTwilioVoice() {
         otherUserIdRef.current = receiverId;
 
         // Ask server to signal receiver. Server will emit call_unavailable if receiver is offline.
-        socket.emit('call_initiate', { matchId, receiverId });
+        s.emit('call_initiate', { matchId, receiverId });
 
         // Wait briefly for offline/unavailable.
         const ok = await new Promise<boolean>((resolve) => {
@@ -170,12 +230,12 @@ export function useTwilioVoice() {
           };
 
           const cleanupListeners = () => {
-            socket.off('call_unavailable', onUnavailable);
-            socket.off('call_initiated', onInitiated);
+            s.off('call_unavailable', onUnavailable);
+            s.off('call_initiated', onInitiated);
           };
 
-          socket.on('call_unavailable', onUnavailable);
-          socket.on('call_initiated', onInitiated);
+          s.on('call_unavailable', onUnavailable);
+          s.on('call_initiated', onInitiated);
         });
 
         if (!ok) {
@@ -204,7 +264,7 @@ export function useTwilioVoice() {
         cleanup();
       }
     },
-    [socket, isConnected, voice, cleanup, ensureMicPermission]
+    [socket, isConnected, waitForConnection, voice, cleanup, ensureMicPermission]
   );
 
   // ✅ Answer call
@@ -267,11 +327,16 @@ export function useTwilioVoice() {
   return {
     status,
     callStatus,
+    isMuted,
+    audioDevices,
+    selectedAudioDevice,
     activeCall,
     incomingCall,
     makeCall,
     answerCall,
     rejectCall,
     endCall,
+    toggleMute,
+    selectAudioDevice,
   };
 }

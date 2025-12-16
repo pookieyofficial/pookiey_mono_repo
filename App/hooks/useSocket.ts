@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
 
@@ -38,6 +38,7 @@ export interface InboxItem {
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
+  const [socketState, setSocketState] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { dbUser } = useAuth();
 
@@ -77,11 +78,83 @@ export const useSocket = () => {
     });
 
     socketRef.current = socket;
+    setSocketState(socket);
 
     return () => {
       socket.disconnect();
+      socketRef.current = null;
+      setSocketState(null);
     };
   }, [dbUser?.user_id]);
+
+  const waitForConnection = useCallback(
+    async (timeoutMs: number = 2500) => {
+      const start = Date.now();
+
+      // Wait for socket to be created (can be briefly null right after mount)
+      while (!socketRef.current && Date.now() - start < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
+
+      const socket = socketRef.current;
+      if (!socket) {
+        throw new Error('Socket not initialized');
+      }
+
+      if (socket.connected) {
+        return socket;
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          cleanup();
+          reject(new Error('Socket connection timeout'));
+        }, Math.max(0, timeoutMs - (Date.now() - start)));
+
+        const onConnect = () => {
+          cleanup();
+          resolve();
+        };
+
+        const onConnectError = (err: any) => {
+          cleanup();
+          reject(err instanceof Error ? err : new Error('Socket connection error'));
+        };
+
+        const cleanup = () => {
+          clearTimeout(timer);
+          socket.off('connect', onConnect);
+          socket.off('connect_error', onConnectError);
+        };
+
+        socket.on('connect', onConnect);
+        socket.on('connect_error', onConnectError);
+      });
+
+      return socket;
+    },
+    []
+  );
+
+  const checkCallReady = useCallback(
+    async (matchId: string, receiverId: string, timeoutMs: number = 1500): Promise<boolean> => {
+      const socket = socketRef.current;
+      if (!socket || !socket.connected) return false;
+
+      return await new Promise<boolean>((resolve) => {
+        const timer = setTimeout(() => resolve(false), timeoutMs);
+        socket.emit(
+          'call_presence',
+          { matchId, receiverId },
+          (res?: { receiverOnline?: boolean }) => {
+            clearTimeout(timer);
+            resolve(!!res?.receiverOnline);
+          }
+        );
+      });
+    },
+    []
+  );
 
   const joinMatch = (matchId: string) => {
     socketRef.current?.emit('join_match', matchId);
@@ -149,8 +222,10 @@ export const useSocket = () => {
   };
 
   return {
-    socket: socketRef.current,
+    socket: socketState,
     isConnected,
+    waitForConnection,
+    checkCallReady,
     joinMatch,
     leaveMatch,
     sendMessage,

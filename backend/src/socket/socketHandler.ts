@@ -219,6 +219,47 @@ export const initializeSocket = (httpServer: HTTPServer) => {
         });
 
         // Voice call events
+        // Presence check for enabling/disabling the call button client-side
+        socket.on(
+            "call_presence",
+            async (
+                data: { matchId: string; receiverId: string },
+                ack?: (res: { receiverOnline: boolean }) => void
+            ) => {
+                try {
+                    const { matchId, receiverId } = data;
+
+                    if (!userId) {
+                        ack?.({ receiverOnline: false });
+                        return;
+                    }
+
+                    // Verify the match exists and user is part of it (same rules as call_initiate)
+                    const match = await Matches.findById(matchId);
+                    if (!match || (match.user1Id !== userId && match.user2Id !== userId)) {
+                        ack?.({ receiverOnline: false });
+                        return;
+                    }
+
+                    // Verify receiver is the other user in the match
+                    const otherUserId = match.user1Id === userId ? match.user2Id : match.user1Id;
+                    if (otherUserId !== receiverId) {
+                        ack?.({ receiverOnline: false });
+                        return;
+                    }
+
+                    const receiverRoom = `user:${receiverId}`;
+                    const roomInfo = io.sockets.adapter.rooms.get(receiverRoom);
+                    const receiverOnline = !!roomInfo && roomInfo.size > 0;
+
+                    ack?.({ receiverOnline });
+                } catch (error) {
+                    console.error("Error checking call presence:", error);
+                    ack?.({ receiverOnline: false });
+                }
+            }
+        );
+
         socket.on("call_initiate", async (data: { matchId: string; receiverId: string }) => {
             try {
                 const { matchId, receiverId } = data;
