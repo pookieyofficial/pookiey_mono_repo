@@ -8,7 +8,7 @@ import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     StyleSheet,
@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next';
 
 export default function LocationScreen() {
     const { t } = useTranslation();
+    const params = useLocalSearchParams();
+    const fromHome = params.fromHome === 'true';
     const {
         isLoading,
         hasPermission,
@@ -97,14 +99,19 @@ export default function LocationScreen() {
             clearOnboarding();
             console.log('✅ Onboarding state cleared');
 
-            // Check for pending deeplink after onboarding
-            const pendingDeeplink = deepLinkState.getPendingDeeplink();
-            if (pendingDeeplink) {
-                console.log('🔗 Routing to pending deeplink after onboarding:', pendingDeeplink);
-                deepLinkState.clearPendingDeeplink();
-                router.replace(pendingDeeplink as any);
-            } else {
+            // If accessed from home, go back to home. Otherwise, continue with onboarding completion
+            if (fromHome) {
                 router.replace('/(home)/(tabs)');
+            } else {
+                // Check for pending deeplink after onboarding
+                const pendingDeeplink = deepLinkState.getPendingDeeplink();
+                if (pendingDeeplink) {
+                    console.log('🔗 Routing to pending deeplink after onboarding:', pendingDeeplink);
+                    deepLinkState.clearPendingDeeplink();
+                    router.replace(pendingDeeplink as any);
+                } else {
+                    router.replace('/(home)/(tabs)');
+                }
             }
         } catch (error) {
             console.error('Error saving user data:', error);
@@ -140,7 +147,7 @@ export default function LocationScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
-                <CustomBackButton />
+                {!fromHome && <CustomBackButton />}
                 <View style={styles.content}>
 
                     <View style={styles.locationHeader}>
@@ -186,7 +193,7 @@ export default function LocationScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <CustomBackButton />
+            {!fromHome && <CustomBackButton />}
             <View style={styles.content}>
 
                 <View style={styles.illustrationContainer}>

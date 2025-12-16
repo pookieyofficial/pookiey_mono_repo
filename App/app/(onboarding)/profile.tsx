@@ -132,7 +132,7 @@ export default function ProfileScreen() {
     }
 
     setFullName(`${firstName.trim()} ${lastName.trim()}`);
-    router.push('/(onboarding)/image');
+    router.push('/(onboarding)/referral');
   };
 
   const handleBirthdayChange = (event: any, selectedDate: any) => {

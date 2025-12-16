@@ -18,8 +18,10 @@ import CustomBackButton from "@/components/CustomBackButton";
 import { useAuthStore } from "@/store/authStore";
 import { getReferralCodeAPI } from "@/APIs/userAPIs";
 import type { DBUser } from "@/types";
+import { useTranslation } from "react-i18next";
 
 const ReferScreen = () => {
+  const { t } = useTranslation();
   const { idToken, dbUser, setDBUser, getIdToken } = useAuthStore();
   const typedDbUser = dbUser as DBUser | null;
   const [referralCode, setReferralCode] = useState<string | undefined>(
@@ -68,7 +70,7 @@ const ReferScreen = () => {
 
   const handleShare = async () => {
     if (!referralCode) return;
-    const message = `Join me on Pookiey! Use my referral code ${referralCode} when you sign up.`;
+    const message = t("refer.shareMessage", { code: referralCode });
     try {
       await Share.share({ message });
     } catch { }
@@ -87,7 +89,7 @@ const ReferScreen = () => {
     }
     return (
       <ThemedText style={styles.codePlaceholder}>
-        {error || "Tap refresh to generate your code"}
+        {error || t("refer.tapRefreshToGenerate")}
       </ThemedText>
     );
   };
@@ -108,9 +110,9 @@ const ReferScreen = () => {
         >
           <View style={styles.heroHeader}>
             <View>
-              <ThemedText style={styles.heroLabel}>Invite & Earn</ThemedText>
+              <ThemedText style={styles.heroLabel}>{t("refer.inviteAndEarn")}</ThemedText>
               <ThemedText type="title" style={styles.heroTitle}>
-                Share your vibe with friends
+                {t("refer.shareYourVibe")}
               </ThemedText>
             </View>
             <View style={styles.iconBadge}>
@@ -132,8 +134,7 @@ const ReferScreen = () => {
           </View>
 
           <ThemedText style={styles.heroSub}>
-            Send this code to new users and build your circle. Your code never
-            changes.
+            {t("refer.sendCodeDescription")}
           </ThemedText>
 
           {error && (
@@ -147,7 +148,7 @@ const ReferScreen = () => {
               onPress={handleShare}
             >
               <Ionicons name="share-outline" size={18} color={Colors.primary.white} />
-              <ThemedText style={styles.secondaryCtaText}>Share</ThemedText>
+              <ThemedText style={styles.secondaryCtaText}>{t("refer.share")}</ThemedText>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -158,9 +159,9 @@ const ReferScreen = () => {
               <ThemedText style={styles.stepNumber}>1</ThemedText>
             </View>
             <View style={styles.stepCopy}>
-              <ThemedText style={styles.stepTitle}>Share your code</ThemedText>
+              <ThemedText style={styles.stepTitle}>{t("refer.step1Title")}</ThemedText>
               <ThemedText style={styles.stepText}>
-                Send your 6-letter invite to friends you want on Pookiey.
+                {t("refer.step1Text")}
               </ThemedText>
             </View>
           </View>
@@ -172,10 +173,9 @@ const ReferScreen = () => {
               <ThemedText style={styles.stepNumber}>2</ThemedText>
             </View>
             <View style={styles.stepCopy}>
-              <ThemedText style={styles.stepTitle}>Friends sign up</ThemedText>
+              <ThemedText style={styles.stepTitle}>{t("refer.step2Title")}</ThemedText>
               <ThemedText style={styles.stepText}>
-                They enter your code during signup. Each code is unique and
-                locked to you.
+                {t("refer.step2Text")}
               </ThemedText>
             </View>
           </View>
@@ -187,7 +187,7 @@ const ReferScreen = () => {
               <ThemedText style={styles.stepNumber}>3</ThemedText>
             </View>
             <View style={styles.stepCopy}>
-              <ThemedText style={styles.stepTitle}>Stay connected</ThemedText>
+              <ThemedText style={styles.stepTitle}>{t("refer.step3Title")}</ThemedText>
               <ThemedText style={styles.stepText}>
                 We’ll keep your circle updated with new perks as they arrive.
               </ThemedText>

@@ -6,6 +6,9 @@ export default function _layout() {
             <Stack.Screen name="index"/>
             <Stack.Screen name="profile"/>
             <Stack.Screen name="refer_screen"/>
+            <Stack.Screen name="helpCenter"/>
+            <Stack.Screen name="privacyPolicy"/>
+            <Stack.Screen name="deleteAccount"/>
         </Stack>
     )
 }

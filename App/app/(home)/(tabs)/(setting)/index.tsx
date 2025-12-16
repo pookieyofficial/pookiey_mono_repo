@@ -16,7 +16,6 @@ import { truncateText } from '@/utils/truncateTexts'
 import { useTranslation } from 'react-i18next'
 import LanguageSelector from '@/components/LanguageSelector'
 import { useOnboardingStore } from '@/store/onboardingStore'
-
 const Settings = () => {
   const { t } = useTranslation();
   const { dbUser } = useAuthStore()
@@ -31,11 +30,20 @@ const Settings = () => {
     if (buttonName === 'Refer') {
       router.push('/(home)/(tabs)/(setting)/refer_screen')
     }
-    // Add navigation logic for other buttons here
+    if (buttonName === 'Help Center') {
+      router.push('/(home)/(tabs)/(setting)/helpCenter')
+    }
+    if (buttonName === 'Privacy Policy') {
+      router.push('/(home)/(tabs)/(setting)/privacyPolicy')
+    }
   }
 
   const handleProfilePress = () => {
     router.push('/(home)/(tabs)/(setting)/profile')
+  }
+
+  const handleDeleteAccount = () => {
+    router.push('/(home)/(tabs)/(setting)/deleteAccount')
   }
 
   return (
@@ -117,24 +125,14 @@ const Settings = () => {
               <Ionicons name="gift-outline" size={24} color={Colors.primary.red} />
             </View>
 
-            <ThemedText style={styles.settingText}>Invite & Refer</ThemedText>
+            <ThemedText style={styles.settingText}>{t('settings.inviteAndRefer')}</ThemedText>
 
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
 
           <View style={styles.decorativeBorder} />
 
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => handleButtonPress('Setting')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.settingIconContainer}>
-              <Ionicons name="settings-outline" size={24} color={Colors.primary.red} />
-            </View>
-            <ThemedText style={styles.settingText}>{t('settings.accountSettings')}</ThemedText>
-            <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
-          </TouchableOpacity>
+          
 
           <View style={styles.decorativeBorder} />
 
@@ -173,6 +171,22 @@ const Settings = () => {
               <Ionicons name="shield-outline" size={24} color={Colors.primary.red} />
             </View>
             <ThemedText style={styles.settingText}>{t('settings.privacyPolicy')}</ThemedText>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.decorativeBorder} />
+
+          <TouchableOpacity
+            style={[styles.settingItem, styles.deleteAccountItem]}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="trash-outline" size={24} color={Colors.primary.red} />
+            </View>
+            <ThemedText style={styles.settingText}>
+              {t('settings.deleteAccount')}
+            </ThemedText>
             <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
           </TouchableOpacity>
         </View>
@@ -268,6 +282,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     borderRadius: 0.5,
     opacity: 0.3,
+  },
+  deleteAccountItem: {
+    marginTop: 20,
   },
 })
 

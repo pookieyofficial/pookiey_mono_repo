@@ -3,104 +3,69 @@ import CustomDialog from '@/components/CustomDialog';
 import MainButton from '@/components/MainButton';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
-import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as Notifications from 'expo-notifications';
+import { Audio } from 'expo-av';
 import React, { useEffect, useState } from 'react';
 import {
     StyleSheet,
     View,
     Platform
 } from 'react-native';
-
-import * as Device from 'expo-device';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-export default function NotificationScreen() {
+export default function MicrophoneScreen() {
     const { t } = useTranslation();
     const params = useLocalSearchParams();
     const fromHome = params.fromHome === 'true';
     const [isLoading, setIsLoading] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const [showErrorDialog, setShowErrorDialog] = useState(false);
-    const { addNotificationToken } = useAuthStore();
 
-    const requestNotificationPermission = async () => {
+    const checkMicrophonePermission = async () => {
+        try {
+            const { status } = await Audio.getPermissionsAsync();
+            setHasPermission(status === 'granted');
+            return status === 'granted';
+        } catch (error) {
+            console.error('Error checking microphone permission:', error);
+            return false;
+        }
+    };
+
+    useEffect(() => {
+        checkMicrophonePermission();
+    }, []);
+
+    const requestMicrophonePermission = async () => {
         setIsLoading(true);
         try {
-            const { status } = await Notifications.requestPermissionsAsync();
+            const { status } = await Audio.requestPermissionsAsync();
 
             if (status === 'granted') {
                 setHasPermission(true);
-
-                Notifications.setNotificationHandler({
-                    handleNotification: async () => ({
-                        shouldShowAlert: true,
-                        shouldPlaySound: true,
-                        shouldSetBadge: true,
-                        shouldShowBanner: true,
-                        shouldShowList: true,
-                    }),
-                });
-
-                if (Platform.OS === 'android') {
-                    Notifications.setNotificationChannelAsync('messages', {
-                        name: 'messages',
-                        importance: Notifications.AndroidImportance.HIGH,
-                        vibrationPattern: [0, 250, 250, 250],
-                        lightColor: '#FF231F7C',
-                        sound: 'default',
-                        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-                        showBadge: true,
-        
-                    });
-                }
-
-                if (Device.isDevice) {
-                    const token = await Notifications.getExpoPushTokenAsync({
-                        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-                    });
-                    console.log('Token:', token);
-
-                    if (token?.data) {
-                        addNotificationToken(token.data);
-                        console.log('Notification token stored:', token.data);
-                    }
-                } else {
-                    console.warn('Must use physical device for Push Notifications');
-                }
             } else {
                 setShowErrorDialog(true);
             }
         } catch (error) {
-            console.error('Error requesting notification permission:', error);
+            console.error('Error requesting microphone permission:', error);
             setShowErrorDialog(true);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSkip = () => {
-        // If accessed from home, go back to home. Otherwise, continue onboarding to language
-        if (fromHome) {
-            router.replace('/(home)/(tabs)');
-        } else {
-            router.push('/(onboarding)/language');
-        }
-    };
-
     const handleContinue = () => {
         if (hasPermission) {
-            // If accessed from home, go back to home. Otherwise, continue onboarding to language
+            // If accessed from home, go back to home. Otherwise, continue onboarding to location
             if (fromHome) {
                 router.replace('/(home)/(tabs)');
             } else {
-                router.push('/(onboarding)/language');
+                router.push('/(onboarding)/location');
             }
         } else {
-            requestNotificationPermission();
+            requestMicrophonePermission();
         }
     };
 
@@ -114,7 +79,7 @@ export default function NotificationScreen() {
                             <View style={[styles.circle, styles.circle1]} />
                             <View style={[styles.circle, styles.circle2]} />
                             <View style={[styles.circle, styles.circle3]} />
-                            <View style={styles.notificationContainer}>
+                            <View style={styles.microphoneContainer}>
                                 <Ionicons name="checkmark-circle" size={80} color={"white"} />
                             </View>
                         </View>
@@ -122,17 +87,17 @@ export default function NotificationScreen() {
 
                     <View style={styles.textContainer}>
                         <ThemedText type="title" style={styles.title}>
-                            {t('notification.notificationsEnabled')}
+                            {t('microphone.microphoneEnabled')}
                         </ThemedText>
                         <ThemedText type="subtitle" style={styles.subtitle}>
-                            {t('notification.notificationsEnabledSubtitle')}
+                            {t('microphone.microphoneEnabledSubtitle')}
                         </ThemedText>
                     </View>
 
                     <View style={styles.spacer} />
 
                     <MainButton
-                        title={t('notification.continue')}
+                        title={t('microphone.continue')}
                         onPress={handleContinue}
                     />
                 </View>
@@ -149,33 +114,37 @@ export default function NotificationScreen() {
                         <View style={[styles.circle, styles.circle1]} />
                         <View style={[styles.circle, styles.circle2]} />
                         <View style={[styles.circle, styles.circle3]} />
-                        <View style={styles.notificationContainer}>
-                            <View style={styles.bellContainer}>
-                                <Ionicons name="notifications" size={60} color="white" />
-                                <View style={styles.heartIcon}>
-                                    <Ionicons name="heart" size={24} color={Colors.primaryBackgroundColor} />
-                                </View>
-                            </View>
+                        <View style={styles.microphoneContainer}>
+                            <Ionicons name="mic" size={60} color="white" />
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.textContainer}>
                     <ThemedText type="title" style={styles.title}>
-                        {t('notification.title')}
+                        {t('microphone.title')}
                     </ThemedText>
                     <ThemedText style={styles.subtitle}>
-                        {t('notification.subtitle')}
+                        {t('microphone.subtitle')}
                     </ThemedText>
                 </View>
 
                 <View style={styles.featuresList}>
                     <View style={styles.featureItem}>
                         <View style={styles.featureIcon}>
-                            <Ionicons name="heart" size={20} color={Colors.primaryBackgroundColor} />
+                            <Ionicons name="mic" size={20} color={Colors.primaryBackgroundColor} />
                         </View>
                         <ThemedText style={styles.featureText}>
-                            {t('notification.knowWhenLikes')}
+                            {t('microphone.sendVoiceNotes')}
+                        </ThemedText>
+                    </View>
+
+                    <View style={styles.featureItem}>
+                        <View style={styles.featureIcon}>
+                            <Ionicons name="call" size={20} color={Colors.primaryBackgroundColor} />
+                        </View>
+                        <ThemedText style={styles.featureText}>
+                            {t('microphone.makeVoiceCalls')}
                         </ThemedText>
                     </View>
 
@@ -184,16 +153,7 @@ export default function NotificationScreen() {
                             <Ionicons name="chatbubble" size={20} color={Colors.primaryBackgroundColor} />
                         </View>
                         <ThemedText style={styles.featureText}>
-                            {t('notification.instantMessageAlerts')}
-                        </ThemedText>
-                    </View>
-
-                    <View style={styles.featureItem}>
-                        <View style={styles.featureIcon}>
-                            <Ionicons name="flash" size={20} color={Colors.primaryBackgroundColor} />
-                        </View>
-                        <ThemedText style={styles.featureText}>
-                            {t('notification.neverMissMatch')}
+                            {t('microphone.enhanceCommunication')}
                         </ThemedText>
                     </View>
                 </View>
@@ -201,7 +161,7 @@ export default function NotificationScreen() {
                 <View style={styles.spacer} />
 
                 <MainButton
-                    title={isLoading ? t('notification.enablingNotifications') : t('notification.allowNotifications')}
+                    title={isLoading ? t('microphone.enablingMicrophone') : t('microphone.allowMicrophone')}
                     onPress={handleContinue}
                     disabled={isLoading}
                 />
@@ -210,23 +170,23 @@ export default function NotificationScreen() {
             <CustomDialog
                 visible={showErrorDialog}
                 type="error"
-                message={t('notification.unableToEnable')}
+                message={t('microphone.unableToEnable')}
                 onDismiss={() => setShowErrorDialog(false)}
                 primaryButton={{
-                    text: t('notification.tryAgain'),
+                    text: t('microphone.tryAgain'),
                     onPress: () => {
                         setShowErrorDialog(false);
-                        requestNotificationPermission();
+                        requestMicrophonePermission();
                     }
                 }}
                 secondaryButton={{
-                    text: t('notification.skip'),
+                    text: t('microphone.skip'),
                     onPress: () => {
                         setShowErrorDialog(false);
                         if (fromHome) {
                             router.replace('/(home)/(tabs)');
                         } else {
-                            router.push('/(onboarding)/language');
+                            router.push('/(onboarding)/location');
                         }
                     }
                 }}
@@ -282,7 +242,7 @@ const styles = StyleSheet.create({
         bottom: 30,
         left: 60,
     },
-    notificationContainer: {
+    microphoneContainer: {
         zIndex: 10,
         backgroundColor: 'transparent',
         borderRadius: 40,
@@ -295,30 +255,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 8,
         elevation: 5,
-    },
-    bellContainer: {
-        position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    heartIcon: {
-        position: 'absolute',
-        top: -5,
-        right: -5,
-        backgroundColor: 'white',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: Colors.secondaryForegroundColor,
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-        elevation: 3,
     },
     textContainer: {
         alignItems: 'center',
@@ -363,7 +299,5 @@ const styles = StyleSheet.create({
     spacer: {
         flex: 0.3,
     },
-    skipButton: {
-        marginTop: 12,
-    },
 });
+

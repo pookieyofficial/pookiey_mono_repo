@@ -207,7 +207,7 @@ export default function PremiumImageSelectorScreen() {
 
   const handleContinue = () => {
     if (selectedImages.length === 6) {
-      router.push('/(onboarding)/gender');
+      router.push('/(onboarding)/notification');
     } else {
       pickImages();
     }

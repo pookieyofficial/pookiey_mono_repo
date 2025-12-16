@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { User } from "../models";
+import { User, Referral } from "../models";
 import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 import { isValidLocation } from "../utils/validateCoordinates";
 import type { IUser } from "../models/User";
@@ -337,5 +337,105 @@ export const getUsers = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("getUsers error:", error);
         res.status(400).json({ success: false, message: "Get users failed" });
+    }
+};
+
+export const deleteAccount = async (req: Request, res: Response) => {
+    try {
+        console.info("deleteAccount controller");
+        const user = req.user as IUser | undefined;
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        // Update user status to "deleted" instead of actually deleting
+        const updatedUser = await User.findOneAndUpdate(
+            { user_id: user.user_id },
+            { $set: { status: "deleted" } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.json({ success: true, message: "Account deleted successfully", data: updatedUser });
+    } catch (error) {
+        console.error("deleteAccount error:", error);
+        res.status(400).json({ success: false, message: "Delete account failed" });
+    }
+};
+
+export const validateAndProcessReferral = async (req: Request, res: Response) => {
+    try {
+        console.info("validateAndProcessReferral controller");
+        const user = req.user as IUser | undefined;
+        const { referralCode } = req.body;
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        if (!referralCode || typeof referralCode !== 'string' || referralCode.trim().length === 0) {
+            return res.status(400).json({ success: false, message: "Referral code is required" });
+        }
+
+        const code = referralCode.trim().toUpperCase();
+
+        // Find the user who owns this referral code
+        const referrerUser = await User.findOne({ referralCode: code });
+
+        if (!referrerUser) {
+            return res.status(404).json({ success: false, message: "Invalid referral code" });
+        }
+
+        // Check if user is trying to use their own referral code
+        if (referrerUser.user_id === user.user_id) {
+            return res.status(400).json({ success: false, message: "You cannot use your own referral code" });
+        }
+
+        // Check if user has already used a referral code
+        const existingReferral = await Referral.findOne({ referredUserId: user.user_id });
+        if (existingReferral) {
+            return res.status(400).json({ success: false, message: "You have already used a referral code" });
+        }
+
+        // Check if referrer has already referred this user (shouldn't happen but safety check)
+        const duplicateReferral = await Referral.findOne({
+            referrerUserId: referrerUser.user_id,
+            referredUserId: user.user_id
+        });
+        if (duplicateReferral) {
+            return res.status(400).json({ success: false, message: "Referral already processed" });
+        }
+
+        // Create the referral record
+        const referral = await Referral.create({
+            referrerUserId: referrerUser.user_id,
+            referredUserId: user.user_id,
+            referralCode: code,
+        });
+
+        res.json({
+            success: true,
+            message: "Referral code applied successfully",
+            data: referral,
+        });
+    } catch (error: any) {
+        console.error("validateAndProcessReferral error:", error);
+        
+        // Handle duplicate key error
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: "Referral already processed",
+            });
+        }
+
+        res.status(400).json({
+            success: false,
+            message: error?.message || "Failed to process referral code",
+        });
     }
 };
