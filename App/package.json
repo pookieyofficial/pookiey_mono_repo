@@ -9,13 +9,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
-    "build:dev:ios": "eas build --profile development --platform ios",
-    "build:dev:android": "eas build --profile development --platform android",
-    "build:dev:all": "eas build --profile development --platform all"
+    "lint": "expo lint"
   },
   "dependencies": {
-    "@ashworthhub/twilio-voice-expo": "^1.6.1-expo.14",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",

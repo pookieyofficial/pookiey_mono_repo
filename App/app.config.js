@@ -3,7 +3,7 @@ import 'dotenv/config';
 export default {
   expo: {
     name: "Pookiey",
-    slug: "pookiey",
+    slug: "pookieycom",
     version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -56,8 +56,6 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      "@ashworthhub/twilio-voice-expo",
-
       [
         "expo-audio",
         {
@@ -123,10 +121,10 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "bf4420c6-9f01-4b1c-a6f3-a233e8509b1e",
+        projectId: "c18e1abf-a6cc-4ba0-bc5b-3d59cee190b9",
       },
     },
 
-    owner: "shadow-developer",
+    owner: "pookiey.official",
   },
 };
