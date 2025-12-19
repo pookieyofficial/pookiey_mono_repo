@@ -43,41 +43,70 @@ export default function LocationScreen() {
     const handleContinue = async () => {
         try {
             setUpdatingUser(true);
-            const store = useOnboardingStore.getState();
 
-            const nameParts = store.fullName?.split(' ') || [];
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
+            if (!idToken) {
+                throw new Error('Authentication token not found. Please log in again.');
+            }
 
             const notificationTokens = getNotificationTokens();
 
-            const profileData = {
-                profile: {
-                    firstName,
-                    lastName,
-                    dateOfBirth: store.birthday ? new Date(store.birthday) : undefined,
-                    gender: store.gender === 'Man' ? 'male' : 'female',
-                    bio: store.bio,
-                    location: {
-                        type: "Point" as const,
-                        coordinates: location ? [location.coords.longitude, location.coords.latitude] : undefined,
-                        city: address,
+            // IMPORTANT:
+            // When this screen is opened from Home (fromHome=true), the onboarding store may be empty.
+            // Sending the full onboarding payload would overwrite existing profile fields with empty values.
+            // In that case we only update the fields relevant to this flow (location + notificationTokens).
+            if (fromHome) {
+                const partialUpdate: any = {};
+
+                if (location) {
+                    partialUpdate.profile = {
+                        location: {
+                            type: "Point" as const,
+                            coordinates: [location.coords.longitude, location.coords.latitude],
+                            city: address,
+                        },
+                    };
+                }
+
+                if (notificationTokens.length > 0) {
+                    partialUpdate.notificationTokens = notificationTokens;
+                }
+
+                console.log('Saving fromHome permission updates:', partialUpdate);
+                await updateUser(idToken as string, partialUpdate);
+            } else {
+                const store = useOnboardingStore.getState();
+
+                const nameParts = store.fullName?.split(' ') || [];
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                const profileData = {
+                    profile: {
+                        firstName,
+                        lastName,
+                        dateOfBirth: store.birthday ? new Date(store.birthday) : undefined,
+                        gender: store.gender === 'Man' ? 'male' : 'female',
+                        bio: store.bio,
+                        location: {
+                            type: "Point" as const,
+                            coordinates: location ? [location.coords.longitude, location.coords.latitude] : undefined,
+                            city: address,
+                        },
+                        photos: store.photos ? store.photos.map((photoUrl, index) => ({
+                            url: photoUrl,
+                            isPrimary: index === 0,
+                            uploadedAt: new Date()
+                        })) : [],
+                        interests: store.interests || [],
+                        occupation: store.occupation,
+                        isOnboarded: true
                     },
-                    photos: store.photos ? store.photos.map((photoUrl, index) => ({
-                        url: photoUrl,
-                        isPrimary: index === 0,
-                        uploadedAt: new Date()
-                    })) : [],
-                    interests: store.interests || [],
-                    occupation: store.occupation,
-                    isOnboarded: true
-                },
-                ...(notificationTokens.length > 0 && { notificationTokens })
-            };
+                    ...(notificationTokens.length > 0 && { notificationTokens })
+                };
 
-            console.log('Saving onboarding data:', profileData);
-
-            await updateUser(idToken as string, profileData);
+                console.log('Saving onboarding data:', profileData);
+                await updateUser(idToken as string, profileData);
+            }
 
             // Fetch the updated user data and store it locally
             try {
@@ -95,9 +124,11 @@ export default function LocationScreen() {
                 // Don't block navigation if fetch fails, but log the error
             }
 
-            // Clear onboarding state after successful completion
-            clearOnboarding();
-            console.log('✅ Onboarding state cleared');
+            // Only clear onboarding state when we are actually in onboarding.
+            if (!fromHome) {
+                clearOnboarding();
+                console.log('✅ Onboarding state cleared');
+            }
 
             // If accessed from home, go back to home. Otherwise, continue with onboarding completion
             if (fromHome) {

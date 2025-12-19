@@ -25,6 +25,7 @@ export function useTwilioVoice() {
   const [isMuted, setIsMuted] = useState(false);
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<AudioDevice | undefined>(undefined);
+  const [isVoiceReady, setIsVoiceReady] = useState(false);
   const [incomingCall, setIncomingCall] = useState<{
     matchId: string;
     callerId: string;
@@ -38,13 +39,14 @@ export function useTwilioVoice() {
   const otherUserIdRef = useRef<string | null>(null);
   const matchIdRef = useRef<string | null>(null);
 
-  // Online-only calls: DO NOT call voice.register() (avoids Firebase dependency on Android).
-  // We create one Voice instance and reuse it.
   const voiceRef = useRef<Voice | null>(null);
-  if (!voiceRef.current) {
-    voiceRef.current = new Voice();
-  }
-  const voice = voiceRef.current;
+  const getVoice = useCallback((): Voice => {
+    if (!voiceRef.current) {
+      voiceRef.current = new Voice();
+      setIsVoiceReady(true);
+    }
+    return voiceRef.current;
+  }, []);
 
   const ensureMicPermission = useCallback(async () => {
     const perm = await Audio.requestPermissionsAsync();
@@ -113,6 +115,9 @@ export function useTwilioVoice() {
 
   // Keep audio devices in sync with the native layer (speaker / bluetooth / earpiece)
   useEffect(() => {
+    if (!isVoiceReady || !voiceRef.current) return;
+    const voice = voiceRef.current;
+
     // Initial fetch
     (async () => {
       try {
@@ -133,7 +138,7 @@ export function useTwilioVoice() {
     return () => {
       voice.off(Voice.Event.AudioDevicesUpdated, handler);
     };
-  }, [voice]);
+  }, [isVoiceReady]);
 
   const selectAudioDevice = useCallback(async (device: AudioDevice) => {
     try {
@@ -245,6 +250,7 @@ export function useTwilioVoice() {
 
         // Connect caller into conference room via TwiML App Voice URL
         const token = await fetchToken();
+        const voice = getVoice();
         const call = await voice.connect(token, {
           // Include both `room` and `To` (some TwiML apps read `To`)
           params: { room: matchId, To: matchId, role: 'caller' },
@@ -264,7 +270,7 @@ export function useTwilioVoice() {
         cleanup();
       }
     },
-    [socket, isConnected, waitForConnection, voice, cleanup, ensureMicPermission]
+    [socket, isConnected, waitForConnection, cleanup, ensureMicPermission, getVoice]
   );
 
   // ✅ Answer call
@@ -279,6 +285,7 @@ export function useTwilioVoice() {
       otherUserIdRef.current = incomingCall.callerId;
 
       // Connect receiver into the same conference room
+      const voice = getVoice();
       const call = await voice.connect(token, {
         params: { room: incomingCall.matchId, To: incomingCall.matchId, role: 'receiver' },
       });
@@ -297,7 +304,7 @@ export function useTwilioVoice() {
       console.error('Error answering call:', e);
       cleanup();
     }
-  }, [incomingCall, socket, isConnected, voice, cleanup, ensureMicPermission]);
+  }, [incomingCall, socket, isConnected, cleanup, ensureMicPermission, getVoice]);
 
   // ❌ Reject call
   const rejectCall = useCallback(() => {

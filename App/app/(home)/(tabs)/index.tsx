@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity, Linking, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -16,12 +16,13 @@ import * as Location from 'expo-location'
 import * as Notifications from 'expo-notifications'
 import { Audio } from 'expo-av'
 import { useFocusEffect } from '@react-navigation/native'
+import * as Device from 'expo-device'
 
 export default function index() {
   const { t } = useTranslation();
   const router = useRouter()
 
-  const { getRecommendedUsers } = useUser()
+  const { getRecommendedUsers, updateUser } = useUser()
   const { idToken, token } = useAuth()
   const { signOut } = useAuth()
 
@@ -30,48 +31,194 @@ export default function index() {
   const [deckKey, setDeckKey] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [permissionsChecked, setPermissionsChecked] = useState(false)
+  const [permissionError, setPermissionError] = useState<string | null>(null)
   const isRefreshingRef = useRef(false)
+  const isCheckingPermissionsRef = useRef(false)
+  const lastLocationSentRef = useRef<string | null>(null)
+  const lastPushTokenSentRef = useRef<string | null>(null)
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
-  const { dbUser } = useAuthStore()
+  const { dbUser, setDBUser, addNotificationToken, getNotificationTokens } = useAuthStore()
 
-  // Check permissions when component mounts
-  useEffect(() => {
-    const checkPermissions = async () => {
+  const updateLocationInApi = useCallback(
+    async (coords: { latitude: number; longitude: number }, city?: string) => {
+      if (!idToken) return
+
+      const signature = `${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}|${city || ''}`
+      if (lastLocationSentRef.current === signature) return
+
       try {
-        // Check location permission
-        const locationPermission = await Location.getForegroundPermissionsAsync()
-        if (locationPermission.status !== 'granted') {
-          router.replace('/(onboarding)/location?fromHome=true')
-          return
+        const response = await updateUser(idToken as string, {
+          profile: {
+            location: {
+              type: 'Point' as const,
+              coordinates: [coords.longitude, coords.latitude],
+              city,
+            },
+          },
+        })
+
+        if (response?.success && response?.data) {
+          setDBUser(response.data)
         }
 
-        // Check notification permission
-        const notificationPermission = await Notifications.getPermissionsAsync()
-        if (notificationPermission.status !== 'granted') {
-          router.replace('/(onboarding)/notification?fromHome=true')
-          return
-        }
-
-        // Check microphone permission
-        const microphonePermission = await Audio.getPermissionsAsync()
-        if (microphonePermission.status !== 'granted') {
-          router.replace('/(onboarding)/microphone?fromHome=true')
-          return
-        }
-
-        // All permissions granted
-        setPermissionsChecked(true)
-      } catch (error) {
-        console.error('Error checking permissions:', error)
-        // If there's an error, allow the user to continue
-        setPermissionsChecked(true)
+        lastLocationSentRef.current = signature
+      } catch (e) {
+        console.error('Home: failed to update location in API:', e)
       }
-    }
+    },
+    [idToken, setDBUser, updateUser],
+  )
 
-    checkPermissions()
-  }, [router])
+  const updateNotificationTokenInApi = useCallback(
+    async (pushToken: string) => {
+      if (!idToken) return
+      if (!pushToken) return
+      if (lastPushTokenSentRef.current === pushToken) return
+
+      try {
+        const localTokens = getNotificationTokens()
+        const dbTokens = Array.isArray(dbUser?.notificationTokens) ? dbUser!.notificationTokens : []
+        const merged = Array.from(new Set([...dbTokens, ...localTokens, pushToken]))
+
+        const response = await updateUser(idToken as string, { notificationTokens: merged })
+        if (response?.success && response?.data) {
+          setDBUser(response.data)
+        }
+
+        lastPushTokenSentRef.current = pushToken
+      } catch (e) {
+        console.error('Home: failed to update notification token in API:', e)
+      }
+    },
+    [dbUser, getNotificationTokens, idToken, setDBUser, updateUser],
+  )
+
+  const ensurePermissions = useCallback(async () => {
+    if (isCheckingPermissionsRef.current) return
+    isCheckingPermissionsRef.current = true
+    setPermissionError(null)
+
+    try {
+      // 1) Location permission + update location via API
+      const currentLocationPerm = await Location.getForegroundPermissionsAsync()
+      const locationStatus =
+        currentLocationPerm.status === 'granted'
+          ? currentLocationPerm.status
+          : (await Location.requestForegroundPermissionsAsync()).status
+
+      if (locationStatus !== 'granted') {
+        setPermissionsChecked(false)
+        setPermissionError('Location permission is required to continue. Please allow it.')
+        return
+      }
+
+      try {
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        })
+
+        let city: string | undefined
+        try {
+          const reverse = await Location.reverseGeocodeAsync({
+            latitude: currentLocation.coords.latitude,
+            longitude: currentLocation.coords.longitude,
+          })
+          if (reverse?.length) {
+            const a = reverse[0]
+            const addressParts = [a.city, a.region, a.country].filter(Boolean)
+            city = addressParts.join(', ') || undefined
+          }
+        } catch (e) {
+          console.log('Home: reverse geocode failed:', e)
+        }
+
+        await updateLocationInApi(
+          {
+            latitude: currentLocation.coords.latitude,
+            longitude: currentLocation.coords.longitude,
+          },
+          city,
+        )
+      } catch (e) {
+        console.log('Home: unable to fetch current location:', e)
+      }
+
+      // 2) Notifications permission + update token via API
+      const currentNotifPerm = await Notifications.getPermissionsAsync()
+      const notifStatus =
+        currentNotifPerm.status === 'granted'
+          ? currentNotifPerm.status
+          : (await Notifications.requestPermissionsAsync()).status
+
+      if (notifStatus !== 'granted') {
+        setPermissionsChecked(false)
+        setPermissionError('Notification permission is required to continue. Please allow it.')
+        return
+      }
+
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      })
+
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('messages', {
+          name: 'messages',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          showBadge: true,
+        })
+      }
+
+      if (Device.isDevice) {
+        const pushToken = await Notifications.getExpoPushTokenAsync({
+          projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+        })
+        if (pushToken?.data) {
+          addNotificationToken(pushToken.data)
+          await updateNotificationTokenInApi(pushToken.data)
+        }
+      } else {
+        console.warn('Home: must use physical device for push notifications token')
+      }
+
+      // 3) Microphone permission (no API call)
+      const currentMicPerm = await Audio.getPermissionsAsync()
+      const micStatus =
+        currentMicPerm.status === 'granted'
+          ? currentMicPerm.status
+          : (await Audio.requestPermissionsAsync()).status
+
+      if (micStatus !== 'granted') {
+        setPermissionsChecked(false)
+        setPermissionError('Microphone permission is required to continue. Please allow it.')
+        return
+      }
+
+      setPermissionsChecked(true)
+    } catch (error) {
+      console.error('Home: error ensuring permissions:', error)
+      setPermissionError('Could not request permissions. Please try again.')
+      setPermissionsChecked(false)
+    } finally {
+      isCheckingPermissionsRef.current = false
+    }
+  }, [addNotificationToken, updateLocationInApi, updateNotificationTokenInApi])
+
+  // Ask permissions directly (no routing)
+  useEffect(() => {
+    ensurePermissions()
+  }, [ensurePermissions])
 
   // Load stories when component mounts
   const loadStories = useCallback(async () => {
@@ -255,6 +402,13 @@ export default function index() {
     }, [permissionsChecked, idToken, profiles.length])
   )
 
+  // Re-check permissions when user returns (e.g. after changing OS settings)
+  useFocusEffect(
+    useCallback(() => {
+      ensurePermissions()
+    }, [ensurePermissions])
+  )
+
   const loadMoreProfiles = async () => {
     try {
       const recommendedUsers = await getRecommendedUsers(idToken as string, {
@@ -287,7 +441,31 @@ export default function index() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ThemedText>{t('home.loadingProfiles')}</ThemedText>
+          <ThemedText style={{ textAlign: 'center', paddingHorizontal: 24 }}>
+            {permissionError || t('home.loadingProfiles')}
+          </ThemedText>
+
+          <TouchableOpacity
+            style={{
+              marginTop: 16,
+              backgroundColor: Colors.primaryBackgroundColor,
+              paddingVertical: 12,
+              paddingHorizontal: 18,
+              borderRadius: 10,
+            }}
+            onPress={ensurePermissions}
+          >
+            <ThemedText style={{ color: 'white' }}>Grant permissions</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 12 }}
+            onPress={() => {
+              Linking.openSettings().catch(() => null)
+            }}
+          >
+            <ThemedText style={{ color: Colors.secondaryForegroundColor }}>Open Settings</ThemedText>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     )

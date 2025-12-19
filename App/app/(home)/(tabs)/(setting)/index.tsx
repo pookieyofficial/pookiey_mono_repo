@@ -242,9 +242,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   profileStatus: {
-    fontSize: 14,
     color: Colors.text.secondary,
-    lineHeight: 18,
     marginTop: 2,
   },
   profileArrow: {

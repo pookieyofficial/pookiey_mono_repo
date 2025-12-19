@@ -7,6 +7,7 @@ export function parseForMonggoSetUpdates(obj: AnyObject, prefix = ''): AnyObject
         if (!obj.hasOwnProperty(key)) continue;
 
         const value = obj[key];
+        if (value === undefined) continue;
         const path = prefix ? `${prefix}.${key}` : key;
 
         if (Array.isArray(value)) {

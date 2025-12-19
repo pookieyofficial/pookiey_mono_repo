@@ -36,29 +36,40 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     fontFamily: 'HellixMedium',
+    width: 'auto'
   },
   defaultSemiBold: {
     fontSize: 16,
     fontWeight: '600',
     fontFamily: 'HellixSemiBold',
+    width: 'auto'
+
   },
   title: {
     fontSize: 32,
     fontFamily: 'HellixSemiBold',
+    width: 'auto'
+
   },
   subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
     fontFamily: 'HellixMedium',
+    width: 'auto'
+
   },
   link: {
     fontSize: 16,
     color: Colors.primaryBackgroundColor,
     fontFamily: 'HellixBold',
+    width: 'auto'
+
   },
   bold: {
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'HellixBold',
+    width: 'auto'
+
   },
 });
