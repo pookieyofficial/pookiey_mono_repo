@@ -38,7 +38,7 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" })
+  res.status(200).json({ status: "ok", data:"CI/CD pipeline live" })
 })
 
 
