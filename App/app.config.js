@@ -44,6 +44,7 @@ export default {
         "android.permission.READ_MEDIA_VIDEO",
       ],
       package: "com.pookiey.pookiey",
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
