@@ -10,7 +10,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   // eslint-disable-next-line no-console
   console.warn(
-    "Supabase environment variables are missing. Authentication will not work."
+    "Supabase environment variables are missing. Authentication system will not work."
   );
 }
 
