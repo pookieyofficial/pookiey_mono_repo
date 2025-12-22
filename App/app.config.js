@@ -9,7 +9,7 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "pookiey",
     userInterfaceStyle: "light",
-      newArchEnabled: true,
+    newArchEnabled: false,
     platforms: ["ios", "android"],
     ios: {
       supportsTablet: true,
@@ -44,6 +44,7 @@ export default {
         "android.permission.READ_MEDIA_VIDEO",
       ],
       package: "com.pookiey.pookiey",
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -56,6 +57,7 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
+      "./plugins/withTwilioVoiceAndroid",
       [
         "expo-audio",
         {
