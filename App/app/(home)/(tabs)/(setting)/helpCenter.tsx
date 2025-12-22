@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 export default function HelpCenterScreen() {
   const { t } = useTranslation();
   const supportEmail = 'support@pookiey.com';
-  const contactUrl = 'https://pookiey.com/contact-us';
+  const contactUrl = 'https://pookiey.com/support';
 
   const handleEmailPress = async () => {
     const emailUrl = `mailto:${supportEmail}`;

@@ -120,6 +120,18 @@ export default {
       typedRoutes: true,
     },
 
+    // Enable EAS Update (OTA updates)
+    updates: {
+      // EAS Update URL (must match your EAS projectId)
+      url: "https://u.expo.dev/c18e1abf-a6cc-4ba0-bc5b-3d59cee190b9",
+      // Check for updates on app start (0 = immediately)
+      fallbackToCacheTimeout: 0,
+    },
+    // Use app version as the runtime version so OTA updates only apply to compatible binaries
+    runtimeVersion: {
+      policy: "appVersion",
+    },
+
     extra: {
       router: {},
       eas: {
