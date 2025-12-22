@@ -9,7 +9,7 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "pookiey",
     userInterfaceStyle: "light",
-      newArchEnabled: true,
+    newArchEnabled: false,
     platforms: ["ios", "android"],
     ios: {
       supportsTablet: true,
@@ -57,6 +57,7 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
+      "./plugins/withTwilioVoiceAndroid",
       [
         "expo-audio",
         {

@@ -5,8 +5,7 @@ import { supabase } from '@/config/supabaseConfig';
 import { useSocket } from './useSocket';
 import { Audio } from 'expo-av';
 
-// Ensure we always have a valid base URL (prevents "Invalid URL: //")
-const API_URL = "https://api.thedevpiyush.com/api/v1";
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_API_URL;
 
 type Status = 'idle' | 'calling' | 'ringing' | 'connected';
 

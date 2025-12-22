@@ -4,12 +4,11 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { PaperProvider } from 'react-native-paper';
-import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useDeepLinking } from '@/hooks/useDeepLinking';
 import { Colors } from '@/constants/Colors';
-import '@/config/i18n'; // Initialize i18n
+import '@/config/i18n';
 
 SplashScreen.preventAutoHideAsync();
 

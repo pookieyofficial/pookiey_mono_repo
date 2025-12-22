@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, TouchableOpacity, Linking, Platform } from 'react-native'
+import { View, Linking, Platform, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -36,6 +36,7 @@ export default function index() {
   const isCheckingPermissionsRef = useRef(false)
   const lastLocationSentRef = useRef<string | null>(null)
   const lastPushTokenSentRef = useRef<string | null>(null)
+  const permissionDialogShownRef = useRef<string | null>(null)
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
@@ -219,6 +220,40 @@ export default function index() {
   useEffect(() => {
     ensurePermissions()
   }, [ensurePermissions])
+
+  // Show a quick dialog if permissions are missing, but DO NOT block the swipe deck UI.
+  useEffect(() => {
+    const message =
+      permissionError ||
+      (!permissionsChecked ? 'Permissions are required for the best experience. Please allow them.' : null)
+
+    if (!message) return
+
+    // Avoid spamming the same dialog repeatedly (e.g. on re-renders / polling)
+    if (permissionDialogShownRef.current === message) return
+    permissionDialogShownRef.current = message
+
+    // Delay slightly so we don't show an Alert during initial render/layout
+    const t = setTimeout(() => {
+      Alert.alert('Permissions needed', message, [
+        {
+          text: 'Grant',
+          onPress: () => {
+            // Reset so we can show again if it still fails after a re-request
+            permissionDialogShownRef.current = null
+            ensurePermissions()
+          },
+        },
+        {
+          text: 'Open Settings',
+          onPress: () => Linking.openSettings().catch(() => null),
+        },
+        { text: 'Not now', style: 'cancel' },
+      ])
+    }, 250)
+
+    return () => clearTimeout(t)
+  }, [permissionError, permissionsChecked, ensurePermissions])
 
   // Load stories when component mounts
   const loadStories = useCallback(async () => {
@@ -434,41 +469,6 @@ export default function index() {
   const handleRefreshProfiles = async () => {
     setIsLoading(true)
     await initializeProfiles()
-  }
-
-  // Don't render content until permissions are checked
-  if (!permissionsChecked) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ThemedText style={{ textAlign: 'center', paddingHorizontal: 24 }}>
-            {permissionError || t('home.loadingProfiles')}
-          </ThemedText>
-
-          <TouchableOpacity
-            style={{
-              marginTop: 16,
-              backgroundColor: Colors.primaryBackgroundColor,
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-              borderRadius: 10,
-            }}
-            onPress={ensurePermissions}
-          >
-            <ThemedText style={{ color: 'white' }}>Grant permissions</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{ marginTop: 12 }}
-            onPress={() => {
-              Linking.openSettings().catch(() => null)
-            }}
-          >
-            <ThemedText style={{ color: Colors.secondaryForegroundColor }}>Open Settings</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    )
   }
 
   return (
