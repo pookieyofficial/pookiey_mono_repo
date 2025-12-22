@@ -5,6 +5,13 @@ import { useAuth } from './useAuth';
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_API_URL || 'http://localhost:6969/api/v1';
 const SOCKET_URL = API_URL.replace('/api/v1', '');
 
+// --- Singleton Socket.IO connection (avoid multiple parallel sockets per user) ---
+// Multiple components call useSocket() (tabs, chat room, call provider). Previously each call
+// created its own socket connection, which can lead to missing events / inconsistent "online"
+// presence. We keep a single socket per logged-in user for the whole app runtime.
+let singletonSocket: Socket | null = null;
+let singletonUserId: string | null = null;
+
 export interface Message {
   _id: string;
   matchId: string;
@@ -47,43 +54,71 @@ export const useSocket = () => {
       return;
     }
 
-    console.log('Connecting to socket:', SOCKET_URL);
+    const userId = dbUser.user_id;
 
-    const socket = io(SOCKET_URL, {
-      auth: {
-        userId: dbUser.user_id,
-      },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    // Reuse existing socket for same user, otherwise replace it.
+    if (!singletonSocket || singletonUserId !== userId) {
+      if (singletonSocket) {
+        try {
+          singletonSocket.removeAllListeners();
+          singletonSocket.disconnect();
+        } catch {
+          // ignore
+        }
+      }
 
-    socket.on('connect', () => {
+      console.log('Connecting to socket:', SOCKET_URL);
+      singletonUserId = userId;
+      singletonSocket = io(SOCKET_URL, {
+        auth: { userId },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+    }
+
+    const socket = singletonSocket;
+
+    const onConnect = () => {
       console.log('Socket connected successfully');
       setIsConnected(true);
-    });
+    };
 
-    socket.on('disconnect', (reason) => {
+    const onDisconnect = (reason: any) => {
       console.log('Socket disconnected:', reason);
       setIsConnected(false);
-    });
+    };
 
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
-    });
+    const onConnectError = (error: any) => {
+      console.error('Socket connection error:', error?.message ?? error);
+    };
 
-    socket.on('error', (error: { message: string }) => {
+    const onError = (error: { message: string }) => {
       console.error('Socket error:', error.message);
-    });
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
+    socket.on('error', onError);
 
     socketRef.current = socket;
     setSocketState(socket);
+    // If this hook mounts after the singleton socket is already connected,
+    // we won't get a fresh 'connect' event. Seed state from current socket status.
+    setIsConnected(!!socket.connected);
 
     return () => {
-      socket.disconnect();
+      // Don't disconnect the singleton here; other screens/providers may still rely on it.
+      // We only disconnect when the logged-in user changes (handled above).
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onConnectError);
+      socket.off('error', onError);
       socketRef.current = null;
       setSocketState(null);
+      setIsConnected(false);
     };
   }, [dbUser?.user_id]);
 
