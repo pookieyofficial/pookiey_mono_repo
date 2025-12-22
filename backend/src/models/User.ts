@@ -22,6 +22,8 @@ export interface IUser extends Document {
     updatedAt: Date;
     lastLoginAt?: Date;
     notificationTokens?: string[];
+    isAdmin?: boolean;
+    isModerator?: boolean;
 }
 
 export interface IUserProfile {
@@ -151,6 +153,8 @@ const UserSchema = new Schema<IUser>(
         updatedAt: { type: Date, default: Date.now },
         lastLoginAt: { type: Date, default: Date.now },
         notificationTokens: { type: [String], default: [] },
+        isAdmin: { type: Boolean, default: false },
+        isModerator: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

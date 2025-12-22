@@ -2,12 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { User } from "../models/User";
 import { verifySupabaseToken } from "../config/supabase";
 
-// List of admin user emails - in production, store this in env or database
-const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",") || [];
+
 
 export const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    console.log("verifyAdmin middleware");
-    console.log({ ADMIN_EMAILS })
     try {
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
@@ -26,8 +23,8 @@ export const verifyAdmin = async (req: Request, res: Response, next: NextFunctio
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // Check if user is admin (by email or add isAdmin field to User model)
-        const isAdmin = ADMIN_EMAILS.includes(user.email) 
+
+        const isAdmin = user?.isAdmin || user?.isModerator
         
         
 
