@@ -15,8 +15,8 @@ type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
 const MAPPING = {
   'house.fill': 'home' as MaterialIconName,
   'house': 'home' as MaterialIconName,
-  'message': 'chat-bubble-outline' as MaterialIconName,
-  'message.fill': 'chat-bubble' as MaterialIconName,
+  'message': 'question-answer' as MaterialIconName, // Rounded chat bubble (most rounded option)
+  'message.fill': 'question-answer' as MaterialIconName, // Rounded chat bubble filled
   'gearshape': 'settings' as MaterialIconName,
   'gearshape.fill': 'settings' as MaterialIconName,
   'paperplane.fill': 'send' as MaterialIconName,
@@ -26,6 +26,8 @@ const MAPPING = {
   'chevron.right': 'chevron-right' as MaterialIconName,
   'camera.fill': 'camera' as MaterialIconName,
   'camera': 'camera' as MaterialIconName,
+  'fire': 'fire' as MaterialIconName,
+  'fire.fill': 'fire' as MaterialIconName
 } as const;
 
 type IconSymbolName = keyof typeof MAPPING;

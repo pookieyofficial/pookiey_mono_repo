@@ -122,7 +122,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.stories'),
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name={focused ? "camera.fill" : "camera"} color={color} weight={focused ? 'bold' : 'regular'} />
+            <IconSymbol size={28} name={focused ? "heart.fill" : "heart.fill"} color={color} weight={focused ? 'bold' : 'regular'} />
           ),
         }}
       />

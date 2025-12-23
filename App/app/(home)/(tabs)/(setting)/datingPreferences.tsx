@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   StyleSheet,
@@ -17,8 +17,99 @@ import { useLocation } from '@/hooks/useLocation'
 import CustomBackButton from '@/components/CustomBackButton'
 import MainButton from '@/components/MainButton'
 import CustomDialog from '@/components/CustomDialog'
-import Slider from '@react-native-community/slider'
 import { useTranslation } from 'react-i18next'
+
+// Number Input Component with Up/Down Arrows
+interface NumberInputProps {
+  value: number
+  onIncrement: () => void
+  onDecrement: () => void
+  min: number
+  max: number
+  label: string
+}
+
+const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
+  value,
+  onIncrement,
+  onDecrement,
+  min,
+  max,
+  label,
+  unit,
+}) => {
+  const [displayValue, setDisplayValue] = React.useState(value)
+  const lastValueRef = React.useRef(value)
+
+  // Sync display value when prop value changes (e.g., from external source)
+  React.useEffect(() => {
+    if (value !== lastValueRef.current) {
+      setDisplayValue(value)
+      lastValueRef.current = value
+    }
+  }, [value])
+
+  const handleIncrement = () => {
+    if (displayValue >= max) return
+    
+    // Immediate visual update - no waiting for parent state
+    const newValue = displayValue + 1
+    setDisplayValue(newValue)
+    lastValueRef.current = newValue
+    
+    // Trigger parent update immediately
+    onIncrement()
+  }
+
+  const handleDecrement = () => {
+    if (displayValue <= min) return
+    
+    // Immediate visual update - no waiting for parent state
+    const newValue = displayValue - 1
+    setDisplayValue(newValue)
+    lastValueRef.current = newValue
+    
+    // Trigger parent update immediately
+    onDecrement()
+  }
+
+  return (
+    <View style={styles.numberInputContainer}>
+      <ThemedText style={styles.numberInputLabel}>{label}</ThemedText>
+      <View style={styles.numberInputRow}>
+        <TouchableOpacity
+          style={[styles.arrowButton, displayValue <= min && styles.arrowButtonDisabled]}
+          onPress={handleDecrement}
+          disabled={displayValue <= min}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={displayValue <= min ? Colors.text.tertiary : Colors.primary.red}
+          />
+        </TouchableOpacity>
+        <View style={styles.numberDisplay}>
+          <ThemedText type="bold" style={styles.numberValue}>
+            {displayValue}{unit ? ` ${unit}` : ''}
+          </ThemedText>
+        </View>
+        <TouchableOpacity
+          style={[styles.arrowButton, displayValue >= max && styles.arrowButtonDisabled]}
+          onPress={handleIncrement}
+          disabled={displayValue >= max}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="chevron-up"
+            size={20}
+            color={displayValue >= max ? Colors.text.tertiary : Colors.primary.red}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}
 
 const DatingPreferences = () => {
   const { t } = useTranslation();
@@ -201,59 +292,42 @@ const DatingPreferences = () => {
               <ThemedText style={styles.sectionTitle}>{t('datingPreferences.ageRange')}</ThemedText>
             </View>
             
-            {/* Min and Max Age Display */}
-            <View style={styles.valueRow}>
-              <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>{t('datingPreferences.minAge')}</ThemedText>
-                <ThemedText type="bold" style={styles.valueText}>{minAge}</ThemedText>
-              </View>
-              
-              <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>{t('datingPreferences.maxAge')}</ThemedText>
-                <ThemedText type="bold" style={styles.valueText}>{maxAge}</ThemedText>
-              </View>
-            </View>
+            {/* Age Range Inputs */}
+            <NumberInput
+              value={minAge}
+              onIncrement={() => {
+                if (minAge < maxAge - 1) {
+                  setMinAge(minAge + 1)
+                }
+              }}
+              onDecrement={() => {
+                if (minAge > 18) {
+                  setMinAge(minAge - 1)
+                }
+              }}
+              min={18}
+              max={maxAge - 1}
+              label={t('datingPreferences.minimumAge', { age: minAge })}
+            />
 
-            {/* Sliders */}
-            <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.minimumAge', { age: minAge })}</ThemedText>
-              <Slider
-                style={styles.slider}
-                minimumValue={18}
-                maximumValue={Math.max(18, maxAge - 1)}
-                value={minAge}
-                onValueChange={(value) => {
-                  // Ensure min age is always less than max age
-                  if (value < maxAge) {
-                    setMinAge(Math.round(value))
-                  }
-                }}
-                minimumTrackTintColor={Colors.primary.red}
-                maximumTrackTintColor={Colors.text.light}
-                thumbTintColor={Colors.primary.red}
-                step={1}
-              />
-            </View>
+            <View style={styles.spacer} />
 
-            <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.maximumAge', { age: maxAge })}</ThemedText>
-              <Slider
-                style={styles.slider}
-                minimumValue={Math.min(65, minAge + 1)}
-                maximumValue={65}
-                value={maxAge}
-                onValueChange={(value) => {
-                  // Ensure max age is always greater than min age
-                  if (value > minAge) {
-                    setMaxAge(Math.round(value))
-                  }
-                }}
-                minimumTrackTintColor={Colors.primary.red}
-                maximumTrackTintColor={Colors.text.light}
-                thumbTintColor={Colors.primary.red}
-                step={1}
-              />
-            </View>
+            <NumberInput
+              value={maxAge}
+              onIncrement={() => {
+                if (maxAge < 65) {
+                  setMaxAge(maxAge + 1)
+                }
+              }}
+              onDecrement={() => {
+                if (maxAge > minAge + 1) {
+                  setMaxAge(maxAge - 1)
+                }
+              }}
+              min={minAge + 1}
+              max={65}
+              label={t('datingPreferences.maximumAge', { age: maxAge })}
+            />
           </View>
 
           {/* Distance Section */}
@@ -263,27 +337,24 @@ const DatingPreferences = () => {
               <ThemedText style={styles.sectionTitle}>{t('datingPreferences.maximumDistance')}</ThemedText>
             </View>
 
-            <View style={styles.valueRow}>
-              <View style={styles.valueContainer}>
-                <ThemedText style={styles.valueLabel}>{t('datingPreferences.distance')}</ThemedText>
-                <ThemedText type="bold" style={styles.valueText}>{distance} km</ThemedText>
-              </View>
-            </View>
-
-            <View style={styles.sliderContainer}>
-              <ThemedText style={styles.sliderLabel}>{t('datingPreferences.distanceKm', { distance })}</ThemedText>
-              <Slider
-                style={styles.slider}
-                minimumValue={1}
-                maximumValue={100}
-                value={distance}
-                onValueChange={setDistance}
-                minimumTrackTintColor={Colors.primary.red}
-                maximumTrackTintColor={Colors.text.light}
-                thumbTintColor={Colors.primary.red}
-                step={1}
-              />
-            </View>
+            {/* Distance Input */}
+            <NumberInput
+              value={distance}
+              onIncrement={() => {
+                if (distance < 100) {
+                  setDistance(distance + 1)
+                }
+              }}
+              onDecrement={() => {
+                if (distance > 1) {
+                  setDistance(distance - 1)
+                }
+              }}
+              min={1}
+              max={100}
+              label={t('datingPreferences.distanceKm', { distance })}
+              unit="km"
+            />
           </View>
 
           {/* Location Update Section */}
@@ -382,34 +453,60 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     color: Colors.titleColor,
   },
-  valueRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  spacer: {
+    height: 16,
+  },
+  // Number Input Styles
+  numberInputContainer: {
     marginBottom: 20,
   },
-  valueContainer: {
-    alignItems: 'center',
-  },
-  valueLabel: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginBottom: 8,
-  },
-  valueText: {
-    fontSize: 28,
-    color: Colors.primary.red,
-  },
-  sliderContainer: {
-    marginBottom: 20,
-  },
-  sliderLabel: {
+  numberInputLabel: {
     fontSize: 16,
     color: Colors.titleColor,
-    marginBottom: 8,
+    marginBottom: 12,
+    fontWeight: '500',
   },
-  slider: {
-    width: '100%',
-    height: 40,
+  numberInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  arrowButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary.white,
+    borderWidth: 2,
+    borderColor: Colors.primary.red,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  arrowButtonDisabled: {
+    borderColor: Colors.text.light,
+    backgroundColor: Colors.parentBackgroundColor,
+    opacity: 0.5,
+  },
+  numberDisplay: {
+    minWidth: 80,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.parentBackgroundColor,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numberValue: {
+    fontSize: 32,
+    color: Colors.primary.red,
   },
   locationDescription: {
     fontSize: 14,

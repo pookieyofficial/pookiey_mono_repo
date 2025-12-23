@@ -82,11 +82,13 @@ export default function index() {
         const localTokens = getNotificationTokens()
         const dbTokens = Array.isArray(dbUser?.notificationTokens) ? dbUser!.notificationTokens : []
         const merged = Array.from(new Set([...dbTokens, ...localTokens, pushToken]))
+        console.log(merged)
 
         const response = await updateUser(idToken as string, { notificationTokens: merged })
         if (response?.success && response?.data) {
           setDBUser(response.data)
         }
+        console.log(response)
 
         lastPushTokenSentRef.current = pushToken
       } catch (e) {
