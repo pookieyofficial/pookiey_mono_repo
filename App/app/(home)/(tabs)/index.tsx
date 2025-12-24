@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Linking, Platform, Alert } from 'react-native'
+import { View, Linking, Platform, Alert, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -17,6 +17,7 @@ import * as Notifications from 'expo-notifications'
 import { Audio } from 'expo-av'
 import { useFocusEffect } from '@react-navigation/native'
 import * as Device from 'expo-device'
+import Ionicons from '@expo/vector-icons/build/Ionicons'
 
 export default function index() {
   const { t } = useTranslation();
@@ -476,6 +477,9 @@ export default function index() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
       <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
+          <Ionicons name="refresh-outline" size={24} color={Colors.primary.red} />
+        </TouchableOpacity>
 
         {isLoading && profiles.length === 0
           ?

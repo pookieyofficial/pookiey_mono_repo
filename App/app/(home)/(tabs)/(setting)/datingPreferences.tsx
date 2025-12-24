@@ -27,6 +27,7 @@ interface NumberInputProps {
   min: number
   max: number
   label: string
+  disabled?: boolean
 }
 
 const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
@@ -37,6 +38,7 @@ const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
   max,
   label,
   unit,
+  disabled = false,
 }) => {
   const [displayValue, setDisplayValue] = React.useState(value)
   const lastValueRef = React.useRef(value)
@@ -50,7 +52,7 @@ const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
   }, [value])
 
   const handleIncrement = () => {
-    if (displayValue >= max) return
+    if (disabled || displayValue >= max) return
     
     // Immediate visual update - no waiting for parent state
     const newValue = displayValue + 1
@@ -62,7 +64,7 @@ const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
   }
 
   const handleDecrement = () => {
-    if (displayValue <= min) return
+    if (disabled || displayValue <= min) return
     
     // Immediate visual update - no waiting for parent state
     const newValue = displayValue - 1
@@ -78,32 +80,38 @@ const NumberInput: React.FC<NumberInputProps & { unit?: string }> = ({
       <ThemedText style={styles.numberInputLabel}>{label}</ThemedText>
       <View style={styles.numberInputRow}>
         <TouchableOpacity
-          style={[styles.arrowButton, displayValue <= min && styles.arrowButtonDisabled]}
+          style={[
+            styles.arrowButton,
+            (disabled || displayValue <= min) && styles.arrowButtonDisabled
+          ]}
           onPress={handleDecrement}
-          disabled={displayValue <= min}
+          disabled={disabled || displayValue <= min}
           activeOpacity={0.7}
         >
           <Ionicons
             name="chevron-down"
             size={20}
-            color={displayValue <= min ? Colors.text.tertiary : Colors.primary.red}
+            color={(disabled || displayValue <= min) ? Colors.text.tertiary : Colors.primary.red}
           />
         </TouchableOpacity>
-        <View style={styles.numberDisplay}>
-          <ThemedText type="bold" style={styles.numberValue}>
+        <View style={[styles.numberDisplay, disabled && styles.numberDisplayDisabled]}>
+          <ThemedText type="bold" style={[styles.numberValue, disabled && styles.numberValueDisabled]}>
             {displayValue}{unit ? ` ${unit}` : ''}
           </ThemedText>
         </View>
         <TouchableOpacity
-          style={[styles.arrowButton, displayValue >= max && styles.arrowButtonDisabled]}
+          style={[
+            styles.arrowButton,
+            (disabled || displayValue >= max) && styles.arrowButtonDisabled
+          ]}
           onPress={handleIncrement}
-          disabled={displayValue >= max}
+          disabled={disabled || displayValue >= max}
           activeOpacity={0.7}
         >
           <Ionicons
             name="chevron-up"
             size={20}
-            color={displayValue >= max ? Colors.text.tertiary : Colors.primary.red}
+            color={(disabled || displayValue >= max) ? Colors.text.tertiary : Colors.primary.red}
           />
         </TouchableOpacity>
       </View>
@@ -130,6 +138,9 @@ const DatingPreferences = () => {
   const [distance, setDistance] = useState(50)
   const [showMe, setShowMe] = useState<"male" | "female">('male')
   const [showLocationDialog, setShowLocationDialog] = useState(false)
+
+  // Check if user has active subscription
+  const isPremium = dbUser?.subscription?.status === 'active'
 
   useEffect(() => {
     // Load existing preferences
@@ -354,7 +365,17 @@ const DatingPreferences = () => {
               max={100}
               label={t('datingPreferences.distanceKm', { distance })}
               unit="km"
+              disabled={!isPremium}
             />
+
+            {!isPremium && (
+              <View style={styles.premiumNote}>
+                <Ionicons name="lock-closed" size={16} color={Colors.text.secondary} />
+                <ThemedText style={styles.premiumNoteText}>
+                  {t('datingPreferences.premiumDistanceNote') || 'Premium users can change distance range'}
+                </ThemedText>
+              </View>
+            )}
           </View>
 
           {/* Location Update Section */}
@@ -507,6 +528,27 @@ const styles = StyleSheet.create({
   numberValue: {
     fontSize: 32,
     color: Colors.primary.red,
+  },
+  numberValueDisabled: {
+    color: Colors.text.tertiary,
+    opacity: 0.6,
+  },
+  numberDisplayDisabled: {
+    opacity: 0.6,
+  },
+  premiumNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: Colors.parentBackgroundColor,
+    borderRadius: 8,
+    gap: 8,
+  },
+  premiumNoteText: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    flex: 1,
   },
   locationDescription: {
     fontSize: 14,

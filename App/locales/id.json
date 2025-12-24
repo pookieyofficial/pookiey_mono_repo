@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Gagal memperbarui lokasi",
     "failedToUpdatePreferences": "Gagal memperbarui preferensi",
     "unableToAccessLocation": "Tidak dapat mengakses lokasi. Harap izinkan akses lokasi di pengaturan perangkat Anda untuk memperbarui lokasi Anda.",
-    "tryAgain": "Coba Lagi"
+    "tryAgain": "Coba Lagi",
+    "premiumDistanceNote": "Pengguna premium dapat mengubah rentang jarak"
   },
   "userProfileView": {
     "error": "⚠️ Kesalahan",

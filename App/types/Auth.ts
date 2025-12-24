@@ -58,6 +58,16 @@ export interface DBUser {
     ageRange?: number[];
     showMe?: string[];
   };
+  subscription?: {
+    status?: 'none' | 'pending' | 'active' | 'expired' | 'cancelled';
+    plan?: 'basic' | 'premium' | 'super' | 'free';
+    startDate?: Date | null;
+    endDate?: Date | null;
+    autoRenew?: boolean;
+    lastPaymentAt?: Date | null;
+    provider?: 'razorpay' | 'stripe' | 'paypal' | 'apple' | 'google' | null;
+    updatedAt?: Date | null;
+  };
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date;

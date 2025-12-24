@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Konum güncellenemedi",
     "failedToUpdatePreferences": "Tercihler güncellenemedi",
     "unableToAccessLocation": "Konuma erişilemiyor. Konumunuzu güncellemek için lütfen cihaz ayarlarınızdan konum erişimine izin verin.",
-    "tryAgain": "Tekrar dene"
+    "tryAgain": "Tekrar dene",
+    "premiumDistanceNote": "Premium kullanıcılar mesafe aralığını değiştirebilir"
   },
   "userProfileView": {
     "error": "⚠️ Hata",

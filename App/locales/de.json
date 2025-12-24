@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Standort konnte nicht aktualisiert werden",
     "failedToUpdatePreferences": "Präferenzen konnten nicht aktualisiert werden",
     "unableToAccessLocation": "Zugriff auf Standort nicht möglich. Bitte erlauben Sie den Zugriff auf den Standort in Ihren Geräteeinstellungen, um Ihren Standort zu aktualisieren.",
-    "tryAgain": "Erneut versuchen"
+    "tryAgain": "Erneut versuchen",
+    "premiumDistanceNote": "Premium-Benutzer können den Entfernungsbereich ändern"
   },
   "userProfileView": {
     "error": "⚠️ Fehler",

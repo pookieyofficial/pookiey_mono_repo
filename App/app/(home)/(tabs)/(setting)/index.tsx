@@ -23,7 +23,7 @@ const Settings = () => {
 
   const handleButtonPress = (buttonName: string) => {
     console.log(`${buttonName} pressed`)
-    
+
     if (buttonName === 'Dating Preference') {
       router.push('/(home)/(tabs)/(setting)/datingPreferences')
     }
@@ -35,6 +35,9 @@ const Settings = () => {
     }
     if (buttonName === 'Privacy Policy') {
       router.push('/(home)/(tabs)/(setting)/privacyPolicy')
+    }
+    if (buttonName === 'Price Plans') {
+      router.push('/(home)/(tabs)/(setting)/pricePlans')
     }
   }
 
@@ -73,7 +76,7 @@ const Settings = () => {
 
             <View style={styles.profileInfo}>
               {dbUser?.displayName && (
-                <ThemedText type='bold' style={styles.profileName}>
+                <ThemedText type='defaultSemiBold' style={styles.profileName}>
                   {dbUser?.profile?.firstName} {dbUser?.profile?.lastName}
                 </ThemedText>
               )}
@@ -132,7 +135,7 @@ const Settings = () => {
 
           <View style={styles.decorativeBorder} />
 
-          
+
 
           <View style={styles.decorativeBorder} />
 
@@ -177,12 +180,28 @@ const Settings = () => {
           <View style={styles.decorativeBorder} />
 
           <TouchableOpacity
-            style={[styles.settingItem, styles.deleteAccountItem]}
+            style={[styles.settingItem, styles.ExtraAccountItem]}
+            onPress={() => handleButtonPress('Price Plans')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="pricetags" size={24} color={Colors.primary.red} />
+            </View>
+            <ThemedText style={styles.settingText}>
+              Subscribe to Pookiey!
+            </ThemedText>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.decorativeBorder} />
+
+          <TouchableOpacity
+            style={[styles.settingItem]}
             onPress={handleDeleteAccount}
             activeOpacity={0.7}
           >
             <View style={styles.settingIconContainer}>
-              <Ionicons name="trash-outline" size={24} color={Colors.primary.red} />
+              <Ionicons name="trash" size={24} color={Colors.primary.red} />
             </View>
             <ThemedText style={styles.settingText}>
               {t('settings.deleteAccount')}
@@ -191,7 +210,7 @@ const Settings = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   )
 }
 
@@ -281,7 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 0.5,
     opacity: 0.3,
   },
-  deleteAccountItem: {
+  ExtraAccountItem: {
     marginTop: 20,
   },
 })

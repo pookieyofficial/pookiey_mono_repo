@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Falha ao atualizar localização",
     "failedToUpdatePreferences": "Falha ao atualizar preferências",
     "unableToAccessLocation": "Não é possível acessar a localização. Por favor, permita o acesso à localização nas configurações do dispositivo para atualizar sua localização.",
-    "tryAgain": "Tentar novamente"
+    "tryAgain": "Tentar novamente",
+    "premiumDistanceNote": "Usuários premium podem alterar o alcance de distância"
   },
   "userProfileView": {
     "error": "⚠️ Erro",

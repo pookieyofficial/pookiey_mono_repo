@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Impossibile aggiornare la posizione",
     "failedToUpdatePreferences": "Impossibile aggiornare le preferenze",
     "unableToAccessLocation": "Impossibile accedere alla posizione. Consenti l'accesso alla posizione nelle impostazioni del dispositivo per aggiornare la tua posizione.",
-    "tryAgain": "Riprova"
+    "tryAgain": "Riprova",
+    "premiumDistanceNote": "Gli utenti premium possono modificare l'intervallo di distanza"
   },
   "userProfileView": {
     "error": "⚠️ Errore",

@@ -433,7 +433,9 @@
     "failedToUpdateLocation": "Failed to update location",
     "failedToUpdatePreferences": "Failed to update preferences",
     "unableToAccessLocation": "Unable to access location. Please allow location access in your device settings to update your location.",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "premiumDistanceNote": "Premium users can change distance range",
+    "pricePlans": "Price Plans"
   },
   "userProfileView": {
     "error": "⚠️ Error",

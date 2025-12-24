@@ -27,9 +27,8 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
         currency: "INR",
         durationDays: 30,
         features: [
-            "Unlimited swipes",
-            "See who liked you",
-            "1 spotlight per month",
+            "15 Swipes Per Day",
+            "1 Spotlight Per Month",
         ],
         interaction_per_day: 15
     },
@@ -40,10 +39,8 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
         currency: "INR",
         durationDays: 90,
         features: [
-            "Unlimited swipes",
-            "Priority likes",
-            "5 spotlights per month",
-            "Advanced filters",
+            "25 Swipes Per Day",
+            "Voice Calling to Matched Users",
         ],
         interaction_per_day: 25
     },
@@ -54,10 +51,9 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
         currency: "INR",
         durationDays: 180,
         features: [
-            "Unlimited everything",
-            "Profile boost weekly",
-            "See read receipts",
-            "Premium support",
+            "30 Swipes Per Day",
+            "Voice Calling to Matched Users",
+            "Premium Support and profile boost",
         ],
         interaction_per_day: 30
     },

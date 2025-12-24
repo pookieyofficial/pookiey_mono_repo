@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "فشل في تحديث الموقع",
     "failedToUpdatePreferences": "فشل في تحديث التفضيلات",
     "unableToAccessLocation": "تعذر الوصول إلى الموقع. يرجى السماح بالوصول إلى الموقع في إعدادات جهازك لتحديث موقعك.",
-    "tryAgain": "حاول مرة أخرى"
+    "tryAgain": "حاول مرة أخرى",
+    "premiumDistanceNote": "يمكن للمستخدمين المميزين تغيير نطاق المسافة"
   },
   "userProfileView": {
     "error": "⚠️ خطأ",

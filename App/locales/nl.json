@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Locatie bijwerken mislukt",
     "failedToUpdatePreferences": "Voorkeuren bijwerken mislukt",
     "unableToAccessLocation": "Kan locatie niet openen. Sta toegang tot locatie toe in uw apparaatinstellingen om uw locatie bij te werken.",
-    "tryAgain": "Probeer opnieuw"
+    "tryAgain": "Probeer opnieuw",
+    "premiumDistanceNote": "Premium gebruikers kunnen het afstandsbereik wijzigen"
   },
   "userProfileView": {
     "error": "⚠️ Fout",

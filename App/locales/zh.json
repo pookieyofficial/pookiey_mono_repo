@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "更新位置失败",
     "failedToUpdatePreferences": "更新偏好设置失败",
     "unableToAccessLocation": "无法访问位置。请在设备设置中允许位置访问以更新您的位置。",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "premiumDistanceNote": "高级用户可以更改距离范围"
   },
   "userProfileView": {
     "error": "⚠️ 错误",

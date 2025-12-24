@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "อัปเดตตำแหน่งล้มเหลว",
     "failedToUpdatePreferences": "อัปเดตความชอบล้มเหลว",
     "unableToAccessLocation": "ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาอนุญาตการเข้าถึงตำแหน่งในการตั้งค่าอุปกรณ์เพื่ออัปเดตตำแหน่งของคุณ",
-    "tryAgain": "ลองอีกครั้ง"
+    "tryAgain": "ลองอีกครั้ง",
+    "premiumDistanceNote": "ผู้ใช้พรีเมียมสามารถเปลี่ยนช่วงระยะทางได้"
   },
   "userProfileView": {
     "error": "⚠️ เกิดข้อผิดพลาด",

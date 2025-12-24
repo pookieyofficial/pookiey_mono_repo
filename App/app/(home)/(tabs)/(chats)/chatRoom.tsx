@@ -75,6 +75,11 @@ export default function ChatRoom() {
   const otherUserId = params.userId as string;
   const insets = useSafeAreaInsets();
 
+  // Check if user has active subscription with premium or super plan
+  const isPremium = 
+    dbUser?.subscription?.status === 'active' && 
+    (dbUser?.subscription?.plan === 'premium' || dbUser?.subscription?.plan === 'super');
+
   const [imageError, setImageError] = useState(false);
 
   useLayoutEffect(() => {
@@ -128,31 +133,61 @@ export default function ChatRoom() {
         </View>
       ),
       headerRight: () => (
-        <TouchableOpacity
-          onPress={() => {
-            if (dbUser?.user_id && otherUserId) {
-              const canCallNow = isConnected && isOtherUserOnline;
-              if (!isConnected) {
-                Alert.alert('Connecting...', 'Please wait while we are connecting to the recipient!');
-                return;
+        <View style={{ position: 'relative', marginRight: 8 }}>
+          <TouchableOpacity
+            onPress={() => {
+              if (dbUser?.user_id && otherUserId) {
+                // Check premium status first
+                if (!isPremium) {
+                  Alert.alert(
+                    'Premium Required',
+                    'Voice calling requires a premium subscription. Please upgrade to make calls.'
+                  );
+                  return;
+                }
+
+                const canCallNow = isConnected && isOtherUserOnline;
+                if (!isConnected) {
+                  Alert.alert('Connecting...', 'Please wait while we are connecting to the recipient!');
+                  return;
+                }
+                if (!isOtherUserOnline) {
+                  Alert.alert('Call unavailable', 'You can only call when the recipient is online on Pookiey!');
+                  return;
+                }
+                if (canCallNow) {
+                  makeCall(matchId, otherUserId, otherUserId);
+                }
               }
-              if (!isOtherUserOnline) {
-                Alert.alert('Call unavailable', 'You can only call when the recipient is online on Pookiey!');
-                return;
-              }
-              if (canCallNow) {
-                makeCall(matchId, otherUserId, otherUserId);
-              }
-            }
-          }}
-          style={{ padding: 8, marginRight: 8 }}
-        >
-          <Ionicons
-            name="call"
-            size={24}
-            color={isConnected && isOtherUserOnline ? '#FF3B30' : '#B0B0B0'}
-          />
-        </TouchableOpacity>
+            }}
+            style={{ padding: 8 }}
+          >
+            <Ionicons
+              name="call"
+              size={24}
+              color={isConnected && isOtherUserOnline && isPremium ? '#FF3B30' : '#B0B0B0'}
+            />
+          </TouchableOpacity>
+          {!isPremium && (
+            <View
+              style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 4,
+                backgroundColor: 'transparent',
+                borderRadius: 8,
+                width: 20,
+                height: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderWidth: 1.5,
+                borderColor: '#fff',
+              }}
+            >
+              <Ionicons name="lock-closed" size={20} color={Colors.text.secondary} />
+            </View>
+          )}
+        </View>
       ),
       headerStyle: {
         backgroundColor: Colors.parentBackgroundColor,
@@ -184,6 +219,7 @@ export default function ChatRoom() {
     makeCall,
     isConnected,
     isOtherUserOnline,
+    isPremium,
   ]);
 
   // Load initial messages

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +47,8 @@ interface LanguageSelectorProps {
   };
 }
 
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 export default function LanguageSelector({ onLanguageChange, store }: LanguageSelectorProps) {
   const { t, i18n } = useTranslation();
   const [modalVisible, setModalVisible] = useState(false);
@@ -88,7 +90,11 @@ export default function LanguageSelector({ onLanguageChange, store }: LanguageSe
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <ThemedText type="title" style={styles.modalTitle}>
@@ -102,7 +108,12 @@ export default function LanguageSelector({ onLanguageChange, store }: LanguageSe
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.languageList} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              style={styles.languageList} 
+              contentContainerStyle={styles.languageListContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               {availableLanguages.map((language) => {
                 const isSelected = language.code === currentLanguage;
                 return (
@@ -145,7 +156,7 @@ export default function LanguageSelector({ onLanguageChange, store }: LanguageSe
               })}
             </ScrollView>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );
@@ -177,8 +188,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.parentBackgroundColor,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '80%',
-    paddingBottom: 20,
+    height: SCREEN_HEIGHT * 0.8,
+    flexDirection: 'column',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -199,8 +210,13 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   languageList: {
+    flex: 1,
     paddingHorizontal: 24,
+  },
+  languageListContent: {
     paddingTop: 16,
+    paddingBottom: 24,
+    flexGrow: 1,
   },
   languageItem: {
     flexDirection: 'row',

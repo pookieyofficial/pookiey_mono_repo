@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Cập nhật vị trí thất bại",
     "failedToUpdatePreferences": "Cập nhật tùy chọn thất bại",
     "unableToAccessLocation": "Không thể truy cập vị trí. Vui lòng cho phép truy cập vị trí trong cài đặt thiết bị để cập nhật vị trí của bạn.",
-    "tryAgain": "Thử lại"
+    "tryAgain": "Thử lại",
+    "premiumDistanceNote": "Người dùng premium có thể thay đổi phạm vi khoảng cách"
   },
   "userProfileView": {
     "error": "⚠️ Lỗi",

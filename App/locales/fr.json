@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "Échec de la mise à jour de la localisation",
     "failedToUpdatePreferences": "Échec de la mise à jour des préférences",
     "unableToAccessLocation": "Impossible d'accéder à la localisation. Veuillez autoriser l'accès à la localisation dans les paramètres de votre appareil pour mettre à jour votre localisation.",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "premiumDistanceNote": "Les utilisateurs premium peuvent modifier la plage de distance"
   },
   "userProfileView": {
     "error": "⚠️ Erreur",

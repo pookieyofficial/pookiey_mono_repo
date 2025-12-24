@@ -82,7 +82,7 @@ const MatchingScreen = () => {
     }
 
     const handleContinueSwiping = () => {
-        router.back();
+        router.replace('/(home)/(tabs)');
     }
 
     const leftCardTranslateX = leftCardAnim.interpolate({

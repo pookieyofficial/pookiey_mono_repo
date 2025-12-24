@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primaryBackgroundColor,
   },
   genderText: {
-    fontSize: 16,
+    fontSize: 13,
     color: '#666',
     fontWeight: '500',
   },

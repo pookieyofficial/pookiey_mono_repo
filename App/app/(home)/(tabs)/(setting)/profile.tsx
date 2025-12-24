@@ -464,10 +464,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   section: {
     backgroundColor: '#FFFFFF',
@@ -584,7 +583,6 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
     marginLeft: 8,
   },
 })

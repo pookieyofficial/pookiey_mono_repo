@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "位置情報の更新に失敗しました",
     "failedToUpdatePreferences": "設定の更新に失敗しました",
     "unableToAccessLocation": "位置情報にアクセスできません。位置情報を更新するには、デバイスの設定で位置情報へのアクセスを許可してください。",
-    "tryAgain": "再試行"
+    "tryAgain": "再試行",
+    "premiumDistanceNote": "プレミアムユーザーは距離範囲を変更できます"
   },
   "userProfileView": {
     "error": "⚠️ エラー",

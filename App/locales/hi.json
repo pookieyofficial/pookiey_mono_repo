@@ -372,7 +372,8 @@
     "failedToUpdateLocation": "स्थान अपडेट करने में विफल",
     "failedToUpdatePreferences": "प्राथमिकताएं अपडेट करने में विफल",
     "unableToAccessLocation": "स्थान तक पहुंचने में असमर्थ। अपना स्थान अपडेट करने के लिए कृपया अपनी डिवाइस सेटिंग्स में स्थान पहुंच की अनुमति दें।",
-    "tryAgain": "पुनः प्रयास करें"
+    "tryAgain": "पुनः प्रयास करें",
+    "premiumDistanceNote": "प्रीमियम उपयोगकर्ता दूरी सीमा बदल सकते हैं"
   },
   "userProfileView": {
     "error": "⚠️ त्रुटि",

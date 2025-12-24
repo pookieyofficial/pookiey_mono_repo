@@ -9,6 +9,7 @@ export default function _layout() {
             <Stack.Screen name="helpCenter"/>
             <Stack.Screen name="privacyPolicy"/>
             <Stack.Screen name="deleteAccount"/>
+            <Stack.Screen name="pricePlans" options={{ presentation: 'fullScreenModal' }} />
         </Stack>
     )
 }

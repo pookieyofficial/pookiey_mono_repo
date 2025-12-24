@@ -372,7 +372,8 @@
     "failedToUpdateLocation": "مقام اپ ڈیٹ کرنے میں ناکام",
     "failedToUpdatePreferences": "ترجیحات اپ ڈیٹ کرنے میں ناکام",
     "unableToAccessLocation": "مقام تک رسائی حاصل نہیں کر سکے۔ اپنا مقام اپ ڈیٹ کرنے کے لیے براہ کرم اپنی ڈیوائس کی ترتیبات میں مقام تک رسائی کی اجازت دیں۔",
-    "tryAgain": "دوبارہ کوشش کریں"
+    "tryAgain": "دوبارہ کوشش کریں",
+    "premiumDistanceNote": "پریمیم صارفین فاصلے کی حد تبدیل کر سکتے ہیں"
   },
   "userProfileView": {
     "error": "⚠️ خرابی",

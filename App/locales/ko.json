@@ -397,7 +397,8 @@
     "failedToUpdateLocation": "위치 업데이트 실패",
     "failedToUpdatePreferences": "선호도 업데이트 실패",
     "unableToAccessLocation": "위치에 액세스할 수 없습니다. 위치를 업데이트하려면 기기 설정에서 위치 액세스를 허용해주세요.",
-    "tryAgain": "다시 시도"
+    "tryAgain": "다시 시도",
+    "premiumDistanceNote": "프리미엄 사용자는 거리 범위를 변경할 수 있습니다"
   },
   "userProfileView": {
     "error": "⚠️ 오류",

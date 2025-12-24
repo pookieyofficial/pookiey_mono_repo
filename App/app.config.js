@@ -14,6 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.pookiey.pookiey",
+      icon: "./assets/images/icon.png",
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
           "Pookiey needs your location to show you matches nearby.",
