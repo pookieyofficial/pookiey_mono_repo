@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
-import { User } from "../models/User";
+import mongoose from "mongoose";
+import { User, IUser } from "../models/User";
 import { Interaction } from "../models/Interactions";
 import { Matches } from "../models/Matches";
 import { Messages } from "../models/Messages";
 import { Subscription } from "../models/subscription";
 import { Report } from "../models/Report";
 import { Story } from "../models/Story";
+import { Support } from "../models/Support";
 
 // Helper to get date range
 const getDateRange = (filter: string) => {
@@ -711,5 +713,155 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("getDashboardStats error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch dashboard stats" });
+    }
+};
+
+// Support Messages
+export const getSupportMessages = async (req: Request, res: Response) => {
+    try {
+        const { page = 1, limit = 50, status } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const query: any = {};
+        if (status) {
+            query.status = status;
+        }
+
+        const supportMessages = await Support.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
+            .lean();
+
+        // Get user info for each support message
+        const supportMessagesWithUser = await Promise.all(
+            supportMessages.map(async (msg) => {
+                const user = await User.findOne({ user_id: msg.userId as string });
+                return {
+                    ...msg,
+                    user: user
+                        ? {
+                            user_id: user.user_id,
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                        }
+                        : null,
+                };
+            })
+        );
+
+        const total = await Support.countDocuments(query);
+
+        // Get status counts
+        const statusCounts = await Support.aggregate([
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                supportMessages: supportMessagesWithUser,
+                statusCounts,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    pages: Math.ceil(total / Number(limit)),
+                },
+            },
+        });
+    } catch (error) {
+        console.error("getSupportMessages error:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch support messages" });
+    }
+};
+
+export const updateSupportStatus = async (req: Request, res: Response) => {
+    try {
+        const { supportId } = req.params;
+        const { status, response, priority } = req.body;
+        const admin = req.user as any as IUser;
+
+        console.log("updateSupportStatus called:", { supportId, status, response, priority, adminId: admin?.user_id, body: req.body });
+
+        if (!supportId) {
+            return res.status(400).json({
+                success: false,
+                message: "Support ID is required",
+            });
+        }
+
+        // Validate MongoDB ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(supportId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid support ID format",
+            });
+        }
+
+        const validStatuses = ["pending", "in_progress", "resolved", "closed"];
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status. Must be one of: pending, in_progress, resolved, closed",
+            });
+        }
+
+        if (!status) {
+            return res.status(400).json({
+                success: false,
+                message: "Status is required",
+            });
+        }
+
+        // Build update object
+        const updateData: any = {};
+        
+        if (status) {
+            updateData.status = status as "pending" | "in_progress" | "resolved" | "closed";
+        }
+
+        if (priority && ["low", "medium", "high", "urgent"].includes(priority)) {
+            updateData.priority = priority as "low" | "medium" | "high" | "urgent";
+        }
+
+        if (response && response.trim()) {
+            updateData.response = response.trim();
+            updateData.respondedAt = new Date();
+            updateData.respondedBy = admin.user_id;
+        }
+
+        // Use findByIdAndUpdate to avoid full document validation
+        const supportMessage = await Support.findByIdAndUpdate(
+            supportId,
+            { $set: updateData },
+            { new: true, runValidators: false }
+        );
+
+        if (!supportMessage) {
+            console.error("Support message not found:", supportId);
+            return res.status(404).json({ success: false, message: "Support message not found" });
+        }
+
+        console.log("Support message updated successfully:", supportMessage._id);
+
+        res.json({
+            success: true,
+            data: supportMessage,
+            message: `Support message updated successfully`,
+        });
+    } catch (error) {
+        console.error("updateSupportStatus error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        res.status(500).json({ 
+            success: false, 
+            message: `Failed to update support message status: ${errorMessage}` 
+        });
     }
 };

@@ -28,4 +28,8 @@ router.get("/reports", adminControllers.getReports);
 router.patch("/users/:userId/status", adminControllers.updateUserStatus);
 router.patch("/users/:userId/moderate", adminControllers.moderateUser);
 
+// Support Messages
+router.get("/support", adminControllers.getSupportMessages);
+router.patch("/support/:supportId", adminControllers.updateSupportStatus);
+
 export default router;
