@@ -234,7 +234,7 @@ const EditProfile = () => {
         try {
           await FileSystem.deleteAsync(compressed.uri, { idempotent: true });
         } catch (cleanupError) {
-          console.warn('Failed to clean up compressed file:', cleanupError);
+          // console.warn('Failed to clean up compressed file:', cleanupError);
         }
       }
 
@@ -242,7 +242,7 @@ const EditProfile = () => {
       setIsUploadingPhotoURL(false);
       return fileURL;
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      // console.error('Error uploading profile picture:', error);
       setIsUploadingPhotoURL(false);
       Alert.alert(t('editProfile.error'), t('editProfile.failedToUploadImage'));
       throw error;
@@ -363,7 +363,7 @@ const EditProfile = () => {
 
       // Upload new local images to S3
       if (newLocalPhotos.length > 0) {
-        console.log('🔄 Compressing images for profile...');
+        // console.log('🔄 Compressing images for profile...');
         
         // Step 1: Compress all new images
         const compressedPhotos: { photo: any; mimeType: string; index: number; compressedUri: string }[] = [];
@@ -389,10 +389,10 @@ const EditProfile = () => {
             if (originalInfo.exists && compressed.size) {
               const originalSize = (originalInfo as any).size;
               const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
-              console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+              // console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
             }
           } catch (compressionError) {
-            console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
+            // console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
             compressedPhotos.push({
               ...item,
               compressedUri: photoUrl,
@@ -401,7 +401,7 @@ const EditProfile = () => {
           }
         }
         
-        console.log('✅ All images compressed successfully');
+        // console.log('✅ All images compressed successfully');
         
         // Step 2: Get MIME types for compressed images
         const mimeTypes = compressedPhotos.map(item => item.mimeType);
@@ -458,9 +458,9 @@ const EditProfile = () => {
           if (compressedPhotos[i].compressedUri !== originalUrl) {
             try {
               await FileSystem.deleteAsync(compressedPhotos[i].compressedUri, { idempotent: true });
-              console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
+              // console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
             } catch (cleanupError) {
-              console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
+              // console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
             }
           }
         }
@@ -509,7 +509,7 @@ const EditProfile = () => {
         Alert.alert(t('editProfile.error'), response?.message || t('editProfile.failedToUpdateProfile'))
       }
     } catch (error: any) {
-      console.error('Update profile error:', error)
+      // console.error('Update profile error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || t('editProfile.failedToUpdateProfile')
       Alert.alert(t('editProfile.error'), errorMessage)
     } finally {

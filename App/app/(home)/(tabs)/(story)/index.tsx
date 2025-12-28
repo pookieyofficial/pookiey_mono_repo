@@ -72,7 +72,7 @@ export default function StoriesScreen() {
     try {
       setLoading(true);
       const data = await storyAPI.getStories(token);
-      console.log('Stories refreshed:', data);
+      // console.log('Stories refreshed:', data);
       
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -133,7 +133,7 @@ export default function StoriesScreen() {
         })
       } else {
         // If data is neither object with myStory nor array, set empty structure
-        console.warn('Unexpected data format from stories API:', data);
+        // console.warn('Unexpected data format from stories API:', data);
         setCategorizedStories({
           myStory: dbUser?.user_id ? {
             id: dbUser.user_id,
@@ -147,7 +147,7 @@ export default function StoriesScreen() {
         });
       }
     } catch (error: any) {
-      console.error('Error loading stories:', error);
+      // console.error('Error loading stories:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load stories';
       Alert.alert('Error', errorMessage);
       // Even on error, ensure "Your Story" exists if we have user info
@@ -205,7 +205,7 @@ export default function StoriesScreen() {
         await videoRef.current.pauseAsync();
         await videoRef.current.unloadAsync();
       } catch (error) {
-        console.error('Error stopping video:', error);
+        // console.error('Error stopping video:', error);
       }
     }
     progressAnim.setValue(0);
@@ -233,7 +233,7 @@ export default function StoriesScreen() {
         await videoRef.current.pauseAsync();
         await videoRef.current.unloadAsync();
       } catch (error) {
-        console.error('Error stopping video:', error);
+        // console.error('Error stopping video:', error);
       }
     }
     progressAnim.setValue(0);
@@ -308,7 +308,7 @@ export default function StoriesScreen() {
                 // Stay on current story (index may have shifted)
               }
             } catch (error: any) {
-              console.error('Error deleting story:', error);
+              // console.error('Error deleting story:', error);
               Alert.alert('Error', error?.response?.data?.message || 'Failed to delete story');
             } finally {
               setDeletingStoryId(null);
@@ -324,12 +324,12 @@ export default function StoriesScreen() {
     
     // Prevent duplicate view tracking
     if (viewedStoryIds.has(storyId)) {
-      console.log('Story already tracked as viewed:', storyId);
+      // console.log('Story already tracked as viewed:', storyId);
       return;
     }
 
     try {
-      console.log('Marking story as viewed:', storyId);
+      // console.log('Marking story as viewed:', storyId);
       await storyAPI.viewStory(storyId, token);
       
       // Mark as viewed in local state to prevent duplicates
@@ -343,7 +343,7 @@ export default function StoriesScreen() {
         loadStories();
       }, 500);
     } catch (error) {
-      console.error('Error marking story as viewed:', error);
+      // console.error('Error marking story as viewed:', error);
     }
   }, [token, loadStories, viewedStoryIds, updateStoryViewStatus]);
 
@@ -389,7 +389,7 @@ export default function StoriesScreen() {
         await videoRef.current.pauseAsync();
         await videoRef.current.unloadAsync();
       } catch (error) {
-        console.error('Error stopping video:', error);
+        // console.error('Error stopping video:', error);
       }
     }
     const allStories = getAllStories();
@@ -421,7 +421,7 @@ export default function StoriesScreen() {
         await videoRef.current.pauseAsync();
         await videoRef.current.unloadAsync();
       } catch (error) {
-        console.error('Error stopping video:', error);
+        // console.error('Error stopping video:', error);
       }
     }
     if (currentStoryIndex > 0) {
@@ -640,7 +640,7 @@ export default function StoriesScreen() {
           await videoRef.current.pauseAsync();
           await videoRef.current.unloadAsync();
         } catch (error) {
-          console.error('Error stopping video:', error);
+          // console.error('Error stopping video:', error);
         }
       }
       progressAnim.stopAnimation();
@@ -680,7 +680,7 @@ export default function StoriesScreen() {
           Alert.alert('Error', 'Failed to load user profile');
         }
       } catch (error: any) {
-        console.error('Error fetching user profile:', error);
+        // console.error('Error fetching user profile:', error);
         Alert.alert('Error', error?.response?.data?.message || 'Failed to load user profile');
       }
     };
@@ -712,7 +712,7 @@ export default function StoriesScreen() {
               // Ensure video plays after it's fully loaded
               if (videoRef.current) {
                 videoRef.current.playAsync().catch((error) => {
-                  console.error('Error playing video on load:', error);
+                  // console.error('Error playing video on load:', error);
                 });
               }
             }}

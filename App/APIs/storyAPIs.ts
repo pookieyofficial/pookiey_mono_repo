@@ -11,7 +11,7 @@ export const storyAPI = {
                 'Content-Type': 'application/json',
             },
         });
-        console.log('Story API Response:', response.data);
+        // console.log('Story API Response:', response.data);
         return response.data.data || [];
     },
 

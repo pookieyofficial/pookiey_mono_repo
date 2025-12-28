@@ -71,7 +71,7 @@ export default function LocationScreen() {
                     partialUpdate.notificationTokens = notificationTokens;
                 }
 
-                console.log('Saving fromHome permission updates:', partialUpdate);
+                // console.log('Saving fromHome permission updates:', partialUpdate);
                 await updateUser(idToken as string, partialUpdate);
             } else {
                 const store = useOnboardingStore.getState();
@@ -104,30 +104,30 @@ export default function LocationScreen() {
                     ...(notificationTokens.length > 0 && { notificationTokens })
                 };
 
-                console.log('Saving onboarding data:', profileData);
+                // console.log('Saving onboarding data:', profileData);
                 await updateUser(idToken as string, profileData);
             }
 
             // Fetch the updated user data and store it locally
             try {
-                console.log('Fetching updated user data...');
+                // console.log('Fetching updated user data...');
                 const updatedUserResponse = await getUser(idToken as string);
                 const updatedDBUser = updatedUserResponse?.data?.user || updatedUserResponse?.data;
                 if (updatedDBUser) {
                     setDBUser(updatedDBUser);
-                    console.log('✅ Updated user data stored locally');
+                    // console.log('✅ Updated user data stored locally');
                 } else {
-                    console.warn('⚠️ No user data returned from getUser');
+                    // console.warn('⚠️ No user data returned from getUser');
                 }
             } catch (fetchError) {
-                console.error('Error fetching updated user data:', fetchError);
+                // console.error('Error fetching updated user data:', fetchError);
                 // Don't block navigation if fetch fails, but log the error
             }
 
             // Only clear onboarding state when we are actually in onboarding.
             if (!fromHome) {
                 clearOnboarding();
-                console.log('✅ Onboarding state cleared');
+                // console.log('✅ Onboarding state cleared');
             }
 
             // If accessed from home, go back to home. Otherwise, continue with onboarding completion
@@ -137,7 +137,7 @@ export default function LocationScreen() {
                 // Check for pending deeplink after onboarding
                 const pendingDeeplink = deepLinkState.getPendingDeeplink();
                 if (pendingDeeplink) {
-                    console.log('🔗 Routing to pending deeplink after onboarding:', pendingDeeplink);
+                    // console.log('🔗 Routing to pending deeplink after onboarding:', pendingDeeplink);
                     deepLinkState.clearPendingDeeplink();
                     router.replace(pendingDeeplink as any);
                 } else {
@@ -145,18 +145,18 @@ export default function LocationScreen() {
                 }
             }
         } catch (error) {
-            console.error('Error saving user data:', error);
+            // console.error('Error saving user data:', error);
         } finally {
             setUpdatingUser(false);
         }
     };
 
     const handleAccessLocation = async () => {
-        console.log('Handle access location called');
+        // console.log('Handle access location called');
         clearError();
         const success = await requestLocationPermission();
-        console.log('Permission request success:', success);
-        console.log('Current error:', error);
+        // console.log('Permission request success:', success);
+        // console.log('Current error:', error);
         if (!success) {
             setShowErrorDialog(true);
         }

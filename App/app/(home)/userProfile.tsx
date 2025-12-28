@@ -26,14 +26,14 @@ const UserProfile = () => {
             const parsedUser = JSON.parse(userData)
             setUser(parsedUser)
           } catch (e) {
-            console.error('Error parsing userData:', e)
+            // console.error('Error parsing userData:', e)
             Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
           }
         } else {
           Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
         }
       } catch (error) {
-        console.error('Error loading user profile:', error)
+        // console.error('Error loading user profile:', error)
         Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
       } finally {
         setIsLoading(false)

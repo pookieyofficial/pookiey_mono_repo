@@ -63,7 +63,7 @@ export default function ReportsPage() {
         }
       } catch (err) {
         // If API call fails (403 or any error), user is not admin
-        console.error("Failed to fetch reports:", err);
+        // console.error("Failed to fetch reports:", err);
         router.push("/");
       } finally {
         setLoading(false);
@@ -103,7 +103,7 @@ export default function ReportsPage() {
         }
       }
     } catch (err) {
-      console.error("Failed to moderate user:", err);
+      // console.error("Failed to moderate user:", err);
       // If 403 or auth error, redirect to home
       if (err instanceof Error && err.message.includes("Forbidden")) {
         router.push("/");

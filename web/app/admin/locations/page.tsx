@@ -66,7 +66,7 @@ export default function LocationsPage() {
           router.push("/");
         }
       } catch (err) {
-        console.error("Failed to fetch location data:", err);
+        // console.error("Failed to fetch location data:", err);
         router.push("/");
       } finally {
         setLoading(false);

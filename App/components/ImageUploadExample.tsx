@@ -27,7 +27,7 @@ import { UploadedImageResult } from '@/utils/imageCompression';
  * 3. Call the methods:
  *    const result = await pickAndUploadSingle();
  *    if (result) {
- *      console.log('Uploaded image URL:', result.s3Url);
+ *      // console.log('Uploaded image URL:', result.s3Url);
  *    }
  */
 export default function ImageUploadExample() {
@@ -165,7 +165,7 @@ const { isUploading, pickAndUploadSingle } = useImageCompression();
 // Upload an image
 const result = await pickAndUploadSingle();
 if (result) {
-  console.log('S3 URL:', result.s3Url);
+  // console.log('S3 URL:', result.s3Url);
 }`}
             </Text>
           </View>

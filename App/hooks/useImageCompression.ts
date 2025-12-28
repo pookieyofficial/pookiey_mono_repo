@@ -53,7 +53,7 @@ export function useImageCompression(): UseImageCompressionResult {
       setProgress(100);
       return result;
     } catch (err: any) {
-      console.error('Error in pickAndUploadSingle:', err);
+      // console.error('Error in pickAndUploadSingle:', err);
       setError(err.message || 'Failed to upload image');
       return null;
     } finally {
@@ -87,7 +87,7 @@ export function useImageCompression(): UseImageCompressionResult {
       setProgress(100);
       return results;
     } catch (err: any) {
-      console.error('Error in pickAndUploadMultiple:', err);
+      // console.error('Error in pickAndUploadMultiple:', err);
       setError(err.message || 'Failed to upload images');
       return [];
     } finally {
@@ -115,7 +115,7 @@ export function useImageCompression(): UseImageCompressionResult {
       setProgress(100);
       return result;
     } catch (err: any) {
-      console.error('Error in compressAndUpload:', err);
+      // console.error('Error in compressAndUpload:', err);
       setError(err.message || 'Failed to upload image');
       throw err;
     } finally {

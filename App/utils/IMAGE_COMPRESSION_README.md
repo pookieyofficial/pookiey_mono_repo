@@ -37,8 +37,8 @@ function MyComponent() {
     });
 
     if (result) {
-      console.log('Uploaded image URL:', result.s3Url);
-      console.log('Image dimensions:', result.width, 'x', result.height);
+      // console.log('Uploaded image URL:', result.s3Url);
+      // console.log('Image dimensions:', result.width, 'x', result.height);
       // Use result.s3Url to save to your database
     }
   };
@@ -110,7 +110,7 @@ Pick multiple images, compress them, and upload to S3.
 **Example:**
 ```typescript
 const results = await pickAndUploadMultiple();
-console.log(`Uploaded ${results.length} images`);
+// console.log(`Uploaded ${results.length} images`);
 ```
 
 ##### `compressAndUpload(imageUri, quality?)`
@@ -154,7 +154,7 @@ const compressed = await compressImageToJPEG(
   1920, // max width
   1920  // max height
 );
-console.log('Compressed size:', compressed.size, 'bytes');
+// console.log('Compressed size:', compressed.size, 'bytes');
 ```
 
 #### `compressMultipleImages(imageUris, quality?, maxWidth?, maxHeight?)`

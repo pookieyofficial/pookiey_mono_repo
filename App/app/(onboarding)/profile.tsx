@@ -196,7 +196,7 @@ export default function ProfileScreen() {
         try {
           await FileSystem.deleteAsync(compressed.uri, { idempotent: true });
         } catch (cleanupError) {
-          console.warn('Failed to clean up compressed file:', cleanupError);
+          // console.warn('Failed to clean up compressed file:', cleanupError);
         }
       }
 
@@ -212,14 +212,14 @@ export default function ProfileScreen() {
             setDBUser(updatedDBUser);
           }
         } catch (error) {
-          console.error('Failed to save photoURL to database:', error);
+          // console.error('Failed to save photoURL to database:', error);
         }
       }
 
       setIsUploading(false);
       return fileURL;
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      // console.error('Error uploading profile picture:', error);
       setIsUploading(false);
       Alert.alert(t('profile.error'), t('profile.failedToUploadImage'));
       throw error;

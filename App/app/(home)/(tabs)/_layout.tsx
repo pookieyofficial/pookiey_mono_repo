@@ -79,7 +79,7 @@ export default function TabLayout() {
         setInbox(data);
       }
     } catch (error) {
-      console.error('Error loading inbox:', error);
+      // console.error('Error loading inbox:', error);
     }
   };
 

@@ -68,7 +68,7 @@ AsyncStorage.getItem(LANGUAGE_KEY).then((savedLanguage) => {
     i18n.changeLanguage(savedLanguage);
   }
 }).catch((error) => {
-  console.error('Error loading saved language:', error);
+  // console.error('Error loading saved language:', error);
 });
 
 // Function to change language
@@ -77,7 +77,7 @@ export const changeLanguage = async (language: string) => {
     await AsyncStorage.setItem(LANGUAGE_KEY, language);
     await i18n.changeLanguage(language);
   } catch (error) {
-    console.error('Error changing language:', error);
+    // console.error('Error changing language:', error);
   }
 };
 

@@ -76,7 +76,7 @@ export default function UsersPage() {
         setPagination(response.data.pagination);
       }
     } catch (err) {
-      console.error("Failed to fetch users:", err);
+      // console.error("Failed to fetch users:", err);
     } finally {
       setLoading(false);
     }

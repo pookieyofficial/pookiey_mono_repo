@@ -182,7 +182,7 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
                 <View style={styles.middleSection}>
                     <View style={styles.textContainer}>
                         <ThemedText type='title' style={styles.title}>{currentSlideData.title}</ThemedText>
-                        <ThemedText type='subtitle' style={styles.description}>{currentSlideData.description}</ThemedText>
+                        <ThemedText type='defaultSemiBold' style={styles.description}>{currentSlideData.description}</ThemedText>
                     </View>
                     
                     <View style={styles.pagination}>
@@ -315,7 +315,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: Math.min(28, width * 0.07),
-        fontWeight: 'bold',
         color: Colors.primaryBackgroundColor,
         textAlign: 'center',
         marginBottom: 12,

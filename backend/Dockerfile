@@ -1,36 +1,29 @@
-# Use Node.js LTS version as base image
-FROM node:20-alpine
+# ---------- Builder stage ----------
+    FROM node:20-alpine AS builder
 
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy TypeScript config
-COPY tsconfig.json ./
-
-# Copy source code
-COPY src ./src
-
-# Install dev dependencies for building
-RUN npm install
-
-# Build TypeScript code
-RUN npm run build
-
-# Remove dev dependencies to reduce image size
-RUN npm prune --production
-
-# Expose port 6969
+    WORKDIR /app
+    
+    COPY package*.json ./
+    RUN npm ci
+    
+    COPY tsconfig.json ./
+    COPY src ./src
+    
+    RUN npm run build
+    
+    
+    # ---------- Runtime stage ----------
+    FROM node:20-alpine
+    
+    WORKDIR /app
+    
+    COPY package*.json ./
+    RUN npm ci --only=production
+    
+    COPY --from=builder /app/dist ./dist
+    
 EXPOSE 6969
-
-# Set environment variable for port (though it defaults to 6969)
 ENV PORT=6969
-
-# Start the server
-CMD ["npm", "start"]
-
+    
+    CMD ["node", "dist/index.js"]
+    

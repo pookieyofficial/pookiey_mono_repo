@@ -67,7 +67,7 @@ export const useSocket = () => {
         }
       }
 
-      console.log('Connecting to socket:', SOCKET_URL);
+      // console.log('Connecting to socket:', SOCKET_URL);
       singletonUserId = userId;
       singletonSocket = io(SOCKET_URL, {
         auth: { userId },
@@ -81,21 +81,21 @@ export const useSocket = () => {
     const socket = singletonSocket;
 
     const onConnect = () => {
-      console.log('Socket connected successfully');
+      // console.log('Socket connected successfully');
       setIsConnected(true);
     };
 
     const onDisconnect = (reason: any) => {
-      console.log('Socket disconnected:', reason);
+      // console.log('Socket disconnected:', reason);
       setIsConnected(false);
     };
 
     const onConnectError = (error: any) => {
-      console.error('Socket connection error:', error?.message ?? error);
+      // console.error('Socket connection error:', error?.message ?? error);
     };
 
     const onError = (error: { message: string }) => {
-      console.error('Socket error:', error.message);
+      // console.error('Socket error:', error.message);
     };
 
     socket.on('connect', onConnect);

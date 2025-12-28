@@ -1,5 +1,17 @@
 node_modules
 dist
+npm-debug.log
+yarn-error.log
+.env
+.env.*
+.git
+.github
+Dockerfile
+docker-compose*.yml
+README.md
+*.md
+node_modules
+dist
 .env
 .env.local
 *.log

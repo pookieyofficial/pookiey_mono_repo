@@ -41,7 +41,7 @@ export default function InteractionsPage() {
           setStats(response.data);
         }
       } catch (err) {
-        console.error("Failed to fetch interaction stats:", err);
+        // console.error("Failed to fetch interaction stats:", err);
       } finally {
         setLoading(false);
       }

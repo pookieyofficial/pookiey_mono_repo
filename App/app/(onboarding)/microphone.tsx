@@ -29,7 +29,7 @@ export default function MicrophoneScreen() {
             setHasPermission(status === 'granted');
             return status === 'granted';
         } catch (error) {
-            console.error('Error checking microphone permission:', error);
+            // console.error('Error checking microphone permission:', error);
             return false;
         }
     };
@@ -49,7 +49,7 @@ export default function MicrophoneScreen() {
                 setShowErrorDialog(true);
             }
         } catch (error) {
-            console.error('Error requesting microphone permission:', error);
+            // console.error('Error requesting microphone permission:', error);
             setShowErrorDialog(true);
         } finally {
             setIsLoading(false);

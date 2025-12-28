@@ -186,7 +186,7 @@ const DatingPreferences = () => {
         Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdateLocation'))
       }
     } catch (error: any) {
-      console.error('Update location error:', error)
+      // console.error('Update location error:', error)
       Alert.alert(t('datingPreferences.error'), error?.message || t('datingPreferences.failedToUpdateLocation'))
     }
   }
@@ -230,7 +230,7 @@ const DatingPreferences = () => {
         Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdatePreferences'))
       }
     } catch (error: any) {
-      console.error('Update preferences error:', error)
+      // console.error('Update preferences error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || t('datingPreferences.failedToUpdatePreferences')
       Alert.alert(t('datingPreferences.error'), errorMessage)
     } finally {

@@ -49,7 +49,7 @@ export default function PricePlansScreen() {
         const sorted = [...data].sort((a, b) => a.amountInPaise - b.amountInPaise);
         setPlans(sorted);
       } catch (err) {
-        console.error('Failed to load subscription plans', err);
+        // console.error('Failed to load subscription plans', err);
         setError('Failed to load plans. Please try again.');
       } finally {
         setLoading(false);
