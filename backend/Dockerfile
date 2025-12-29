@@ -22,8 +22,8 @@
     
     COPY --from=builder /app/dist ./dist
     
-EXPOSE 6969
-ENV PORT=6969
+    EXPOSE 6969
+    ENV PORT=6969
     
     CMD ["node", "dist/index.js"]
     
