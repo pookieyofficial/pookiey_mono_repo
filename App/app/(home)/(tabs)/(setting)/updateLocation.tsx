@@ -69,7 +69,7 @@ const UpdateLocation = () => {
         Alert.alert('Error', response?.message || 'Failed to update location')
       }
     } catch (error: any) {
-      // console.error('Update location error:', error)
+      console.error('Update location error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update location'
       Alert.alert('Error', errorMessage)
     } finally {

@@ -168,7 +168,7 @@ export const useAuthStore = create<AuthStore>()(
           router.replace('/(auth)');
           get().logout();
         } catch (error) {
-          // console.error('Sign out error:', error);
+          console.error('Sign out error:', error);
         } finally {
           set({ isLoading: false });
         }
@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthStore>()(
               set({ splashHidden: true });
             }, 300);
           } catch {
-            // console.error('Error hiding splash screen');
+            console.error('Error hiding splash screen');
           }
         }
       },
@@ -197,7 +197,7 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
 
-          // console.log('🔄 handleAuthSuccess - calling getOrCreateUser...');
+          console.log('🔄 handleAuthSuccess - calling getOrCreateUser...');
           const { getOrCreateUser } = useUser();
 
           const response = await getOrCreateUser(accessToken, supabaseUser);
@@ -229,7 +229,7 @@ export const useAuthStore = create<AuthStore>()(
           router.replace(targetRoute as any);
           await get().hideSplashScreen();
         } catch (error) {
-          // console.error('Auth success error:', error);
+          console.error('Auth success error:', error);
           router.replace('/(auth)');
           get().logout();
           await get().hideSplashScreen();
@@ -275,7 +275,7 @@ export const useAuthStore = create<AuthStore>()(
 
           // Don't do anything if auth state hasn't changed, except on explicit SIGNED_IN
           if (event !== 'SIGNED_IN' && lastAuthState === isAuthenticated) {
-            // console.log('⏭️ Auth state unchanged, skipping');
+            console.log('⏭️ Auth state unchanged, skipping');
             return;
           }
 
@@ -335,7 +335,7 @@ export const useAuthStore = create<AuthStore>()(
         if (state) {
           state.isLoading = false;
           state.isInitialized = true;
-          // console.log('Store rehydrated - user:', state.user?.email);
+          console.log('Store rehydrated - user:', state.user?.email);
         }
       },
     }

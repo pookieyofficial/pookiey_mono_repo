@@ -117,7 +117,7 @@ export default function UserDetailPage() {
           router.push("/admin/users");
         }
       } catch (err) {
-        // console.error("Failed to fetch user details:", err);
+        console.error("Failed to fetch user details:", err);
         router.push("/admin/users");
       } finally {
         setLoading(false);
@@ -224,7 +224,7 @@ export default function UserDetailPage() {
         alert("Failed to update user status");
       }
     } catch (err) {
-      // console.error("Failed to update user status:", err);
+      console.error("Failed to update user status:", err);
       alert(err instanceof Error ? err.message : "Failed to update user status");
     } finally {
       setUpdatingStatus(false);

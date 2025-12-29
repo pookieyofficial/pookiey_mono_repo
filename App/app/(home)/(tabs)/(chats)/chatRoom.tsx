@@ -83,7 +83,7 @@ export default function ChatRoom() {
   const [imageError, setImageError] = useState(false);
 
   useLayoutEffect(() => {
-    // console.log('userAvatar', userAvatar);
+    console.log('userAvatar', userAvatar);
     navigation.setOptions({
       headerShown: true,
       headerTitle: '',
@@ -340,7 +340,7 @@ export default function ChatRoom() {
         markAsRead(matchId);
       }
     } catch (error) {
-      // console.error('Error loading messages:', error);
+      console.error('Error loading messages:', error);
     } finally {
       setLoading(false);
     }
@@ -419,7 +419,7 @@ export default function ChatRoom() {
         });
         stopTyping(matchId);
       } catch (error) {
-        // console.error('Error sending voice note:', error);
+        console.error('Error sending voice note:', error);
         Alert.alert(
           'Upload failed',
           'We could not send your voice note. Please try again.'
@@ -443,7 +443,7 @@ export default function ChatRoom() {
         await recording.stopAndUnloadAsync();
         uri = recording.getURI();
       } catch (error) {
-        // console.error('Error stopping recording:', error);
+        console.error('Error stopping recording:', error);
       }
 
       if (recordingIntervalRef.current) {
@@ -463,7 +463,7 @@ export default function ChatRoom() {
           staysActiveInBackground: false,
         });
       } catch (error) {
-        // console.error('Error resetting audio mode:', error);
+        console.error('Error resetting audio mode:', error);
       }
 
       if (!uri) {
@@ -533,11 +533,11 @@ export default function ChatRoom() {
             setRecordingDurationSeconds(seconds);
           }
         } catch (error) {
-          // console.error('Error updating recording status:', error);
+          console.error('Error updating recording status:', error);
         }
       }, 250);
     } catch (error) {
-      // console.error('Error starting recording:', error);
+      console.error('Error starting recording:', error);
       setRecording(null);
       setIsRecording(false);
       await Audio.setAudioModeAsync({
@@ -561,13 +561,13 @@ export default function ChatRoom() {
 
   const handleStopRecording = useCallback(() => {
     finalizeRecording(true).catch((error) =>
-      // console.error('Error finalizing recording:', error)
+      console.error('Error finalizing recording:', error)
     );
   }, [finalizeRecording]);
 
   const handleCancelRecording = useCallback(() => {
     finalizeRecording(false).catch((error) =>
-      // console.error('Error cancelling recording:', error)
+      console.error('Error cancelling recording:', error)
     );
   }, [finalizeRecording]);
 
@@ -643,7 +643,7 @@ export default function ChatRoom() {
           }
         });
       } catch (error) {
-        // console.error('Error playing voice note:', error);
+        console.error('Error playing voice note:', error);
         Alert.alert('Playback error', 'Unable to play this voice note.');
       }
     },

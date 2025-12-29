@@ -27,7 +27,7 @@ export default function HelpCenterScreen() {
         await Linking.openURL(emailUrl);
       }
     } catch (error) {
-      // console.error('Error opening email:', error);
+      console.error('Error opening email:', error);
     }
   };
 
@@ -38,7 +38,7 @@ export default function HelpCenterScreen() {
         await Linking.openURL(contactUrl);
       }
     } catch (error) {
-      // console.error('Error opening URL:', error);
+      console.error('Error opening URL:', error);
     }
   };
 

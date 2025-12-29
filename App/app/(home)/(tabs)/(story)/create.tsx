@@ -59,10 +59,10 @@ export default function CreateStoryScreen() {
       try {
         if (!cameraPermission?.granted) {
           const result = await requestCameraPermission();
-          // console.log('Camera permission result:', result);
+          console.log('Camera permission result:', result);
         }
       } catch (error) {
-        // console.error('Error requesting permissions:', error);
+        console.error('Error requesting permissions:', error);
       }
     };
     requestPermissions();
@@ -72,7 +72,7 @@ export default function CreateStoryScreen() {
   // Play video when preview is shown
   useEffect(() => {
     if (capturedMedia && mediaType === 'video' && videoRef.current) {
-      videoRef.current.playAsync().catch(// console.error);
+      videoRef.current.playAsync().catch(console.error);
     }
   }, [capturedMedia, mediaType]);
 
@@ -99,14 +99,14 @@ export default function CreateStoryScreen() {
             return;
           }
         } catch (error) {
-          // console.error('Error checking file size:', error);
+          console.error('Error checking file size:', error);
         }
 
         setCapturedMedia(photo.uri);
         setMediaType('image');
       }
     } catch (error) {
-      // console.error('Error taking photo:', error);
+      console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo');
     }
   };
@@ -121,17 +121,17 @@ export default function CreateStoryScreen() {
       if (!permission || !permission.granted) {
         permission = await MediaLibrary.requestPermissionsAsync().catch(() => null);
         if (!permission || !permission.granted) {
-          // console.log('Media library permission not granted');
+          console.log('Media library permission not granted');
           return false;
         }
       }
 
       // Save to device
       const asset = await MediaLibrary.createAssetAsync(uri);
-      // console.log('Media saved to device:', asset.uri);
+      console.log('Media saved to device:', asset.uri);
       return true;
     } catch (error: any) {
-      // console.error('Error saving to device:', error);
+      console.error('Error saving to device:', error);
       // Don't fail the upload if saving to device fails
       return false;
     }
@@ -181,7 +181,7 @@ export default function CreateStoryScreen() {
         setMediaType(isVideo ? 'video' : 'image');
       }
     } catch (error) {
-      // console.error('Error picking from gallery:', error);
+      console.error('Error picking from gallery:', error);
       Alert.alert('Error', 'Failed to pick media');
     }
   };
@@ -205,7 +205,7 @@ export default function CreateStoryScreen() {
 
       // Compress image to JPEG if it's an image
       if (mediaType === 'image') {
-        // console.log('🔄 Compressing image for story...');
+        console.log('🔄 Compressing image for story...');
         try {
           const compressed = await compressImageToJPEG(
             capturedMedia,
@@ -213,17 +213,17 @@ export default function CreateStoryScreen() {
           );
           mediaToUpload = compressed.uri;
           mimeType = compressed.mimeType;
-          // console.log('✅ Image compressed successfully');
+          console.log('✅ Image compressed successfully');
           
           // Log compression results
           const originalInfo = await FileSystem.getInfoAsync(capturedMedia);
           if (originalInfo.exists && compressed.size) {
             const originalSize = (originalInfo as any).size;
             const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
-            // console.log(`📊 Compression: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+            console.log(`📊 Compression: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
           }
         } catch (compressionError) {
-          // console.error('⚠️ Image compression failed, uploading original:', compressionError);
+          console.error('⚠️ Image compression failed, uploading original:', compressionError);
           // Continue with original image if compression fails
         }
       }
@@ -245,9 +245,9 @@ export default function CreateStoryScreen() {
       if (mediaType === 'image' && mediaToUpload !== capturedMedia) {
         try {
           await FileSystem.deleteAsync(mediaToUpload, { idempotent: true });
-          // console.log('🗑️ Cleaned up temporary compressed file');
+          console.log('🗑️ Cleaned up temporary compressed file');
         } catch (cleanupError) {
-          // console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
+          console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
         }
       }
 
@@ -263,14 +263,14 @@ export default function CreateStoryScreen() {
       // Save to device storage
       const saved = await saveToDevice(capturedMedia, mediaType);
       if (saved) {
-        // console.log('Story saved to device gallery');
+        console.log('Story saved to device gallery');
       }
 
       // Refresh stories in store
       try {
         setLoading(true);
         const data = await storyAPI.getStories(token);
-        // console.log('Stories refreshed after creation:', data);
+        console.log('Stories refreshed after creation:', data);
         
         // Handle new categorized structure
         if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -331,7 +331,7 @@ export default function CreateStoryScreen() {
           });
         } else {
           // If data is neither object with myStory nor array, set empty structure
-          // console.warn('Unexpected data format from stories API:', data);
+          console.warn('Unexpected data format from stories API:', data);
           setCategorizedStories({
             myStory: dbUser?.user_id ? {
               id: dbUser.user_id,
@@ -345,7 +345,7 @@ export default function CreateStoryScreen() {
           });
         }
       } catch (refreshError) {
-        // console.error('Error refreshing stories:', refreshError);
+        console.error('Error refreshing stories:', refreshError);
       } finally {
         setLoading(false);
       }
@@ -361,7 +361,7 @@ export default function CreateStoryScreen() {
         ]
       );
     } catch (error: any) {
-      // console.error('Error creating story:', error);
+      console.error('Error creating story:', error);
       Alert.alert('Error', error.message || 'Failed to create story');
     } finally {
       setUploading(false);
@@ -419,11 +419,11 @@ export default function CreateStoryScreen() {
                 style={styles.previewMedia} 
                 resizeMode="cover"
                 onError={(error) => {
-                  // console.error('Image load error:', error);
+                  console.error('Image load error:', error);
                   Alert.alert('Error', 'Failed to load image preview');
                 }}
                 onLoad={() => {
-                  // console.log('Image loaded successfully');
+                  console.log('Image loaded successfully');
                 }}
               />
             ) : (
@@ -436,13 +436,13 @@ export default function CreateStoryScreen() {
                 isLooping={true}
                 useNativeControls={true}
                 onError={(error) => {
-                  // console.error('Video load error:', error);
+                  console.error('Video load error:', error);
                   Alert.alert('Error', 'Failed to load video preview');
                 }}
                 onLoad={() => {
-                  // console.log('Video loaded successfully');
+                  console.log('Video loaded successfully');
                   if (videoRef.current) {
-                    videoRef.current.playAsync().catch(// console.error);
+                    videoRef.current.playAsync().catch(console.error);
                   }
                 }}
               />

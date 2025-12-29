@@ -26,7 +26,7 @@ const MatchingScreen = () => {
     const userName = params.userName as string
     const userAvatar = params.userAvatar as string
 
-    // console.log('Match screen params:', { match, user1, user2 })
+    console.log('Match screen params:', { match, user1, user2 })
 
     // Default data fallback (for development/testing)
     const defaultMatchData = {
@@ -67,8 +67,8 @@ const MatchingScreen = () => {
     }, [leftCardAnim, rightCardAnim]);
 
     const handleSayHello = () => {
-        // console.log('User said hello to:', displayMatchName)
-        // console.log('Match details:', { match, user1, user2 })
+        console.log('User said hello to:', displayMatchName)
+        console.log('Match details:', { match, user1, user2 })
         router.replace({
             pathname: '/(home)/(tabs)/(chats)',
             params: {

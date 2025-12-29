@@ -64,7 +64,7 @@ export default function DeleteAccountScreen() {
                 ]
               );
             } catch (error: any) {
-              // console.error('Delete account error:', error);
+              console.error('Delete account error:', error);
               Alert.alert(
                 t('deleteAccount.errorTitle'),
                 error?.response?.data?.message || t('deleteAccount.errorGeneric')

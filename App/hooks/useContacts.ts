@@ -14,13 +14,13 @@ export const useContacts = () => {
             const { status } = await Contacts.requestPermissionsAsync();
             
             if (status === 'granted') {
-                // console.log('Contact permission granted');
+                console.log('Contact permission granted');
                 
                 const { data } = await Contacts.getContactsAsync({
                     fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
                     
                 });
-                // console.log(JSON.stringify(data[25]))
+                console.log(JSON.stringify(data[25]))
                 
                 setContacts(data);
                 setHasPermission(true);

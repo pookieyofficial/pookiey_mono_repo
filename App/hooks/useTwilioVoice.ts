@@ -108,7 +108,7 @@ export function useTwilioVoice() {
         setIsMuted(next);
       }
     } catch (e) {
-      // console.error('Error toggling mute:', e);
+      console.error('Error toggling mute:', e);
     }
   }, [isMuted]);
 
@@ -144,7 +144,7 @@ export function useTwilioVoice() {
       // Correct API: AudioDevice.select() triggers native routing + emits AudioDevicesUpdated
       await device.select();
     } catch (e) {
-      // console.error('Error selecting audio device:', e);
+      console.error('Error selecting audio device:', e);
     }
   }, []);
 
@@ -261,11 +261,11 @@ export function useTwilioVoice() {
         call.on(Call.Event.Connected, () => setStatus('connected'));
         call.on(Call.Event.Disconnected, () => cleanup());
         call.on(Call.Event.ConnectFailure, (err: any) => {
-          // console.error('Call connect failure:', err);
+          console.error('Call connect failure:', err);
           cleanup();
         });
       } catch (e: any) {
-        // console.error('Error making call:', e);
+        console.error('Error making call:', e);
         cleanup();
       }
     },
@@ -300,7 +300,7 @@ export function useTwilioVoice() {
       call.on(Call.Event.Disconnected, () => cleanup());
       call.on(Call.Event.ConnectFailure, () => cleanup());
     } catch (e: any) {
-      // console.error('Error answering call:', e);
+      console.error('Error answering call:', e);
       cleanup();
     }
   }, [incomingCall, socket, isConnected, cleanup, ensureMicPermission, getVoice]);

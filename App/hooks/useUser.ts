@@ -8,22 +8,22 @@ export const useUser = () => {
             return Error('No ID token');
         }
         try {
-            // console.log('🚀 [getUser] About to call:', getUserAPI);
-            // console.log('🚀 [getUser] Full URL:', getUserAPI);
-            // console.log('🚀 [getUser] Has token:', !!idToken);
+            console.log('🚀 [getUser] About to call:', getUserAPI);
+            console.log('🚀 [getUser] Full URL:', getUserAPI);
+            console.log('🚀 [getUser] Has token:', !!idToken);
             const response = await axios.get(getUserAPI, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                 },
             });
-            // console.log('✅ [getUser] Success! Status:', response.status);
+            console.log('✅ [getUser] Success! Status:', response.status);
             return response.data;
         }
         catch (error: any) {
-            // console.error('❌ [getUser] ERROR - URL called:', getUserAPI);
-            // console.error('❌ [getUser] Error message:', error?.message);
-            // console.error('❌ [getUser] Error code:', error?.code);
-            // console.error('❌ [getUser] Error response:', error?.response?.status, error?.response?.data);
+            console.error('❌ [getUser] ERROR - URL called:', getUserAPI);
+            console.error('❌ [getUser] Error message:', error?.message);
+            console.error('❌ [getUser] Error code:', error?.code);
+            console.error('❌ [getUser] Error response:', error?.response?.status, error?.response?.data);
             throw error;
         }
     }
@@ -51,23 +51,23 @@ export const useUser = () => {
                 provider: supabaseUser.app_metadata?.provider || 'google',
             };
 
-            // console.log('🚀 [createUser] About to call:', createUserAPI);
-            // console.log('🚀 [createUser] Full URL:', createUserAPI);
-            // console.log('🚀 [createUser] Request data:', userData);
+            console.log('🚀 [createUser] About to call:', createUserAPI);
+            console.log('🚀 [createUser] Full URL:', createUserAPI);
+            console.log('🚀 [createUser] Request data:', userData);
             const response = await axios.post(createUserAPI, userData, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                     'Content-Type': 'application/json',
                 },
             });
-            // console.log('✅ [createUser] Success! Status:', response.status);
+            console.log('✅ [createUser] Success! Status:', response.status);
             return response.data;
         }
         catch (error: any) {
-            // console.error('❌ [createUser] ERROR - URL called:', createUserAPI);
-            // console.error('❌ [createUser] Error message:', error?.message);
-            // console.error('❌ [createUser] Error code:', error?.code);
-            // console.error('❌ [createUser] Error response:', error?.response?.status, error?.response?.data);
+            console.error('❌ [createUser] ERROR - URL called:', createUserAPI);
+            console.error('❌ [createUser] Error message:', error?.message);
+            console.error('❌ [createUser] Error code:', error?.code);
+            console.error('❌ [createUser] Error response:', error?.response?.status, error?.response?.data);
             throw error;
         }
     }

@@ -25,7 +25,7 @@ export default function PrivacyPolicyScreen() {
         await Linking.openURL(emailUrl);
       }
     } catch (error) {
-      // console.error('Error opening email:', error);
+      console.error('Error opening email:', error);
     }
   };
 

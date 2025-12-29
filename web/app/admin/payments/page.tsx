@@ -45,7 +45,7 @@ export default function PaymentsPage() {
           setStats(response.data);
         }
       } catch (err) {
-        // console.error("Failed to fetch premium stats:", err);
+        console.error("Failed to fetch premium stats:", err);
       } finally {
         setLoading(false);
       }

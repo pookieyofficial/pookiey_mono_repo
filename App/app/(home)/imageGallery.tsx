@@ -21,7 +21,7 @@ const ImageGallery = () => {
       parsedIndex = parseInt(initialIndex, 10) || 0
     }
   } catch (error) {
-    // console.error('Error parsing gallery data:', error)
+    console.error('Error parsing gallery data:', error)
     Alert.alert('Error', 'Failed to load gallery images')
   }
 

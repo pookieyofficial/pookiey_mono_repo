@@ -29,7 +29,7 @@ export default function PremiumImageSelectorScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
-    // console.log({ photos })
+    console.log({ photos })
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
@@ -43,14 +43,14 @@ export default function PremiumImageSelectorScreen() {
       setSelectedImages(photos);
       // Set default mime type for existing photos
       setSelectedImageMimeTypes(photos.map(() => 'image/jpeg'));
-      // console.log("Loaded existing photos from store:", photos);
+      console.log("Loaded existing photos from store:", photos);
     }
   }, [photos]);
 
   const handleupload = async () => {
     try {
       if (!Array.isArray(photos) || photos.length === 0) {
-        // console.log('🔄 Compressing images for onboarding...');
+        console.log('🔄 Compressing images for onboarding...');
         
         // Step 1: Compress all images
         const compressedImages = [];
@@ -71,16 +71,16 @@ export default function PremiumImageSelectorScreen() {
             if (originalInfo.exists && compressed.size) {
               const originalSize = (originalInfo as any).size;
               const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
-              // console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
+              console.log(`📊 Image ${i + 1}: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
             }
           } catch (compressionError) {
-            // console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
+            console.error(`⚠️ Image ${i + 1} compression failed, using original:`, compressionError);
             compressedImages.push(selectedImages[i]);
             compressedMimeTypes.push(selectedImageMimeTypes[i]);
           }
         }
         
-        // console.log('✅ All images compressed successfully');
+        console.log('✅ All images compressed successfully');
         
         // Step 2: Request presigned URLs with compressed image MIME types
         const arrayofPresignedUrls = await requestPresignedURl(compressedMimeTypes);
@@ -99,34 +99,34 @@ export default function PremiumImageSelectorScreen() {
         let ImagePublicUrl = [];
         for (let i = 0; i < compressedImages.length; i++) {
           const fileUrl = arrayofPresignedUrls[i].fileURL;
-          // console.log({ fileUrl });
+          console.log({ fileUrl });
           ImagePublicUrl.push(fileUrl);
         }
         
         // Save the public URLs to Zustand store
         setPhotos(ImagePublicUrl);
-        // console.log("Photos saved to store:", ImagePublicUrl);
-        // console.log("publicurl of image is ", photos);
-        // console.log("resultArray", resultArray);
+        console.log("Photos saved to store:", ImagePublicUrl);
+        console.log("publicurl of image is ", photos);
+        console.log("resultArray", resultArray);
 
         // Step 4: Upload compressed images to S3
         const uploadResponse = await uploadMultipleTos3(resultArray);
-        // console.log("uploadResponse", uploadResponse);
+        console.log("uploadResponse", uploadResponse);
         
         // Step 5: Clean up temporary compressed files
         for (let i = 0; i < compressedImages.length; i++) {
           if (compressedImages[i] !== selectedImages[i]) {
             try {
               await FileSystem.deleteAsync(compressedImages[i], { idempotent: true });
-              // console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
+              console.log(`🗑️ Cleaned up compressed file ${i + 1}`);
             } catch (cleanupError) {
-              // console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
+              console.warn(`⚠️ Failed to clean up compressed file ${i + 1}:`, cleanupError);
             }
           }
         }
       }
     } catch (error) {
-      // console.log("error from handleUpload", error);
+      console.log("error from handleUpload", error);
     }
   }
 
@@ -156,8 +156,8 @@ export default function PremiumImageSelectorScreen() {
         const newMimeTypes = result.assets.map(asset => asset.mimeType || 'image/jpeg');
         setSelectedImages(prev => [...prev, ...newImages].slice(0, 6));
         setSelectedImageMimeTypes(prev => [...prev, ...newMimeTypes].slice(0, 6));
-        // console.log("Selected Images:", selectedImages);
-        // console.log("Selected Mime Types:", selectedImageMimeTypes)
+        console.log("Selected Images:", selectedImages);
+        console.log("Selected Mime Types:", selectedImageMimeTypes)
 
         // Success animation feedback
         Animated.sequence([
@@ -175,7 +175,7 @@ export default function PremiumImageSelectorScreen() {
       }
     } catch (error) {
       Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
-      // console.error('Image picker error:', error);
+      console.error('Image picker error:', error);
     } finally {
       setIsLoading(false);
     }

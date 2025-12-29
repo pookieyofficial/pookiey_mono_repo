@@ -67,7 +67,7 @@ export default function index() {
 
         lastLocationSentRef.current = signature
       } catch (e) {
-        // console.error('Home: failed to update location in API:', e)
+        console.error('Home: failed to update location in API:', e)
       }
     },
     [idToken, setDBUser, updateUser],
@@ -83,17 +83,17 @@ export default function index() {
         const localTokens = getNotificationTokens()
         const dbTokens = Array.isArray(dbUser?.notificationTokens) ? dbUser!.notificationTokens : []
         const merged = Array.from(new Set([...dbTokens, ...localTokens, pushToken]))
-        // console.log(merged)
+        console.log(merged)
 
         const response = await updateUser(idToken as string, { notificationTokens: merged })
         if (response?.success && response?.data) {
           setDBUser(response.data)
         }
-        // console.log(response)
+        console.log(response)
 
         lastPushTokenSentRef.current = pushToken
       } catch (e) {
-        // console.error('Home: failed to update notification token in API:', e)
+        console.error('Home: failed to update notification token in API:', e)
       }
     },
     [dbUser, getNotificationTokens, idToken, setDBUser, updateUser],
@@ -135,7 +135,7 @@ export default function index() {
             city = addressParts.join(', ') || undefined
           }
         } catch (e) {
-          // console.log('Home: reverse geocode failed:', e)
+          console.log('Home: reverse geocode failed:', e)
         }
 
         await updateLocationInApi(
@@ -146,7 +146,7 @@ export default function index() {
           city,
         )
       } catch (e) {
-        // console.log('Home: unable to fetch current location:', e)
+        console.log('Home: unable to fetch current location:', e)
       }
 
       // 2) Notifications permission + update token via API
@@ -193,7 +193,7 @@ export default function index() {
           await updateNotificationTokenInApi(pushToken.data)
         }
       } else {
-        // console.warn('Home: must use physical device for push notifications token')
+        console.warn('Home: must use physical device for push notifications token')
       }
 
       // 3) Microphone permission (no API call)
@@ -211,7 +211,7 @@ export default function index() {
 
       setPermissionsChecked(true)
     } catch (error) {
-      // console.error('Home: error ensuring permissions:', error)
+      console.error('Home: error ensuring permissions:', error)
       setPermissionError('Could not request permissions. Please try again.')
       setPermissionsChecked(false)
     } finally {
@@ -268,7 +268,7 @@ export default function index() {
     try {
       setStoryLoading(true)
       const data = await storyAPI.getStories(token)
-      // console.log('Stories loaded from home page:', data)
+      console.log('Stories loaded from home page:', data)
 
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -327,7 +327,7 @@ export default function index() {
           discover: []
         })
       } else {
-        // console.warn('Unexpected data format from stories API:', data);
+        console.warn('Unexpected data format from stories API:', data);
         setCategorizedStories({
           myStory: dbUser?.user_id ? {
             id: dbUser.user_id,
@@ -406,7 +406,7 @@ export default function index() {
       setConsumed(0)
       setDeckKey(k => k + 1) // reset deck to first card on full refresh
     } catch (error) {
-      // console.error('Error initializing profiles:', error)
+      console.error('Error initializing profiles:', error)
     } finally {
       setIsLoading(false)
     }
@@ -465,7 +465,7 @@ export default function index() {
         })
       }
     } catch (error) {
-      // console.error('Error loading more profiles:', error)
+      console.error('Error loading more profiles:', error)
     }
   }
 

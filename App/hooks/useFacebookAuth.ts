@@ -58,7 +58,7 @@ export function useFacebookAuth() {
           }
 
           if (accessToken) {
-            // console.log({ accessToken, refreshToken });
+            console.log({ accessToken, refreshToken });
 
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
@@ -78,7 +78,7 @@ export function useFacebookAuth() {
 
       return { data: null, error: new AuthError('OAuth flow failed') };
     } catch (error) {
-      // console.log('Facebook sign in error:', error);
+      console.log('Facebook sign in error:', error);
       return { data: null, error: error as AuthError };
     } finally {
       setLoading(false);

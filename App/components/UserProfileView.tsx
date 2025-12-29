@@ -104,7 +104,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
             return existingMatch.matchId
           }
         } catch (error) {
-          // console.error('Error refreshing inbox:', error)
+          console.error('Error refreshing inbox:', error)
         }
       }
 
@@ -129,17 +129,17 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                 return newMatch.matchId
               }
             } catch (error) {
-              // console.error('Error refreshing inbox after interaction:', error)
+              console.error('Error refreshing inbox after interaction:', error)
             }
           }
         } catch (error) {
-          // console.error('Error creating interaction:', error)
+          console.error('Error creating interaction:', error)
         }
       }
 
       return null
     } catch (error) {
-      // console.error('Error finding/creating match:', error)
+      console.error('Error finding/creating match:', error)
       return null
     }
   }
