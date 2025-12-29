@@ -1,6 +1,6 @@
-# 🧠 Development Commands Guide
+# 🧠 Pookiey - Dating App - Development Guide
 
-This monorepo setup allows you to run the **backend**, **web**, and **mobile (Expo)** apps locally — and build the mobile app using **EAS** when needed.
+> This monorepo setup allows you to run the **backend**, **web**, and **mobile (Expo)** app locally for Pookiey developement — and builds the mobile app using **EAS** when needed.
 
 ---
 
@@ -10,12 +10,12 @@ This monorepo setup allows you to run the **backend**, **web**, and **mobile (Ex
 
 | Command                    | Description                                                                                                                                       |
 | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run backend`        | Starts the **backend** server (runs `npm run dev` inside `backend`).                                                                     |
-| `npm run web`            | Starts the **web** app (runs `npm run dev` inside `web`).                                                                              |
-| `npm run mobile`         | Starts the **Expo** dev server (runs `npx expo start --dev-client` inside `app`). Requires a dev-client build already installed via EAS. |
-| `npm run eas:dev`        | Builds a **development** Android dev-client via EAS.                                                                                         |
-| `npm run eas:preview`    | Builds a **preview** Android build via EAS.                                                                                                  |
-| `npm run eas:production` | Builds a **production** Android build via EAS.                                                                                               |
+| `npm run backend`        | Starts the**backend** server (runs `npm run dev` inside `backend`).                                                                     |
+| `npm run web`            | Starts the**web** app (runs `npm run dev` inside `web`).                                                                                |
+| `npm run mobile`         | Starts the**Expo** dev server (runs `npx expo start --dev-client` inside `app`). Requires a dev-client build already installed via EAS. |
+| `npm run eas:dev`        | Builds a**development** Android dev-client via EAS.                                                                                         |
+| `npm run eas:preview`    | Builds a**preview** Android build via EAS.                                                                                                  |
+| `npm run eas:production` | Builds a**production** Android build via EAS.                                                                                               |
 
 ## 🧰 Requirements
 
