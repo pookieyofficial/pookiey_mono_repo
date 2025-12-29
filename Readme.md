@@ -62,4 +62,4 @@ Ensure you have the following installed globally:
 - The root `package.json` is used only for orchestration scripts.
 - If your mobile app needs to call your **local backend**, you’ll need a local tunnel (e.g. **Cloudflare Tunnel** or **Ngrok**) so the phone can reach your machine from outside your LAN.
 
-Author [@TheDevPiyush](https://github.com/thedevpiyush)
+Author - [**@TheDevPiyush**](https://github.com/thedevpiyush)
