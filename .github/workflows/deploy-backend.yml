@@ -49,7 +49,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd /var/www/pookiey_mono_repo
+            cd /var/www/pookiey/pookiey_mono_repo
             git pull origin main
 
             cd backend
