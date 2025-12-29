@@ -17,6 +17,31 @@
 | `npm run eas:preview`    | Builds a**preview** Android build via EAS.                                                                                                  |
 | `npm run eas:production` | Builds a**production** Android build via EAS.                                                                                               |
 
+## 🗂️ Project Structure (Monorepo)
+
+```text
+pookiey.com/
+├─ app/                         # Expo (React Native) mobile app
+│  ├─ app/                      # Expo Router screens (auth/home/onboarding, etc.)
+│  ├─ components/               # UI components (VoiceCallUI, LanguageSelector, SwipeDeck, etc.)
+│  ├─ hooks/                    # App hooks (auth, socket, twilio, etc.)
+│  ├─ locales/                  # i18n JSON files
+│  ├─ assets/                   # Fonts, images
+│  ├─ app.config.js             # Expo config
+│  └─ eas.json                  # EAS build profiles
+├─ backend/                     # Node.js + TypeScript API server
+│  ├─ src/                      # Routes, controllers, models, socket, services
+│  ├─ Dockerfile
+│  └─ docker-compose*.yml
+├─ web/                         # Next.js web app (admin/dashboard)
+│  ├─ app/                      # Next.js App Router pages
+│  ├─ Dockerfile
+│  └─ docker-compose.prod.yml
+├─ .github/workflows/           # CI/CD (build + push + deploy)
+├─ package.json                 # Root orchestration scripts
+└─ Readme.md
+```
+
 ## 🧰 Requirements
 
 Ensure you have the following installed globally:
