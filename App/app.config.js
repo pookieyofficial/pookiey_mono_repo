@@ -30,7 +30,7 @@ export default {
       softwareKeyboardLayoutMode: "resize",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#f1969f",
       },
       edgeToEdgeEnabled: true,
       permissions: [
@@ -69,10 +69,9 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/icon.png",
-          imageWidth: 200,
+          image: "./assets/images/spalsh-icon.png",
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f1969f",
         },
       ],
 
@@ -116,23 +115,16 @@ export default {
       "expo-secure-store",
       "expo-web-browser",
     ],
-
     experiments: {
       typedRoutes: true,
     },
-
-    // Enable EAS Update (OTA updates)
     updates: {
-      // EAS Update URL (must match your EAS projectId)
       url: "https://u.expo.dev/c18e1abf-a6cc-4ba0-bc5b-3d59cee190b9",
-      // Check for updates on app start (0 = immediately)
       fallbackToCacheTimeout: 0,
     },
-    // Use app version as the runtime version so OTA updates only apply to compatible binaries
     runtimeVersion: {
       policy: "appVersion",
     },
-
     extra: {
       router: {},
       eas: {
