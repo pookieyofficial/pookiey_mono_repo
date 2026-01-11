@@ -3,10 +3,10 @@
         "/* ----- Commands for local development ----- */": "",
         "backend": "cd backend && npm run dev",
         "web": "cd web && npm run dev",
-        "mobile": "echo \"**Need dev build app installed already**\" && cd app && npx expo start --dev-client -c --port 8082",
+        "mobile": "echo \"**Need dev build app installed already**\" && cd App && npx expo start --dev-client -c --port 8082",
         "/* ----- Commands for EAS build ----- */": "",
-        "eas:preview": "cd app && eas build --platform android --profile preview",
-        "eas:production": "cd app && eas build --platform android --profile production",
-        "eas:dev": "cd app && eas build --platform android --profile development"
+        "eas:preview": "cd App && eas build --platform android --profile preview",
+        "eas:production": "cd App && eas build --platform android --profile production",
+        "eas:dev": "cd App && eas build --platform android --profile development"
     }
 }
