@@ -1,155 +1,714 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import AuthRedirect from "../components/landing/AuthRedirect";
+import FAQAccordion from "../components/landing/FAQAccordion";
 
-import { useEffect, useState } from "react";
-import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
-import LoginForm from "../components/auth/LoginForm";
-import SubscriptionDashboard from "../components/dashboard/SubscriptionDashboard";
-import { callBackend } from "../lib/api";
+export const metadata: Metadata = {
+  title: "Best Dating App in India | Pookiey - Real & Meaningful Connections",
+  description:
+    "Pookiey is the best dating app in India for real and meaningful connections. Trusted dating platform for casual dating and serious relationships. Available in Bangalore, Hyderabad, Chennai, Delhi, and all major Indian cities.",
+  keywords: [
+    "dating app in India",
+    "best dating app in India",
+    "dating apps in Bangalore",
+    "dating apps in Hyderabad",
+    "dating apps in Chennai",
+    "dating apps in Delhi",
+    "dating apps in Mumbai",
+    "dating apps in Pune",
+    "dating apps in Kolkata",
+    "India dating site",
+    "online dating India",
+    "casual dating",
+    "serious relationships",
+  ],
+  openGraph: {
+    title: "Best Dating App in India | Pookiey - Real & Meaningful Connections",
+    description:
+      "Pookiey is the best dating app in India for real and meaningful connections. Trusted dating platform for casual dating and serious relationships.",
+    type: "website",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Best Dating App in India | Pookiey",
+    description:
+      "Pookiey is the best dating app in India for real and meaningful connections.",
+  },
+  alternates: {
+    canonical: "/",
+  },
+};
 
-export default function HomePage() {
-  const session = useSession();
-  const supabase = useSupabaseClient();
-  const [syncing, setSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const syncUser = async () => {
-      if (!session) {
-        setSyncError(null);
-        return;
-      }
-      setSyncing(true);
-      try {
-        await callBackend(supabase, "/api/v1/user/me", {
-          method: "POST",
-          jsonBody: {},
-        });
-        if (isMounted) {
-          setSyncError(null);
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message ?? "Failed to sync user profile."
-            : "Failed to sync user profile.";
-        if (isMounted) {
-          setSyncError(message);
-        }
-      } finally {
-        if (isMounted) {
-          setSyncing(false);
-        }
-      }
-    };
-
-    void syncUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [session, supabase]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+export default function LandingPage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Pookiey",
+    applicationCategory: "DatingApplication",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "INR",
+    },
+    description:
+      "Best dating app in India for real and meaningful connections. Trusted dating platform for casual dating and serious relationships.",
+    url: "https://pookiey.com",
   };
 
-  if (!session) {
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Is Pookiey a safe dating app in India?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, Pookiey is designed with user safety and privacy in mind. It offers secure login, profile control, and protected communication so users can feel comfortable while using the platform.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Who can use the Pookiey dating app?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Any adult aged 18 and above can use Pookiey. It is suitable for students, working professionals, single adults, and people returning to dating. Users from different cities across India can use the platform easily.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is Pookiey good for serious relationships?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, Pookiey supports users who are looking for serious and long-term relationships. It encourages honest profiles and meaningful conversations, which help users build genuine connections.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can Pookiey be used for casual dating?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, Pookiey also supports casual dating. Users can explore connections at their own pace while keeping interactions respectful and clear.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is Pookiey free to use?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Pookiey offers free access to help users get started. Free users can create profiles and explore matches. Premium features are available for users who want additional tools and better visibility.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Does Pookiey work in all Indian cities?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, Pookiey supports users across India. Whether you are using dating apps in Bangalore, dating apps in Hyderabad, dating apps in Chennai, dating apps in Delhi, dating apps in Kolkata, or smaller cities, the experience remains consistent.",
+        },
+      },
+    ],
+  };
+
     return (
+    <>
+      <AuthRedirect />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+      />
       <div className="relative min-h-screen overflow-hidden">
+        {/* Background gradients */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#E94057]/25 blur-3xl md:h-[380px] md:w-[380px]" />
           <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-[#4B164C]/25 blur-3xl md:h-[320px] md:w-[320px]" />
           <div className="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#FF7EB3]/20 blur-3xl md:h-[420px] md:w-[420px]" />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 md:flex-row md:items-center md:gap-20 md:px-8 lg:px-12">
-          <div className="max-w-xl space-y-6 text-center md:text-left">
+        {/* Navigation */}
+        <nav className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-6 md:px-8 lg:px-12">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
             <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
               Pookiey
             </span>
-            <h1 className="text-4xl font-semibold leading-[1.1] text-[#2A1F2D] md:text-5xl">
-              Your vibe deserves an{" "}
+            </div>
+            <Link
+              href="/auth"
+              className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-5 py-2 text-sm font-semibold text-[#2A1F2D] transition hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
+            >
+              Sign In
+            </Link>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <header className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 pt-12 md:px-8 md:pt-20 lg:px-12">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-4xl font-semibold leading-[1.1] text-[#2A1F2D] md:text-5xl lg:text-6xl">
+              Best Dating App in India for{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C]">
-                unforgettable match
+                Real & Meaningful Connections
               </span>
             </h1>
-            <p className="text-base text-[#6F6077] md:text-lg">
-              Upgrade to premium, get curated boosts, and keep the chemistry
-              flowing across the Pookiey universe. Sign in with Google to manage
-              your subscription in seconds.
+            <p className="mt-6 text-base text-[#6F6077] md:text-lg lg:text-xl">
+              Finding the best dating app in India is not just about swiping profiles. It is about trust, safety, and real people who are serious about connecting. Pookiey is built to help users find genuine matches simply and securely. Whether you are looking for casual dating or a serious relationship, Pookiey supports both with clarity and honesty.
             </p>
-            <div className="grid gap-4 pt-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/60 bg-white/70 p-4 text-left shadow-md shadow-[#E94057]/10 backdrop-blur">
-                <p className="text-sm font-semibold text-[#E94057]">Priority vibes</p>
-                <p className="mt-1 text-sm text-[#6F6077]">
-                  Stay on top with weekly spotlight boosts and priority matches.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/60 bg-white/70 p-4 text-left shadow-md shadow-[#4B164C]/10 backdrop-blur">
-                <p className="text-sm font-semibold text-[#4B164C]">Control center</p>
-                <p className="mt-1 text-sm text-[#6F6077]">
-                  View payment history, manage renewals, and adjust plans anytime.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <LoginForm />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen pb-20">
-      <div className="relative overflow-hidden">
-        <header className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-10 pb-6 md:px-8 lg:px-12">
-          <div className="flex flex-col gap-6 rounded-3xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-6 py-8 text-white shadow-2xl shadow-[#E94057]/20 md:flex-row md:items-center md:justify-between md:px-10 md:py-12">
-            <div className="max-w-xl space-y-3">
-              <span className="pill inline-flex bg-white/25 text-white">
-                Subscription Center
-              </span>
-              <h1 className="text-3xl font-semibold leading-[1.1] md:text-4xl">
-                Hey {session.user.email?.split("@")[0] ?? "lover"}, your premium
-                perks await ✨
-              </h1>
-              <p className="text-sm text-white/80 md:text-base">
-                Manage plans, check payment history, and stay in control of your
-                Pookiey experience.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {syncing && (
-                <span className="pill inline-flex bg-white/20 text-white/90">
-                  Syncing profile…
-                </span>
-              )}
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/auth"
+                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#E94057]/20 transition hover:scale-[1.02] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
               >
-                <span>Sign out</span>
-              </button>
+                Get Started
+              </Link>
             </div>
           </div>
         </header>
-      </div>
 
-      {syncError && (
-        <div className="mx-auto mt-6 w-full max-w-6xl px-6 md:px-8 lg:px-12">
-          <div className="rounded-2xl border border-red-100 bg-red-50/80 p-4 text-sm font-medium text-[#C3344C] shadow-sm">
-            {syncError}
+        {/* Features Section */}
+        <section id="features" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+                Why Pookiey
+              </span>
+              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                Why Choose Pookiey Among Popular Dating Apps in India
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                With so many dating apps available today, choosing the right one can be confusing. Every platform promises matches, but not every platform offers trust, safety, and real people. Pookiey is created to solve these common problems and provide a reliable experience for users who are serious about online dating.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Built for Trust */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-3xl shadow-lg shadow-[#E94057]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    🔒
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
+                    Built for Trust
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    Trust is one of the biggest concerns while using any dating site. Pookiey is designed with strong safety and privacy principles so users feel confident from the first step. Secure login system, user privacy protection, clear and honest communication, and transparent subscription handling.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
+                  </div>
+                </div>
+              </article>
+
+              {/* Simple & Clear */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-3xl shadow-lg shadow-[#4B164C]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    ✨
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
+                    Simple & Clear
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    Many top dating apps in India feel complicated, especially for first-time users. Pookiey keeps the experience simple so anyone can use it without technical knowledge. Easy account access, simple profile setup, clear match flow, and smooth navigation.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
+                  </div>
+                </div>
+              </article>
+
+              {/* Quality Matches */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-3xl shadow-lg shadow-[#FF7EB3]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    💎
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
+                    Quality Matches
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    The goal of dating is not just meeting people, but meeting the right people. Pookiey focuses on meaningful connections instead of random swipes. Better conversations, higher match quality, less time wasted, and more genuine connections.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
+                  </div>
+                </div>
+              </article>
+
+              {/* Flexible Dating */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-3xl shadow-lg shadow-[#E94057]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    💑
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
+                    Flexible Dating
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    Some people use dating apps casually, while others look for long-term relationships. Pookiey supports both without judgment or pressure. Works well for casual dating with respect, serious relationship seekers, honest and open communication, and users who value clarity.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
+                  </div>
+                </div>
+              </article>
+
+              {/* Transparent Pricing */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-3xl shadow-lg shadow-[#4B164C]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    💰
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
+                    Transparent Pricing
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    Many users leave dating apps in India because of confusing payments or unclear plans. Pookiey keeps everything open and easy to understand. Clear subscription information, no hidden charges, easy account control, and simple upgrade or renewal process.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
+                  </div>
+                </div>
+              </article>
+
+              {/* All Indian Cities */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                <div className="relative">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-3xl shadow-lg shadow-[#FF7EB3]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    🗺️
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
+                    All Indian Cities
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
+                    Whether someone is using dating apps in Bangalore, dating apps in Hyderabad, dating app Chennai, or dating apps in Kolkata, the experience remains consistent. Safety standards, usability, and communication quality stay the same everywhere.
+                  </p>
+                  {/* Decorative element */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
-        </div>
-      )}
+        </section>
 
-      <div className="relative z-10 mt-10">
-        <div className="mx-auto w-full max-w-6xl px-6 md:px-8 lg:px-12">
-          <SubscriptionDashboard />
+        {/* How It Works Section */}
+        <section id="how-it-works" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+                How It Works
+              </span>
+              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                Simple, Safe & Easy to Use
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                Many people hesitate to use dating apps in India because they think the process is complicated. Pookiey is designed to be simple, clear, and easy for everyone. From the first login to starting conversations, every step is smooth and user-friendly.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              <article className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] text-2xl font-bold text-white shadow-lg">
+                  1
+                </div>
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Create Account
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Users can sign up quickly using a secure login method. The process is safe and protects user privacy from the beginning. Fast account creation, secure access, and no unnecessary information.
+                </p>
+              </article>
+
+              <article className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#4B164C] text-2xl font-bold text-white shadow-lg">
+                  2
+                </div>
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Set Up Profile
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Creating a profile on Pookiey is simple and does not take much time. Users can share basic details that help find better matches. Profile setup includes basic personal details, interests and preferences, and clear profile visibility controls.
+                </p>
+              </article>
+
+              <article className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#4B164C] to-[#E94057] text-2xl font-bold text-white shadow-lg">
+                  3
+              </div>
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Discover Matches
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Once the profile is ready, users can start exploring matches. Pookiey focuses on meaningful connections instead of random suggestions. Matches based on preferences, better relevance, and less unnecessary scrolling.
+                </p>
+              </article>
+
+              <article className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] text-2xl font-bold text-white shadow-lg">
+                  4
+              </div>
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Start Conversations
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Communication is an important part of any Indian dating site. Pookiey offers a safe and controlled environment for users to talk comfortably. Secure messaging, user control over conversations, and respectful interaction environment.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* About Us Section */}
+        <section id="about" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-6xl">
+            <div className="text-center">
+              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+                About Us
+              </span>
+              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                About Pookiey
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                Discover what makes Pookiey the trusted choice for meaningful connections in India
+              </p>
+            </div>
+
+            <div className="mt-12 space-y-6">
+              {/* Grid Layout for All Cards */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Introduction Card */}
+                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                  <div className="relative">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        💕
+                      </div>
+                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
+                        About Pookiey
+                      </h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
+                      Pookiey is a modern online dating platform created for people who want real, safe, and meaningful connections. We understand that online dating is not just about matching profiles. It is about trust, comfort, and feeling confident while meeting new people. That is why Pookiey is built with a strong focus on safety, simplicity, and honesty.
+                    </p>
+                    {/* Decorative element */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
+                    </div>
+                  </div>
+                </article>
+
+                {/* Goal Card */}
+                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                  <div className="relative">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        🎯
+                      </div>
+                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
+                        Our Goal
+                      </h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
+                      In today's time, many dating apps in India feel confusing or unreliable. Our goal is to offer a clean and dependable experience where users can focus on conversations and connections instead of worrying about privacy or fake interactions. Pookiey is designed for both casual dating and serious relationships, giving users the freedom to choose their own path.
+                    </p>
+                    {/* Decorative element */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
+                    </div>
+                  </div>
+                </article>
+
+                {/* Values Card */}
+                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                  <div className="relative">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        ✨
+                      </div>
+                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
+                        Our Values
+                      </h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
+                      We believe that every user deserves respect and control. From profile creation to communication, Pookiey allows users to manage their experience in a way that feels comfortable. We avoid unnecessary features and focus on what truly matters—helping people connect genuinely.
+                    </p>
+                    {/* Decorative element */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
+                    </div>
+                  </div>
+                </article>
+
+                {/* Built for Indian Users */}
+                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                  <div className="relative">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        🏙️
+                      </div>
+                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
+                        Built for Indian Users
+                      </h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
+                      Pookiey is built for Indian users from all cities and backgrounds. Whether someone is exploring dating apps in Bangalore, dating apps in Hyderabad, dating apps in Chennai, dating apps in Delhi, or smaller cities, the experience remains simple and consistent. Our platform supports local connections while maintaining the same safety and quality standards everywhere.
+                    </p>
+                    {/* Decorative element */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
+                    </div>
+                  </div>
+                </article>
+
+                {/* Transparency & Trust */}
+                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+                  <div className="relative">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        🔐
+                      </div>
+                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
+                        Transparency & Trust
+                      </h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
+                      Transparency is an important part of who we are. We keep our processes clear, our communication honest, and our platform easy to understand. Users always know how things work, what they are signing up for, and how to manage their accounts. This approach helps us build long-term trust with our community.
+                    </p>
+                    {/* Decorative element */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              {/* Mission Card - Full Width */}
+              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-[#E94057]/10 via-[#FF7EB3]/10 to-[#4B164C]/10 p-6 shadow-xl backdrop-blur-lg transition-all duration-500 hover:-translate-y-1 hover:border-[#E94057]/60 hover:shadow-2xl hover:shadow-[#E94057]/30 md:p-10">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/5 via-[#FF7EB3]/5 to-[#4B164C]/5 opacity-50" />
+                <div className="relative">
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] via-[#FF7EB3] to-[#4B164C] text-4xl shadow-xl shadow-[#E94057]/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                      🚀
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057] md:text-3xl">
+                        Our Mission
+                      </h3>
+                      <div className="mt-1 h-1 w-16 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3]" />
+                    </div>
+                  </div>
+                  <p className="text-base leading-relaxed text-[#6F6077] md:text-lg">
+                    At Pookiey, we are focused on creating a respectful and reliable India dating site where people can take their time, be themselves, and build connections naturally. We are committed to improving the online dating experience by listening to users and putting their comfort first. Our mission is simple: to provide a trusted dating platform where real people can meet, talk, and build connections with confidence.
+                  </p>
+                  {/* Decorative elements */}
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] opacity-40" />
+                    <div className="flex gap-2">
+                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
+                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#4B164C]" />
+                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#4B164C] to-[#E94057]" />
+                    </div>
+                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] opacity-40" />
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* Cities Section */}
+        <section id="cities" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center">
+              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+                Available Cities
+              </span>
+              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                Best Dating App Across Major Indian Cities
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                Online dating in India is growing fast, and people from different cities have different dating needs. Pookiey is built to support users across metro cities, IT hubs, education centers, and culturally rich regions. No matter where you live, the platform helps you connect with nearby people safely and simply.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Bangalore
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Suitable for professionals and students. Supports casual dating and serious relationships. Easy to use after long workdays.
+                </p>
+              </article>
+
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Hyderabad
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Simple and quick profile setup. Focus on genuine user interactions. Clear communication features.
+                </p>
+              </article>
+
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Chennai
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Strong privacy controls. Safe and respectful messaging. Support for long-term dating goals.
+                </p>
+              </article>
+
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Delhi
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Supports different dating intentions. Helps users connect with nearby people. Keeps personal data protected.
+                </p>
+              </article>
+
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Mumbai
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Supports flexible dating styles. Helps users meet nearby people. Offers a smooth and simple interface.
+                </p>
+              </article>
+
+              <article className="glass-card rounded-3xl p-6">
+                <h3 className="text-lg font-semibold text-[#2A1F2D]">
+                  Best Dating App in Pune
+                </h3>
+                <p className="mt-2 text-sm text-[#6F6077]">
+                  Easy profile creation. Location-based matches. Smooth and secure chatting.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center">
+              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+                FAQs
+              </span>
+              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                Frequently Asked Questions
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                Got questions? We've got answers. Everything you need to know about Pookiey.
+              </p>
+            </div>
+
+            <div className="mt-12">
+              <FAQAccordion />
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-4xl">
+            <div className="glass-card rounded-3xl p-8 text-center md:p-12">
+              <h2 className="text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
+                Start Your Dating Journey with Confidence
+              </h2>
+              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
+                If you are tired of unreliable dating apps in India and want a platform that values trust, clarity, and genuine connections, Pookiey is the right place to start. It is built for real people, real conversations, and real relationships.
+              </p>
+              <div className="mt-8">
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#E94057]/20 transition hover:scale-[1.02] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
+                >
+                  Get Started Now
+                </Link>
         </div>
       </div>
     </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="relative z-10 border-t border-white/40 bg-white/40 backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8 lg:px-12">
+            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+              <div className="flex items-center gap-2">
+                <span className="pill inline-flex bg-[#E94057]/10 text-[#E94057]">
+                  Pookiey
+                </span>
+              </div>
+              <nav className="flex flex-wrap items-center gap-6 text-sm text-[#6F6077]">
+                <Link
+                  href="/privacy-policy"
+                  className="transition hover:text-[#E94057]"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  href="/support"
+                  className="transition hover:text-[#E94057]"
+                >
+                  Support
+                </Link>
+                <Link
+                  href="#about"
+                  className="transition hover:text-[#E94057]"
+                >
+                  About Us
+                </Link>
+                <Link
+                  href="#faq"
+                  className="transition hover:text-[#E94057]"
+                >
+                  FAQ
+                </Link>
+              </nav>
+            </div>
+            <p className="mt-4 text-center text-xs text-[#B49CC4] md:text-sm">
+              © {new Date().getFullYear()} Pookiey. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 }

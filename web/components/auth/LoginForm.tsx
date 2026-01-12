@@ -44,7 +44,7 @@ export default function LoginForm() {
         provider: "google",
         options: {
           redirectTo:
-            typeof window !== "undefined" ? window.location.origin : undefined,
+            typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
