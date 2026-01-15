@@ -85,6 +85,7 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
                 };
             })
         );
+        console.log("urls", urls);
 
         return res.status(200).json({
             success: true,
