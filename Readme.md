@@ -55,7 +55,7 @@ Ensure you have the following installed globally:
   npm install -g expo-cli
   ```
 
-## 🚀 Quickstart (dev servers)
+## 🚀 Quickstart with the development
 
 ### 📱 Mobile app (Expo)
 1. Install Expo CLI if missing: `npm install -g expo-cli`
@@ -75,9 +75,11 @@ Ensure you have the following installed globally:
 ### 🔧 Backend (API)
 1. `cd backend`
 2. Install deps: `npm install`
-3. 4. inspect `.env.example`, create & set up `.env`
+3. inspect `.env.example`, create & set up `.env`
 4. Return to repo root: `cd ..`
 5. Start API dev server: `npm run backend`
+
+*At any point, if you face dependencies conflicts, first try to solve them conventionally, if you can't, then try `npm install --force`*
 
 ## 🧾 Notes
 
@@ -85,6 +87,5 @@ Ensure you have the following installed globally:
 - The root `package.json` is used only for orchestration scripts.
 - You might need a local tunnel (e.g. **Cloudflare Tunnel** or **Ngrok**), so that your phone can reach your **local backend**.
 
-## 🛠️ How to get started with developement
 
 Author - [**@TheDevPiyush**](https://github.com/thedevpiyush)
