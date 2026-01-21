@@ -45,6 +45,8 @@
     "title": "Interests",
     "subtitle": "Let everyone know what you're passionate about.",
     "continue": "Continue",
+    "errorTitle": "Error",
+    "errorMessage": "Please select at least 2 and at most 5 interests",
     "photography": "Photography",
     "shopping": "Shopping",
     "karaoke": "Karaoke",

@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -44,7 +45,11 @@ export default function InterestScreen() {
     };
 
     const handleContinue = () => {
-        router.push('/(onboarding)/image');
+        if (storedInterests.length < 2 || storedInterests.length > 5) {
+            Alert.alert(t('interest.errorTitle'), t('interest.errorMessage'));
+        } else {
+            router.push('/(onboarding)/image');
+        }
     };
 
     const toggleInterest = (interestKey: string) => {
