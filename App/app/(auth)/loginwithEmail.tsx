@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import CustomBackButton from '@/components/CustomBackButton';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import MainButton from '@/components/MainButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mail } from 'react-native-feather';
@@ -22,6 +23,21 @@ export default function LoginWithEmail() {
   const { signInWithLink, verifyEmailOtp, isLoading } = useAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
   const otpInputRef = useRef<TextInput | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (type: DialogType, title: string, message: string) => {
+    setDialogConfig({ type, title, message });
+    setDialogVisible(true);
+  };
 
   const normalizedEmail = email.trim().toLowerCase();
   const isOtpStep = step === 'OTP';
@@ -36,37 +52,37 @@ export default function LoginWithEmail() {
 
   const handleSendOtp = async () => {
     if (!validateEmail()) {
-      Alert.alert(t('auth.error'), t('auth.enterYourEmail'));
+      showDialog('error', t('auth.error'), t('auth.enterYourEmail'));
       return;
     }
 
     const result = await signInWithLink(normalizedEmail);
 
     if (result.error) {
-      Alert.alert(t('auth.error'), result.error.message);
+      showDialog('error', t('auth.error'), result.error.message);
       return;
     }
 
     setOtp('');
     setStep('OTP');
     setStatusMessage(`Enter the 6-digit code we sent to ${normalizedEmail}.`);
-    Alert.alert(
+    showDialog(
+      'info',
       t('auth.checkYourEmail'),
-      `We just emailed a one-time code to ${normalizedEmail}.`,
-      [{ text: t('auth.ok') }],
+      `We just emailed a one-time code to ${normalizedEmail}.`
     );
   };
 
   const handleVerifyOtp = async () => {
     if (otp.length < OTP_LENGTH) {
-      Alert.alert(t('auth.error'), 'Please enter the 6-digit code.');
+      showDialog('error', t('auth.error'), 'Please enter the 6-digit code.');
       return;
     }
 
     const result = await verifyEmailOtp(normalizedEmail, otp);
 
     if (result.error) {
-      Alert.alert(t('auth.error'), result.error.message);
+      showDialog('error', t('auth.error'), result.error.message);
       return;
     }
 
@@ -116,6 +132,17 @@ export default function LoginWithEmail() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: t('auth.ok') || 'OK',
+          onPress: () => setDialogVisible(false),
+        }}
+      />
       <CustomBackButton />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

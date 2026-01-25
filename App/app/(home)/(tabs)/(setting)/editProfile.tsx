@@ -6,7 +6,6 @@ import {
   Image,
   StyleSheet,
   TextInput,
-  Alert,
   Dimensions,
   ActivityIndicator
 } from 'react-native'
@@ -15,6 +14,7 @@ import { Colors } from '@/constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
+import CustomDialog, { DialogType } from '@/components/CustomDialog'
 import MainButton from '@/components/MainButton'
 import { useAuthStore } from '@/store/authStore'
 import { useUser } from '@/hooks/useUser'
@@ -25,6 +25,7 @@ import { LogBox } from 'react-native';
 import { requestPresignedURl, uploadMultipleTos3, uploadTos3 } from '@/hooks/uploadTos3'
 import { compressImageToJPEG } from '@/utils/imageCompression'
 import { useTranslation } from 'react-i18next'
+import { Linking } from 'react-native'
 LogBox.ignoreAllLogs(false);
 
 const { width } = Dimensions.get('window')
@@ -50,6 +51,21 @@ const EditProfile = () => {
   const [photoURL, setPhotoURL] = useState('')
   const [isUploadingPhotoURL, setIsUploadingPhotoURL] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false)
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType
+    title: string
+    message: string
+    primaryButton?: { text: string; onPress: () => void }
+    secondaryButton?: { text: string; onPress: () => void }
+    cancelButton?: { text: string; onPress: () => void }
+  }>({
+    type: 'info',
+    title: '',
+    message: '',
+  })
 
   // Initialize form with current user data
   useEffect(() => {
@@ -75,6 +91,26 @@ const EditProfile = () => {
     }
   }, [dbUser])
 
+  // Helper function to show dialog
+  const showDialog = (
+    type: DialogType,
+    title: string,
+    message: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void },
+    cancelButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogConfig({
+      type,
+      title,
+      message,
+      primaryButton: primaryButton || { text: t('editProfile.ok') || 'OK', onPress: () => setDialogVisible(false) },
+      secondaryButton,
+      cancelButton,
+    })
+    setDialogVisible(true)
+  }
+
   // Add interest
   const addInterest = () => {
     const trimmedInterest = newInterest.trim().toLowerCase()
@@ -82,7 +118,7 @@ const EditProfile = () => {
       setInterests([...interests, trimmedInterest])
       setNewInterest('')
     } else if (interests.length >= 10) {
-      Alert.alert(t('editProfile.limitReached'), t('editProfile.upTo10Interests'))
+      showDialog('warning', t('editProfile.limitReached'), t('editProfile.upTo10Interests'))
     }
   }
 
@@ -113,7 +149,7 @@ const EditProfile = () => {
   const pickImage = async () => {
     const maxPhotos = MAX_PHOTOS
     if (photos.length >= maxPhotos) {
-      Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
+      showDialog('warning', t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
       return
     }
 
@@ -132,7 +168,7 @@ const EditProfile = () => {
       const remainingSlots = maxPhotos - photos.length
       
       if (remainingSlots <= 0) {
-        Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
+        showDialog('warning', t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
         return
       }
       
@@ -144,7 +180,7 @@ const EditProfile = () => {
         
         // Check for duplicates
         if (isDuplicateImage(localUri, photos)) {
-          Alert.alert(t('editProfile.duplicateImage'), t('editProfile.imageAlreadySelected'))
+          showDialog('warning', t('editProfile.duplicateImage'), t('editProfile.imageAlreadySelected'))
           continue
         }
 
@@ -165,7 +201,7 @@ const EditProfile = () => {
           const mimeTypesToKeep = newMimeTypes.slice(0, maxPhotos - photos.length)
           setPhotos([...photos, ...photosToKeep])
           setPhotoMimeTypes([...photoMimeTypes, ...mimeTypesToKeep])
-          Alert.alert(t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
+          showDialog('warning', t('editProfile.limitReached'), `You can add up to ${maxPhotos} photos`)
         } else {
           setPhotos([...photos, ...newPhotos])
           setPhotoMimeTypes([...photoMimeTypes, ...newMimeTypes])
@@ -174,7 +210,8 @@ const EditProfile = () => {
       
       // Warn if user tried to select more than allowed
       if (result.assets.length > remainingSlots) {
-        Alert.alert(
+        showDialog(
+          'warning',
           t('editProfile.limitReached'), 
           `You can add up to ${maxPhotos} photos. Only ${remainingSlots} ${remainingSlots === 1 ? 'photo' : 'photos'} added.`
         )
@@ -244,7 +281,7 @@ const EditProfile = () => {
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       setIsUploadingPhotoURL(false);
-      Alert.alert(t('editProfile.error'), t('editProfile.failedToUploadImage'));
+      showDialog('error', t('editProfile.error'), t('editProfile.failedToUploadImage'));
       throw error;
     }
   };
@@ -255,7 +292,7 @@ const EditProfile = () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(t('editProfile.permissionRequired'), t('editProfile.cameraRollPermission'));
+        showDialog('warning', t('editProfile.permissionRequired'), t('editProfile.cameraRollPermission'));
         return;
       }
 
@@ -271,7 +308,7 @@ const EditProfile = () => {
         await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
-      Alert.alert(t('editProfile.error'), t('editProfile.failedToSelectImage'));
+      showDialog('error', t('editProfile.error'), t('editProfile.failedToSelectImage'));
     }
   };
 
@@ -281,7 +318,7 @@ const EditProfile = () => {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(t('editProfile.permissionRequired'), t('editProfile.cameraPermission'));
+        showDialog('warning', t('editProfile.permissionRequired'), t('editProfile.cameraPermission'));
         return;
       }
 
@@ -296,46 +333,51 @@ const EditProfile = () => {
         await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
-      Alert.alert(t('editProfile.error'), t('editProfile.failedToTakePhoto'));
+      showDialog('error', t('editProfile.error'), t('editProfile.failedToTakePhoto'));
     }
   };
 
   const showProfilePictureOptions = () => {
-    Alert.alert(
+    showDialog(
+      'info',
       t('editProfile.selectProfilePicture'),
       t('editProfile.chooseOption'),
-      [
-        {
-          text: t('editProfile.chooseFromLibrary'),
-          onPress: pickProfilePicture,
+      {
+        text: t('editProfile.chooseFromLibrary'),
+        onPress: () => {
+          setDialogVisible(false);
+          pickProfilePicture();
         },
-        {
-          text: t('editProfile.takePhoto'),
-          onPress: takeProfilePicture,
+      },
+      {
+        text: t('editProfile.takePhoto'),
+        onPress: () => {
+          setDialogVisible(false);
+          takeProfilePicture();
         },
-        {
-          text: t('editProfile.cancel'),
-          style: 'cancel',
-        },
-      ]
+      },
+      {
+        text: t('editProfile.cancel'),
+        onPress: () => setDialogVisible(false),
+      }
     );
   };
 
   // Save profile
   const saveProfile = async () => {
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert(t('editProfile.error'), t('editProfile.firstNameLastNameRequired'))
+      showDialog('error', t('editProfile.error'), t('editProfile.firstNameLastNameRequired'))
       return
     }
 
     if (!idToken) {
-      Alert.alert(t('editProfile.error'), t('editProfile.authTokenNotFound'))
+      showDialog('error', t('editProfile.error'), t('editProfile.authTokenNotFound'))
       return
     }
 
     // Validate minimum 2 images
     if (photos.length < 2) {
-      Alert.alert(t('editProfile.error'), t('editProfile.uploadAtLeast2Photos'))
+      showDialog('error', t('editProfile.error'), t('editProfile.uploadAtLeast2Photos'))
       return
     }
 
@@ -410,7 +452,7 @@ const EditProfile = () => {
         const presignedUrls = await requestPresignedURl(mimeTypes);
         
         if (!presignedUrls || presignedUrls.length !== compressedPhotos.length) {
-          Alert.alert(t('editProfile.error'), t('editProfile.failedToGetUploadUrls'));
+          showDialog('error', t('editProfile.error'), t('editProfile.failedToGetUploadUrls'));
           setIsLoading(false);
           return;
         }
@@ -431,7 +473,7 @@ const EditProfile = () => {
         );
 
         if (!allSucceeded) {
-          Alert.alert(t('editProfile.error'), t('editProfile.someImagesFailedToUpload'));
+          showDialog('error', t('editProfile.error'), t('editProfile.someImagesFailedToUpload'));
           setIsLoading(false);
           return;
         }
@@ -502,16 +544,25 @@ const EditProfile = () => {
       if (response?.success) {
         // Update the user in the store
         setDBUser(response.data)
-        Alert.alert(t('editProfile.success'), t('editProfile.profileUpdatedSuccessfully'), [
-          { text: t('editProfile.ok'), onPress: () => router.back() }
-        ])
+        showDialog(
+          'success',
+          t('editProfile.success'),
+          t('editProfile.profileUpdatedSuccessfully'),
+          {
+            text: t('editProfile.ok'),
+            onPress: () => {
+              setDialogVisible(false);
+              router.back();
+            },
+          }
+        )
       } else {
-        Alert.alert(t('editProfile.error'), response?.message || t('editProfile.failedToUpdateProfile'))
+        showDialog('error', t('editProfile.error'), response?.message || t('editProfile.failedToUpdateProfile'))
       }
     } catch (error: any) {
       console.error('Update profile error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || t('editProfile.failedToUpdateProfile')
-      Alert.alert(t('editProfile.error'), errorMessage)
+      showDialog('error', t('editProfile.error'), errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -520,6 +571,16 @@ const EditProfile = () => {
   return (
     <SafeAreaView style={styles.container}>
       <CustomBackButton />
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogConfig.primaryButton}
+        secondaryButton={dialogConfig.secondaryButton}
+        cancelButton={dialogConfig.cancelButton}
+      />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}

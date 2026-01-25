@@ -6,13 +6,13 @@ import {
   Image,
   StyleSheet,
   Dimensions,
-  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
 import { Ionicons } from '@expo/vector-icons'
 import CustomBackButton from '@/components/CustomBackButton'
+import CustomDialog from '@/components/CustomDialog'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,6 +26,7 @@ const Profile = () => {
   const { dbUser } = useAuthStore()
   const navigationRouter = useRouter()
   const { signOut } = useAuth()
+  const [signOutDialogVisible, setSignOutDialogVisible] = useState(false)
   
   // Get all photos as array of URLs
   const getAllPhotos = (): string[] => {
@@ -74,34 +75,38 @@ const Profile = () => {
   }
 
   const handleSignOut = () => {
-    Alert.alert(
-      t('settings.signOut'),
-      t('settings.areYouSureSignOut'),
-      [
-        {
-          text: t('settings.cancel'),
-          style: 'cancel'
-        },
-        {
-          text: t('settings.signOut'),
-          style: 'destructive',
-          onPress: () => signOut()
-        }
-      ]
-    )
+    setSignOutDialogVisible(true)
   }
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={signOutDialogVisible}
+        type="warning"
+        title={t('settings.signOut')}
+        message={t('settings.areYouSureSignOut')}
+        onDismiss={() => setSignOutDialogVisible(false)}
+        primaryButton={{
+          text: t('settings.signOut'),
+          onPress: () => {
+            setSignOutDialogVisible(false)
+            signOut()
+          },
+        }}
+        cancelButton={{
+          text: t('settings.cancel'),
+          onPress: () => setSignOutDialogVisible(false),
+        }}
+      />
       <View style={styles.headerContainer}>
         <CustomBackButton />
         <TouchableOpacity 
-          style={styles.signOutButton} 
-          onPress={handleSignOut}
+          style={styles.editButtonHeader} 
+          onPress={() => navigationRouter.push('/(home)/(tabs)/(setting)/editProfile')}
           activeOpacity={0.7}
         >
-          <Ionicons name="log-out-outline" size={20} color={Colors.primaryBackgroundColor} />
-          <ThemedText style={styles.signOutText}>{t('profilePage.signOut')}</ThemedText>
+          <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+          <ThemedText style={styles.editButtonHeaderText}>{t('profilePage.editProfile')}</ThemedText>
         </TouchableOpacity>
       </View>
       <ScrollView
@@ -355,14 +360,14 @@ const Profile = () => {
           </View>
         )}
 
-        {/* Edit Button */}
+        {/* Sign Out Button */}
         <TouchableOpacity 
-          style={styles.editButton} 
+          style={styles.signOutButtonBottom} 
+          onPress={handleSignOut}
           activeOpacity={0.8}
-          onPress={() => navigationRouter.push('/(home)/(tabs)/(setting)/editProfile')}
         >
-          <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-          <ThemedText style={styles.editButtonText}>{t('profilePage.editProfile')}</ThemedText>
+          <Ionicons name="log-out-outline" size={20} color={Colors.primaryBackgroundColor} />
+          <ThemedText style={styles.signOutButtonBottomText}>{t('profilePage.signOut')}</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -380,21 +385,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
   },
-  signOutButton: {
+  editButtonHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-    backgroundColor: 'white',
+    backgroundColor: Colors.primaryBackgroundColor,
     marginRight: 10,
     gap: 6,
   },
-  signOutText: {
+  editButtonHeaderText: {
     fontSize: 14,
-    color: Colors.primaryBackgroundColor,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   scrollView: {
@@ -570,20 +573,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  editButton: {
-    backgroundColor: Colors.primaryBackgroundColor,
+  signOutButtonBottom: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: Colors.primaryBackgroundColor,
     marginHorizontal: 20,
     marginTop: 24,
+    marginBottom: 24,
     paddingVertical: 16,
     borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
   },
-  editButtonText: {
-    color: '#FFFFFF',
+  signOutButtonBottomText: {
+    color: Colors.primaryBackgroundColor,
     fontSize: 16,
-    marginLeft: 8,
+    fontWeight: '600',
   },
 })
 

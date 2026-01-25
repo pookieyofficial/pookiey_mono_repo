@@ -118,11 +118,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="(likes)"
+        options={{
+          title: t('tabs.likes'),
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name={focused ? "heart.fill" : "heart"} color={color} weight={focused ? 'bold' : 'regular'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="(story)"
         options={{
           title: t('tabs.stories'),
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name={focused ? "heart.fill" : "heart.fill"} color={color} weight={focused ? 'bold' : 'regular'} />
+            <IconSymbol size={28} name={focused ? "camera.fill" : "camera"} color={color} weight={focused ? 'bold' : 'regular'} />
           ),
         }}
       />

@@ -140,7 +140,7 @@ export default function PricePlansScreen() {
 
         <View style={styles.header}>
           <ThemedText type="title" style={styles.screenTitle}>
-            Upgrade your experience
+            Limit exhausted? Upgrade to continue swiping!
           </ThemedText>
           <ThemedText type="default" style={styles.screenSubtitle}>
             Choose a plan that fits how you like to connect.
@@ -189,8 +189,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingTop: 1,
+    paddingBottom: 2,
   },
   screenTitle: {
     fontSize: 24,
@@ -300,15 +300,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    paddingTop: 12,
-    backgroundColor: Colors.parentBackgroundColor,
+    paddingBottom: 14,
+    backgroundColor: "transparent",
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.text.light,
   },
   primaryButton: {
     height: 52,
-    borderRadius: 28,
+    borderRadius: 15,
     backgroundColor: Colors.primaryBackgroundColor,
     alignItems: 'center',
     justifyContent: 'center',

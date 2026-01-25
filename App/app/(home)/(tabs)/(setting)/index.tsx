@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    color: Colors.titleColor,
+    color: Colors.primaryBackgroundColor,
   },
   profileSection: {
     paddingHorizontal: 16,

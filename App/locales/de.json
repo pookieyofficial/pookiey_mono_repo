@@ -148,7 +148,7 @@
     "secureLinkMessage": "Wir senden Ihnen einen sicheren Link zum Anmelden auf diesem Gerät.",
     "enterYourEmail": "Geben Sie Ihre E-Mail ein",
     "continue": "Weiter",
-    "checkYourEmail": "Überprüfen Sie Ihre E-Mail! 📧",
+    "checkYourEmail": "Überprüfen Sie Ihre E-Mail! ",
     "magicLinkSent": "Wir haben einen Magic Link an {{email}} gesendet. Klicken Sie auf den Link, um sich anzumelden.",
     "ok": "OK",
     "error": "Fehler",

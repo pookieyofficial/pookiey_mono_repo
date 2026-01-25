@@ -148,7 +148,7 @@
     "secureLinkMessage": "Chúng tôi sẽ gửi cho bạn một liên kết an toàn để đăng nhập trên thiết bị này.",
     "enterYourEmail": "Nhập email của bạn",
     "continue": "Tiếp tục",
-    "checkYourEmail": "Kiểm tra Email của bạn! 📧",
+    "checkYourEmail": "Kiểm tra Email của bạn! ",
     "magicLinkSent": "Chúng tôi đã gửi liên kết ma thuật đến {{email}}. Nhấp vào liên kết để đăng nhập.",
     "ok": "OK",
     "error": "Lỗi",

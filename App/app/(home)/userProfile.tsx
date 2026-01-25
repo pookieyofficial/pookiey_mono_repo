@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { View, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/ThemedText'
 import UserProfileView from '@/components/UserProfileView'
 import { DBUser } from '@/types/Auth'
 import { useTranslation } from 'react-i18next'
+import CustomDialog, { DialogType } from '@/components/CustomDialog'
 
 const UserProfile = () => {
   const { t } = useTranslation();
@@ -16,6 +17,11 @@ const UserProfile = () => {
   
   const [user, setUser] = useState<DBUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [dialogVisible, setDialogVisible] = useState(false)
+
+  const showDialog = () => {
+    setDialogVisible(true)
+  }
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -27,14 +33,14 @@ const UserProfile = () => {
             setUser(parsedUser)
           } catch (e) {
             console.error('Error parsing userData:', e)
-            Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
+            showDialog()
           }
         } else {
-          Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
+          showDialog()
         }
       } catch (error) {
         console.error('Error loading user profile:', error)
-        Alert.alert(t('userProfileView.error'), t('userProfileView.userInfoNotAvailable'))
+        showDialog()
       } finally {
         setIsLoading(false)
       }
@@ -64,6 +70,17 @@ const UserProfile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type="error"
+        title={t('userProfileView.error')}
+        message={t('userProfileView.userInfoNotAvailable')}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: t('auth.ok') || 'OK',
+          onPress: () => setDialogVisible(false),
+        }}
+      />
       <UserProfileView user={user} />
     </SafeAreaView>
   )

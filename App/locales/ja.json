@@ -148,7 +148,7 @@
     "secureLinkMessage": "このデバイスでサインインするための安全なリンクを送信します。",
     "enterYourEmail": "メールアドレスを入力",
     "continue": "続ける",
-    "checkYourEmail": "メールを確認してください！📧",
+    "checkYourEmail": "メールを確認してください！",
     "magicLinkSent": "{{email}}にマジックリンクを送信しました。リンクをクリックしてサインインしてください。",
     "ok": "OK",
     "error": "エラー",

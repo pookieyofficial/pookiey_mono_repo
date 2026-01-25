@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { User, Referral } from "../models";
+import { Interaction } from "../models/Interactions";
+import { Matches } from "../models/Matches";
 import { parseForMonggoSetUpdates } from "../utils/parseReqBody";
 import { isValidLocation } from "../utils/validateCoordinates";
 import type { IUser } from "../models/User";
@@ -115,6 +117,7 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
+// Get referral code
 export const getReferralCode = async (req: Request, res: Response) => {
     try {
         const user = req.user as IUser | undefined;
@@ -150,6 +153,7 @@ export const getReferralCode = async (req: Request, res: Response) => {
     }
 };
 
+// Update user
 export const updateUser = async (req: Request, res: Response) => {
     try {
         console.info("updateUser controller");
@@ -183,6 +187,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 };
 
+// Get user by ID
 export const getUserById = async (req: Request, res: Response) => {
     try {
         console.info("getUserById controller");
@@ -206,6 +211,7 @@ export const getUserById = async (req: Request, res: Response) => {
     }
 };
 
+// Get users
 export const getUsers = async (req: Request, res: Response) => {
     try {
         console.info("getUsers controller");
@@ -340,6 +346,7 @@ export const getUsers = async (req: Request, res: Response) => {
     }
 };
 
+// Delete account
 export const deleteAccount = async (req: Request, res: Response) => {
     try {
         console.info("deleteAccount controller");
@@ -367,6 +374,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     }
 };
 
+// Validate and process referral code
 export const validateAndProcessReferral = async (req: Request, res: Response) => {
     try {
         console.info("validateAndProcessReferral controller");
@@ -424,7 +432,7 @@ export const validateAndProcessReferral = async (req: Request, res: Response) =>
         });
     } catch (error: any) {
         console.error("validateAndProcessReferral error:", error);
-        
+
         // Handle duplicate key error
         if (error.code === 11000) {
             return res.status(400).json({
@@ -437,5 +445,160 @@ export const validateAndProcessReferral = async (req: Request, res: Response) =>
             success: false,
             message: error?.message || "Failed to process referral code",
         });
+    }
+};
+
+// Get user matches
+export const getUserMatches = async (req: Request, res: Response) => {
+    try {
+        console.info("getUserMatches controller");
+        const user = req.user as IUser | undefined;
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const currentUserId = user.user_id;
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(10, Number(req.query.limit) || 20));
+        const skip = (page - 1) * limit;
+
+        // Find all matches where current user is either user1Id or user2Id and status is matched
+        const matches = await Matches.find({
+            $or: [
+                { user1Id: currentUserId },
+                { user2Id: currentUserId }
+            ],
+            status: "matched"
+        }).sort({ updatedAt: -1 });
+
+        const total = matches.length;
+        const paginatedMatches = matches.slice(skip, skip + limit);
+
+        // Get the other user's ID for each match and fetch their details
+        const matchUsers = await Promise.all(
+            paginatedMatches.map(async (match) => {
+                const otherUserId = match.user1Id === currentUserId ? match.user2Id : match.user1Id;
+                const otherUser = await User.findOne({ user_id: otherUserId })
+                    .select('user_id displayName photoURL profile createdAt')
+                    .lean();
+
+                if (!otherUser) return null;
+
+                return {
+                    ...otherUser,
+                    matchId: match._id,
+                    matchedAt: match.createdAt,
+                    lastInteractionAt: match.lastInteractionAt
+                };
+            })
+        );
+
+        const validMatches = matchUsers.filter(Boolean);
+        res.json({ 
+            success: true, 
+            data: validMatches,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit),
+                hasMore: skip + limit < total
+            }
+        });
+    } catch (error) {
+        console.error("getUserMatches error:", error);
+        res.status(400).json({ success: false, message: "Get user matches failed" });
+    }
+};
+
+// Get users who liked the current user (but current user hasn't liked them back)
+export const getUsersWhoLikedMe = async (req: Request, res: Response) => {
+    try {
+        console.info("getUsersWhoLikedMe controller");
+        const user = req.user as IUser | undefined;
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const currentUserId = user.user_id;
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(10, Number(req.query.limit) || 20));
+        const skip = (page - 1) * limit;
+
+        // Find all interactions where current user is the target (toUser) and type is like or superlike
+        const likes = await Interaction.find({
+            toUser: currentUserId,
+            type: { $in: ["like", "superlike"] }
+        }).sort({ createdAt: -1 });
+
+        // Get unique user IDs who liked the current user
+        const likedByUserIds = [...new Set(likes.map(like => like.fromUser))];
+
+        // Check which of these users the current user has NOT liked back
+        const currentUserLikes = await Interaction.find({
+            fromUser: currentUserId,
+            toUser: { $in: likedByUserIds },
+            type: { $in: ["like", "superlike"] }
+        });
+
+        const likedBackUserIds = new Set(currentUserLikes.map(like => like.toUser));
+
+        // Filter out users who current user has already liked back (these would be matches)
+        const unlikedUserIds = likedByUserIds.filter(userId => !likedBackUserIds.has(userId));
+
+        // Also exclude users who are already matched
+        const existingMatches = await Matches.find({
+            $or: [
+                { user1Id: currentUserId, user2Id: { $in: unlikedUserIds } },
+                { user2Id: currentUserId, user1Id: { $in: unlikedUserIds } }
+            ],
+            status: "matched"
+        });
+
+        const matchedUserIds = new Set(
+            existingMatches.flatMap(match => 
+                match.user1Id === currentUserId ? [match.user2Id] : [match.user1Id]
+            )
+        );
+
+        const finalUserIds = unlikedUserIds.filter(userId => !matchedUserIds.has(userId));
+
+        // Fetch user details with pagination
+        const total = finalUserIds.length;
+        const paginatedUserIds = finalUserIds.slice(skip, skip + limit);
+        
+        const users = await User.find({ user_id: { $in: paginatedUserIds } })
+            .select('user_id displayName photoURL profile createdAt')
+            .lean();
+
+        // Add interaction details (like type and timestamp)
+        const usersWithInteraction = users.map(user => {
+            const interaction = likes.find(like => like.fromUser === user.user_id);
+            return {
+                ...user,
+                interactionType: interaction?.type,
+                likedAt: interaction?.createdAt
+            };
+        }).sort((a, b) => {
+            // Sort by most recent likes first
+            const dateA = a.likedAt ? new Date(a.likedAt).getTime() : 0;
+            const dateB = b.likedAt ? new Date(b.likedAt).getTime() : 0;
+            return dateB - dateA;
+        });
+
+        res.json({ 
+            success: true, 
+            data: usersWithInteraction,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit),
+                hasMore: skip + limit < total
+            }
+        });
+    } catch (error) {
+        console.error("getUsersWhoLikedMe error:", error);
+        res.status(400).json({ success: false, message: "Get users who liked me failed" });
     }
 };
