@@ -148,7 +148,7 @@
     "secureLinkMessage": "Nous vous enverrons un lien sécurisé pour vous connecter sur cet appareil.",
     "enterYourEmail": "Entrez votre email",
     "continue": "Continuer",
-    "checkYourEmail": "Vérifiez votre Email ! 📧",
+    "checkYourEmail": "Vérifiez votre Email ! ",
     "magicLinkSent": "Nous avons envoyé un lien magique à {{email}}. Cliquez sur le lien pour vous connecter.",
     "ok": "OK",
     "error": "Erreur",

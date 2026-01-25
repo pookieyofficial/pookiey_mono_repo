@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Linking, Platform, Alert, TouchableOpacity } from 'react-native'
+import { View, Linking, Platform, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -18,6 +18,7 @@ import { Audio } from 'expo-av'
 import { useFocusEffect } from '@react-navigation/native'
 import * as Device from 'expo-device'
 import Ionicons from '@expo/vector-icons/build/Ionicons'
+import CustomDialog, { DialogType } from '@/components/CustomDialog'
 
 export default function index() {
   const { t } = useTranslation();
@@ -33,11 +34,14 @@ export default function index() {
   const [isLoading, setIsLoading] = useState(true)
   const [permissionsChecked, setPermissionsChecked] = useState(false)
   const [permissionError, setPermissionError] = useState<string | null>(null)
+  const [permissionDialogVisible, setPermissionDialogVisible] = useState(false)
   const isRefreshingRef = useRef(false)
   const isCheckingPermissionsRef = useRef(false)
   const lastLocationSentRef = useRef<string | null>(null)
   const lastPushTokenSentRef = useRef<string | null>(null)
   const permissionDialogShownRef = useRef<string | null>(null)
+  const userDismissedAlertRef = useRef(false) // Track if user dismissed with "Not now"
+  const lastPermissionStateRef = useRef<string | null>(null) // Track last permission state to avoid duplicate alerts
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
@@ -210,6 +214,10 @@ export default function index() {
       }
 
       setPermissionsChecked(true)
+      setPermissionError(null) // Clear any previous errors
+      // Reset dismissed flag when permissions are successfully granted
+      userDismissedAlertRef.current = false
+      lastPermissionStateRef.current = 'granted'
     } catch (error) {
       console.error('Home: error ensuring permissions:', error)
       setPermissionError('Could not request permissions. Please try again.')
@@ -226,33 +234,31 @@ export default function index() {
 
   // Show a quick dialog if permissions are missing, but DO NOT block the swipe deck UI.
   useEffect(() => {
-    const message =
-      permissionError ||
-      (!permissionsChecked ? 'Permissions are required for the best experience. Please allow them.' : null)
+    // Don't show alert if user dismissed it with "Not now"
+    if (userDismissedAlertRef.current) return
 
-    if (!message) return
+    // Only show alert if there's an actual permission error (not just initial loading state)
+    if (!permissionError) {
+      // If permissions are checked and granted, reset the dismissed flag for next time
+      if (permissionsChecked) {
+        userDismissedAlertRef.current = false
+        lastPermissionStateRef.current = 'granted'
+      }
+      return
+    }
 
-    // Avoid spamming the same dialog repeatedly (e.g. on re-renders / polling)
-    if (permissionDialogShownRef.current === message) return
-    permissionDialogShownRef.current = message
+    // Avoid spamming the same dialog repeatedly
+    const currentState = permissionError
+    if (permissionDialogShownRef.current === currentState || lastPermissionStateRef.current === currentState) {
+      return
+    }
 
-    // Delay slightly so we don't show an Alert during initial render/layout
+    permissionDialogShownRef.current = currentState
+    lastPermissionStateRef.current = currentState
+
+    // Delay slightly so we don't show a dialog during initial render/layout
     const t = setTimeout(() => {
-      Alert.alert('Permissions needed', message, [
-        {
-          text: 'Grant',
-          onPress: () => {
-            // Reset so we can show again if it still fails after a re-request
-            permissionDialogShownRef.current = null
-            ensurePermissions()
-          },
-        },
-        {
-          text: 'Open Settings',
-          onPress: () => Linking.openSettings().catch(() => null),
-        },
-        { text: 'Not now', style: 'cancel' },
-      ])
+      setPermissionDialogVisible(true)
     }, 250)
 
     return () => clearTimeout(t)
@@ -441,10 +447,15 @@ export default function index() {
   )
 
   // Re-check permissions when user returns (e.g. after changing OS settings)
+  // Only re-check if permissions weren't already granted to avoid unnecessary checks
   useFocusEffect(
     useCallback(() => {
-      ensurePermissions()
-    }, [ensurePermissions])
+      // Only re-check if permissions aren't already checked
+      // This prevents constant re-checking when permissions are already granted
+      if (!permissionsChecked && !isCheckingPermissionsRef.current) {
+        ensurePermissions()
+      }
+    }, [ensurePermissions, permissionsChecked])
   )
 
   const loadMoreProfiles = async () => {
@@ -476,10 +487,60 @@ export default function index() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.parentBackgroundColor }}>
+      <CustomDialog
+        visible={permissionDialogVisible}
+        type="warning"
+        title="Permissions needed"
+        message={permissionError || ''}
+        onDismiss={() => {
+          setPermissionDialogVisible(false)
+          userDismissedAlertRef.current = true
+          permissionDialogShownRef.current = null
+        }}
+        primaryButton={{
+          text: 'Grant',
+          onPress: () => {
+            setPermissionDialogVisible(false)
+            permissionDialogShownRef.current = null
+            lastPermissionStateRef.current = null
+            ensurePermissions()
+          },
+        }}
+        secondaryButton={{
+          text: 'Open Settings',
+          onPress: () => {
+            setPermissionDialogVisible(false)
+            Linking.openSettings().catch(() => null)
+            permissionDialogShownRef.current = null
+            lastPermissionStateRef.current = null
+          },
+        }}
+        cancelButton={{
+          text: 'Not now',
+          onPress: () => {
+            setPermissionDialogVisible(false)
+            userDismissedAlertRef.current = true
+            permissionDialogShownRef.current = null
+          },
+        }}
+      />
       <View style={{ flex: 1 }}>
-        <TouchableOpacity onPress={handleRefreshProfiles} style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
-          <Ionicons name="refresh-outline" size={24} color={Colors.primary.red} />
-        </TouchableOpacity>
+
+        <View style={{
+          paddingHorizontal: 20,
+          paddingTop: 10,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+
+          <ThemedText type='title' style={{ color: Colors.primaryBackgroundColor }}>Discover</ThemedText>
+
+          <TouchableOpacity onPress={handleRefreshProfiles}>
+            <Ionicons name="refresh-outline" size={24} color={Colors.primary.red} />
+          </TouchableOpacity>
+        </View>
+
 
         {isLoading && profiles.length === 0
           ?

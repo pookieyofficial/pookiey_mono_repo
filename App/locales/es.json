@@ -148,7 +148,7 @@
     "secureLinkMessage": "Te enviaremos un enlace seguro para iniciar sesión en este dispositivo.",
     "enterYourEmail": "Ingresa tu email",
     "continue": "Continuar",
-    "checkYourEmail": "¡Revisa tu Email! 📧",
+    "checkYourEmail": "¡Revisa tu Email! ",
     "magicLinkSent": "Hemos enviado un enlace mágico a {{email}}. Haz clic en el enlace para iniciar sesión.",
     "ok": "OK",
     "error": "Error",

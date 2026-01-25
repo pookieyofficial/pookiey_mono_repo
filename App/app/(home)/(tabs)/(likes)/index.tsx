@@ -23,7 +23,7 @@ import { getUsersWhoLikedMeAPI, getUserMatchesAPI } from '@/APIs/userAPIs';
 import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2; // 2 cards per row with padding
+const CARD_WIDTH = (width - 48) / 2;
 const ITEMS_PER_PAGE = 20;
 
 type TabType = 'likes' | 'matches';
@@ -57,7 +57,7 @@ export default function LikesScreen() {
   const { token } = useAuth();
   const router = useRouter();
   const pagerRef = useRef<PagerView>(null);
-  const [activeTabIndex, setActiveTabIndex] = useState(0); // 0 = likes, 1 = matches
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [likes, setLikes] = useState<User[]>([]);
   const [matches, setMatches] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -351,14 +351,13 @@ export default function LikesScreen() {
     );
   };
 
-  // Calculate indicator position - center it under each tab's text
-  const tabWidth = (width - 40) / 2; // 2 tabs with padding
-  const indicatorWidth = 100; // Fixed width for underline (adjust as needed)
+  const tabWidth = (width - 40) / 2;
+  const indicatorWidth = 100;
   const indicatorTranslateX = indicatorPosition.interpolate({
     inputRange: [0, 1],
     outputRange: [
-      tabWidth / 2 - indicatorWidth / 2, // Center of first tab
-      tabWidth + tabWidth / 2 - indicatorWidth / 2, // Center of second tab
+      tabWidth / 2 - indicatorWidth / 2,
+      tabWidth + tabWidth / 2 - indicatorWidth / 2,
     ],
   });
 
@@ -468,7 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    color: Colors.titleColor,
+    color: Colors.primaryBackgroundColor,
   },
   tabContainer: {
     paddingHorizontal: 20,

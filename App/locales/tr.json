@@ -148,7 +148,7 @@
     "secureLinkMessage": "Bu cihazda giriş yapmak için güvenli bir bağlantı göndereceğiz.",
     "enterYourEmail": "E-postanızı girin",
     "continue": "Devam",
-    "checkYourEmail": "E-postanızı kontrol edin! 📧",
+    "checkYourEmail": "E-postanızı kontrol edin! ",
     "magicLinkSent": "{{email}} adresine sihirli bir bağlantı gönderdik. Giriş yapmak için bağlantıya tıklayın.",
     "ok": "Tamam",
     "error": "Hata",

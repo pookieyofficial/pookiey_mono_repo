@@ -148,7 +148,7 @@
     "secureLinkMessage": "We sturen u een veilige link om aan te melden op dit apparaat.",
     "enterYourEmail": "Voer uw e-mail in",
     "continue": "Doorgaan",
-    "checkYourEmail": "Controleer uw E-mail! 📧",
+    "checkYourEmail": "Controleer uw E-mail! ",
     "magicLinkSent": "We hebben een magische link naar {{email}} gestuurd. Klik op de link om aan te melden.",
     "ok": "OK",
     "error": "Fout",

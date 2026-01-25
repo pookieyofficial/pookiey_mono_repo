@@ -9,7 +9,6 @@ import {
   Platform,
   Linking,
   Keyboard,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -21,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Colors } from '@/constants/Colors';
 import { ThemedText } from '@/components/ThemedText';
 import CustomLoader from '@/components/CustomLoader';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import ParsedText from 'react-native-parsed-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio, InterruptionModeIOS } from 'expo-av';
@@ -81,6 +81,21 @@ export default function ChatRoom() {
     (dbUser?.subscription?.plan === 'premium' || dbUser?.subscription?.plan === 'super');
 
   const [imageError, setImageError] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (type: DialogType, title: string, message: string) => {
+    setDialogConfig({ type, title, message });
+    setDialogVisible(true);
+  };
 
   useLayoutEffect(() => {
     console.log('userAvatar', userAvatar);
@@ -139,20 +154,17 @@ export default function ChatRoom() {
               if (dbUser?.user_id && otherUserId) {
                 // Check premium status first
                 if (!isPremium) {
-                  Alert.alert(
-                    'Premium Required',
-                    'Voice calling requires a premium subscription. Please upgrade to make calls.'
-                  );
+                  showDialog('warning', 'Premium Required', 'Voice calling requires a premium subscription. Please upgrade to make calls.');
                   return;
                 }
 
                 const canCallNow = isConnected && isOtherUserOnline;
                 if (!isConnected) {
-                  Alert.alert('Connecting...', 'Please wait while we are connecting to the recipient!');
+                  showDialog('info', 'Connecting...', 'Please wait while we are connecting to the recipient!');
                   return;
                 }
                 if (!isOtherUserOnline) {
-                  Alert.alert('Call unavailable', 'You can only call when the recipient is online on Pookiey!');
+                  showDialog('warning', 'Call unavailable', 'You can only call when the recipient is online on Pookiey!');
                   return;
                 }
                 if (canCallNow) {
@@ -420,10 +432,7 @@ export default function ChatRoom() {
         stopTyping(matchId);
       } catch (error) {
         console.error('Error sending voice note:', error);
-        Alert.alert(
-          'Upload failed',
-          'We could not send your voice note. Please try again.'
-        );
+        showDialog('error', 'Upload failed', 'We could not send your voice note. Please try again.');
       } finally {
         await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => { });
         setUploadingAudio(false);
@@ -468,7 +477,7 @@ export default function ChatRoom() {
 
       if (!uri) {
         if (shouldSend) {
-          Alert.alert('Voice note error', 'We could not access the recorded file.');
+          showDialog('error', 'Voice note error', 'We could not access the recorded file.');
         }
         return;
       }
@@ -487,10 +496,7 @@ export default function ChatRoom() {
       const permission = await Audio.requestPermissionsAsync();
 
       if (permission.status !== 'granted') {
-        Alert.alert(
-          'Microphone access needed',
-          'Please enable microphone access in your device settings to send voice notes.'
-        );
+        showDialog('warning', 'Microphone access needed', 'Please enable microphone access in your device settings to send voice notes.');
         return;
       }
 
@@ -549,7 +555,8 @@ export default function ChatRoom() {
         error instanceof Error
           ? error.message
           : 'Unable to start recording. Please try again.';
-      Alert.alert(
+      showDialog(
+        'error',
         'Recording error',
         errorMessage.includes('Session activation failed')
           ? 'Another app is using the microphone or audio sources.'
@@ -644,7 +651,7 @@ export default function ChatRoom() {
         });
       } catch (error) {
         console.error('Error playing voice note:', error);
-        Alert.alert('Playback error', 'Unable to play this voice note.');
+        showDialog('error', 'Playback error', 'Unable to play this voice note.');
       }
     },
     [playingMessageId]
@@ -821,6 +828,18 @@ export default function ChatRoom() {
   }
 
   return (
+    <>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: 'OK',
+          onPress: () => setDialogVisible(false),
+        }}
+      />
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -921,6 +940,7 @@ export default function ChatRoom() {
 
       {/* Voice Call UI is rendered globally via CallProvider */}
     </KeyboardAvoidingView>
+    </>
   );
 }
 

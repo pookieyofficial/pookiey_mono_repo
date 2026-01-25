@@ -1,10 +1,12 @@
-import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Colors } from '@/constants/Colors';
 import { Foundation } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import CustomLoader from '@/components/CustomLoader';
 import { useRouter } from 'expo-router';
@@ -18,15 +20,30 @@ export default function Page() {
   const router = useRouter()
   const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (type: DialogType, title: string, message: string) => {
+    setDialogConfig({ type, title, message });
+    setDialogVisible(true);
+  };
 
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithGoogleMobile();
       if (result.error) {
-        Alert.alert(t('auth.googleSignInError'), result.error.message);
+        showDialog('error', t('auth.googleSignInError'), result.error.message);
       }
     } catch (error) {
-      Alert.alert(t('auth.error'), t('auth.unexpectedError'));
+      showDialog('error', t('auth.error'), t('auth.unexpectedError'));
     }
   };
 
@@ -43,7 +60,17 @@ export default function Page() {
 
   return (
     <SafeAreaView style={styles.container}>
-
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: t('auth.ok') || 'OK',
+          onPress: () => setDialogVisible(false),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.images}>
           <Image

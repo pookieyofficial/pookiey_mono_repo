@@ -18,6 +18,7 @@ interface CustomDialogProps {
     onDismiss: () => void;
     primaryButton?: DialogButton;
     secondaryButton?: DialogButton;
+    cancelButton?: DialogButton; // Third button for cancel actions
     autoHide?: number;
 }
 
@@ -55,6 +56,7 @@ export default function CustomDialog({
     onDismiss,
     primaryButton = { text: 'OK', onPress: onDismiss },
     secondaryButton,
+    cancelButton,
     autoHide,
 }: CustomDialogProps) {
     const config = getDialogConfig(type);
@@ -91,7 +93,16 @@ export default function CustomDialog({
                     <Text style={styles.message}>{message}</Text>
                 </Dialog.Content>
 
-                <Dialog.Actions>
+                <Dialog.Actions style={styles.actionsContainer}>
+                    {cancelButton && (
+                        <Button
+                            onPress={cancelButton.onPress}
+                            textColor={Colors.text.secondary}
+                            labelStyle={styles.cancelButton}
+                        >
+                            {cancelButton.text}
+                        </Button>
+                    )}
                     {secondaryButton && (
                         <Button
                             onPress={secondaryButton.onPress}
@@ -141,25 +152,38 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     titleText: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '700',
         textAlign: 'left',
+        color: Colors.titleColor,
     },
     message: {
-        fontSize: 14,
-        color:"#000",
+        fontSize: 15,
+        color: Colors.text.primary,
         textAlign: 'left',
+        lineHeight: 22,
     },
     primaryButton: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
-        color: "white",
-        paddingHorizontal: 12,
-
+        color: '#FFFFFF',
+        paddingHorizontal: 16,
+        paddingVertical: 4,
     },
     secondaryButton: {
-        fontSize: 16,
+        fontSize: 15,
+        fontWeight: '600',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+    },
+    cancelButton: {
+        fontSize: 15,
         fontWeight: '500',
-        color: "white",
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+    },
+    actionsContainer: {
+        paddingHorizontal: 8,
+        paddingBottom: 8,
     },
 });

@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
@@ -15,71 +14,93 @@ import { useAuth } from '@/hooks/useAuth';
 import { deleteAccountAPI } from '@/APIs/userAPIs';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 export default function DeleteAccountScreen() {
   const { token, signOut } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const { t } = useTranslation();
+  const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
+  const [errorDialogVisible, setErrorDialogVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successDialogVisible, setSuccessDialogVisible] = useState(false);
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      t('deleteAccount.confirmTitle'),
-      t('deleteAccount.confirmMessage'),
-      [
-        {
-          text: t('deleteAccount.confirmCancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('deleteAccount.confirmDelete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsDeleting(true);
-              if (!token) {
-                Alert.alert(
-                  t('deleteAccount.errorTitle'),
-                  t('deleteAccount.errorNotLoggedIn')
-                );
-                return;
-              }
+    setConfirmDialogVisible(true);
+  };
 
-              await axios.delete(deleteAccountAPI, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              });
+  const performDelete = async () => {
+    try {
+      setIsDeleting(true);
+      setConfirmDialogVisible(false);
+      if (!token) {
+        setErrorMessage(t('deleteAccount.errorNotLoggedIn'));
+        setErrorDialogVisible(true);
+        return;
+      }
 
-              Alert.alert(
-                t('deleteAccount.successTitle'),
-                t('deleteAccount.successMessage'),
-                [
-                  {
-                    text: t('deleteAccount.confirmCancel'),
-                    onPress: async () => {
-                      await signOut();
-                    },
-                  },
-                ]
-              );
-            } catch (error: any) {
-              console.error('Delete account error:', error);
-              Alert.alert(
-                t('deleteAccount.errorTitle'),
-                error?.response?.data?.message || t('deleteAccount.errorGeneric')
-              );
-            } finally {
-              setIsDeleting(false);
-            }
-          },
+      await axios.delete(deleteAccountAPI, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-      ]
-    );
+      });
+
+      setSuccessDialogVisible(true);
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      setErrorMessage(error?.response?.data?.message || t('deleteAccount.errorGeneric'));
+      setErrorDialogVisible(true);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={confirmDialogVisible}
+        type="warning"
+        title={t('deleteAccount.confirmTitle')}
+        message={t('deleteAccount.confirmMessage')}
+        onDismiss={() => setConfirmDialogVisible(false)}
+        primaryButton={{
+          text: t('deleteAccount.confirmDelete'),
+          onPress: performDelete,
+        }}
+        cancelButton={{
+          text: t('deleteAccount.confirmCancel'),
+          onPress: () => setConfirmDialogVisible(false),
+        }}
+      />
+      <CustomDialog
+        visible={errorDialogVisible}
+        type="error"
+        title={t('deleteAccount.errorTitle')}
+        message={errorMessage}
+        onDismiss={() => setErrorDialogVisible(false)}
+        primaryButton={{
+          text: 'OK',
+          onPress: () => setErrorDialogVisible(false),
+        }}
+      />
+      <CustomDialog
+        visible={successDialogVisible}
+        type="success"
+        title={t('deleteAccount.successTitle')}
+        message={t('deleteAccount.successMessage')}
+        onDismiss={async () => {
+          setSuccessDialogVisible(false);
+          await signOut();
+        }}
+        primaryButton={{
+          text: 'OK',
+          onPress: async () => {
+            setSuccessDialogVisible(false);
+            await signOut();
+          },
+        }}
+      />
       <CustomBackButton />
       <ScrollView
         style={styles.scrollView}

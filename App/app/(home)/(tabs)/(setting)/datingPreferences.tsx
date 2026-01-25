@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -16,7 +15,7 @@ import { useUser } from '@/hooks/useUser'
 import { useLocation } from '@/hooks/useLocation'
 import CustomBackButton from '@/components/CustomBackButton'
 import MainButton from '@/components/MainButton'
-import CustomDialog from '@/components/CustomDialog'
+import CustomDialog, { DialogType } from '@/components/CustomDialog'
 import { useTranslation } from 'react-i18next'
 
 // Number Input Component with Up/Down Arrows
@@ -138,6 +137,22 @@ const DatingPreferences = () => {
   const [distance, setDistance] = useState(50)
   const [showMe, setShowMe] = useState<"male" | "female">('male')
   const [showLocationDialog, setShowLocationDialog] = useState(false)
+  const [dialogVisible, setDialogVisible] = useState(false)
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+    onPrimaryPress?: () => void;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  })
+
+  const showDialog = (type: DialogType, title: string, message: string, onPrimaryPress?: () => void) => {
+    setDialogConfig({ type, title, message, onPrimaryPress })
+    setDialogVisible(true)
+  }
 
   // Check if user has active subscription
   const isPremium = dbUser?.subscription?.status === 'active'
@@ -157,12 +172,12 @@ const DatingPreferences = () => {
 
   const handleUpdateLocation = async () => {
     if (!location) {
-      Alert.alert(t('datingPreferences.noLocation'), t('datingPreferences.allowLocationAccess'))
+      showDialog('error', t('datingPreferences.noLocation'), t('datingPreferences.allowLocationAccess'))
       return
     }
 
     if (!idToken) {
-      Alert.alert(t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
+      showDialog('error', t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
       return
     }
 
@@ -181,13 +196,13 @@ const DatingPreferences = () => {
 
       if (response?.success) {
         setDBUser(response.data)
-        Alert.alert(t('datingPreferences.success'), t('datingPreferences.locationUpdatedSuccessfully'))
+        showDialog('success', t('datingPreferences.success'), t('datingPreferences.locationUpdatedSuccessfully'))
       } else {
-        Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdateLocation'))
+        showDialog('error', t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdateLocation'))
       }
     } catch (error: any) {
       console.error('Update location error:', error)
-      Alert.alert(t('datingPreferences.error'), error?.message || t('datingPreferences.failedToUpdateLocation'))
+      showDialog('error', t('datingPreferences.error'), error?.message || t('datingPreferences.failedToUpdateLocation'))
     }
   }
 
@@ -204,7 +219,7 @@ const DatingPreferences = () => {
 
   const handleSave = async () => {
     if (!idToken) {
-      Alert.alert(t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
+      showDialog('error', t('datingPreferences.error'), t('datingPreferences.authTokenNotFound'))
       return
     }
 
@@ -223,16 +238,17 @@ const DatingPreferences = () => {
 
       if (response?.success) {
         setDBUser(response.data)
-        Alert.alert(t('datingPreferences.success'), t('datingPreferences.preferencesUpdatedSuccessfully'), [
-          { text: t('datingPreferences.ok'), onPress: () => router.back() }
-        ])
+        showDialog('success', t('datingPreferences.success'), t('datingPreferences.preferencesUpdatedSuccessfully'), () => {
+          setDialogVisible(false)
+          router.back()
+        })
       } else {
-        Alert.alert(t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdatePreferences'))
+        showDialog('error', t('datingPreferences.error'), response?.message || t('datingPreferences.failedToUpdatePreferences'))
       }
     } catch (error: any) {
       console.error('Update preferences error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || t('datingPreferences.failedToUpdatePreferences')
-      Alert.alert(t('datingPreferences.error'), errorMessage)
+      showDialog('error', t('datingPreferences.error'), errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -240,6 +256,23 @@ const DatingPreferences = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: t('datingPreferences.ok') || 'OK',
+          onPress: () => {
+            if (dialogConfig.onPrimaryPress) {
+              dialogConfig.onPrimaryPress()
+            } else {
+              setDialogVisible(false)
+            }
+          },
+        }}
+      />
       <CustomBackButton />
       <ScrollView 
         style={styles.scrollView}

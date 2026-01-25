@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -15,7 +14,7 @@ import { useUser } from '@/hooks/useUser'
 import { useLocation } from '@/hooks/useLocation'
 import CustomBackButton from '@/components/CustomBackButton'
 import MainButton from '@/components/MainButton'
-import CustomDialog from '@/components/CustomDialog'
+import CustomDialog, { DialogType } from '@/components/CustomDialog'
 import CustomLoader from '@/components/CustomLoader'
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
 
@@ -34,15 +33,31 @@ const UpdateLocation = () => {
 
   const [isUpdating, setIsUpdating] = useState(false)
   const [showErrorDialog, setShowErrorDialog] = useState(false)
+  const [dialogVisible, setDialogVisible] = useState(false)
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+    onPrimaryPress?: () => void;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  })
+
+  const showDialog = (type: DialogType, title: string, message: string, onPrimaryPress?: () => void) => {
+    setDialogConfig({ type, title, message, onPrimaryPress })
+    setDialogVisible(true)
+  }
 
   const handleUpdateLocation = async () => {
     if (!location) {
-      Alert.alert('No Location', 'Please allow location access to update your location')
+      showDialog('error', 'No Location', 'Please allow location access to update your location')
       return
     }
 
     if (!idToken) {
-      Alert.alert('Error', 'Authentication token not found. Please log in again.')
+      showDialog('error', 'Error', 'Authentication token not found. Please log in again.')
       return
     }
 
@@ -62,16 +77,17 @@ const UpdateLocation = () => {
 
       if (response?.success) {
         setDBUser(response.data)
-        Alert.alert('Success', 'Location updated successfully', [
-          { text: 'OK', onPress: () => router.back() }
-        ])
+        showDialog('success', 'Success', 'Location updated successfully', () => {
+          setDialogVisible(false)
+          router.back()
+        })
       } else {
-        Alert.alert('Error', response?.message || 'Failed to update location')
+        showDialog('error', 'Error', response?.message || 'Failed to update location')
       }
     } catch (error: any) {
       console.error('Update location error:', error)
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update location'
-      Alert.alert('Error', errorMessage)
+      showDialog('error', 'Error', errorMessage)
     } finally {
       setIsUpdating(false)
     }
@@ -152,6 +168,23 @@ const UpdateLocation = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={{
+          text: 'OK',
+          onPress: () => {
+            if (dialogConfig.onPrimaryPress) {
+              dialogConfig.onPrimaryPress()
+            } else {
+              setDialogVisible(false)
+            }
+          },
+        }}
+      />
       <CustomBackButton />
       <View style={styles.content}>
         {/* Header */}

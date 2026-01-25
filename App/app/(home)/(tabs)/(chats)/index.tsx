@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.parentBackgroundColor,
   },
   headerTitle: {
-    color: Colors.titleColor,
+    color: Colors.primaryBackgroundColor,
   },
   connectionBadge: {
     flexDirection: 'row',

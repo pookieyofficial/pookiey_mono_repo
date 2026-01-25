@@ -11,12 +11,13 @@ import {
 } from "react-native";
 import Swiper from "react-native-deck-swiper";
 import { BlurView } from "expo-blur";
-import { Heart, Star, Plus, X } from "react-native-feather";
+import { Heart, Star, Plus, X, MapPin } from "react-native-feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "./ThemedText";
 import { Colors } from "../constants/Colors";
 import { useUserInteraction } from "../hooks/userInteraction";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -77,7 +78,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             }
             if (!response?.success) {
                 if (response?.showPriceModal) {
-                    router.push("/(home)/pricePlans");
+                    router.push("/(home)/(tabs)/(setting)/pricePlans");
                     return;
                 }
             }
@@ -131,20 +132,45 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         return (
             <View style={[styles.container, styles.emptyStateWrapper]}>
                 <View style={styles.emptyCard}>
-                    <View style={styles.emptyBadge}>
-                        <Heart
-                            width={32}
-                            height={32}
+                    {/* Decorative gradient circles */}
+                    <View style={styles.decorativeCircle1} />
+                    <View style={styles.decorativeCircle2} />
+                    
+                    {/* Icon with gradient background */}
+                    <LinearGradient
+                        colors={[`${Colors.primaryBackgroundColor}20`, `${Colors.primaryBackgroundColor}08`]}
+                        style={styles.emptyBadge}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        <View style={styles.emptyBadgeInner}>
+                            <Heart
+                                width={48}
+                                height={48}
+                                color={Colors.primaryBackgroundColor}
+                                fill={Colors.primaryBackgroundColor}
+                                strokeWidth={2}
+                            />
+                        </View>
+                    </LinearGradient>
+
+                    {/* Location icon */}
+                    <View style={styles.locationIconContainer}>
+                        <MapPin
+                            width={20}
+                            height={20}
                             color={Colors.primaryBackgroundColor}
-                            fill={`${Colors.primaryBackgroundColor}15`}
+                            strokeWidth={2.5}
                         />
                     </View>
+
                     <ThemedText type="title" style={styles.emptyTitle}>
-                        No nearby matches... yet
+                        No nearby profiles... yet
                     </ThemedText>
                     <ThemedText type="default" style={styles.emptySubtitle}>
                         We couldn't find anyone around you right now. Come back again in some time.
                     </ThemedText>
+                    
                 </View>
             </View>
         );
@@ -291,14 +317,14 @@ const ActionRow: React.FC<{
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, position: "relative" },
+    container: { flex: 1, position: "relative", backgroundColor: Colors.parentBackgroundColor },
     card: {
         width: SCREEN_WIDTH * 0.85,
         height: SCREEN_HEIGHT * 0.55,
         borderRadius: 18,
         overflow: "hidden",
         alignSelf: "center",
-        backgroundColor: "white",
+        backgroundColor: Colors.primary.white,
     },
     image: { width: "100%", height: "100%" },
     gradient: {
@@ -396,39 +422,107 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
+        position: "relative",
     },
     emptyCard: {
-        width: SCREEN_WIDTH * 0.85,
-        paddingVertical: 36,
-        paddingHorizontal: 24,
-        borderRadius: 24,
+        width: SCREEN_WIDTH * 0.9,
+        maxWidth: 400,
+        paddingVertical: 48,
+        paddingHorizontal: 32,
+        borderRadius: 28,
         backgroundColor: Colors.primary.white,
-        borderWidth: 1,
-        borderColor: Colors.text.light,
+        borderWidth: 1.5,
+        borderColor: `${Colors.primaryBackgroundColor}15`,
         shadowColor: Colors.primaryBackgroundColor,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.12,
+        shadowRadius: 24,
+        elevation: 8,
         alignItems: "center",
-        gap: 12,
+        gap: 20,
+        position: "relative",
+        overflow: "visible",
+    },
+    decorativeCircle1: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: `${Colors.primaryBackgroundColor}08`,
+        top: -40,
+        right: -40,
+    },
+    decorativeCircle2: {
+        position: "absolute",
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: `${Colors.primaryBackgroundColor}05`,
+        bottom: -30,
+        left: -30,
     },
     emptyBadge: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: Colors.secondaryBackgroundColor,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 8,
+        shadowColor: Colors.primaryBackgroundColor,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 6,
+    },
+    emptyBadgeInner: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        backgroundColor: Colors.primary.white,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 2,
+        borderColor: `${Colors.primaryBackgroundColor}20`,
+    },
+    locationIconContainer: {
+        position: "absolute",
+        top: 20,
+        right: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: `${Colors.primaryBackgroundColor}10`,
         alignItems: "center",
         justifyContent: "center",
     },
     emptyTitle: {
         color: Colors.titleColor,
         textAlign: "center",
+        fontSize: 24,
+        fontFamily: "HellixBold",
+        marginTop: 8,
     },
     emptySubtitle: {
         color: Colors.text.secondary,
         textAlign: "center",
-        lineHeight: 20,
+        lineHeight: 22,
+        fontSize: 15,
+        paddingHorizontal: 8,
+    },
+    decorativeDots: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 8,
+    },
+    dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: Colors.text.light,
+    },
+    dotActive: {
+        backgroundColor: Colors.primaryBackgroundColor,
+        width: 24,
     },
 });
 
