@@ -6,7 +6,6 @@ import {
     Image,
     TouchableOpacity,
     Pressable,
-    Alert,
     Dimensions,
 } from "react-native";
 import Swiper from "react-native-deck-swiper";
@@ -18,6 +17,7 @@ import { Colors } from "../constants/Colors";
 import { useUserInteraction } from "../hooks/userInteraction";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import CustomDialog, { DialogType } from "./CustomDialog";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -41,6 +41,30 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     const { likeUser, dislikeUser, superlikeUser } = useUserInteraction();
     const swiperRef = React.useRef<any>(null);
     const [cardIndex, setCardIndex] = React.useState(0);
+
+    // Dialog states
+    const [dialogVisible, setDialogVisible] = React.useState(false);
+    const [dialogType, setDialogType] = React.useState<DialogType>('info');
+    const [dialogTitle, setDialogTitle] = React.useState<string>('');
+    const [dialogMessage, setDialogMessage] = React.useState<string>('');
+    const [dialogPrimaryButton, setDialogPrimaryButton] = React.useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+    const [dialogSecondaryButton, setDialogSecondaryButton] = React.useState<{ text: string; onPress: () => void } | undefined>(undefined);
+
+    // Show dialog helper function
+    const showDialog = (
+        type: DialogType,
+        message: string,
+        title?: string,
+        primaryButton?: { text: string; onPress: () => void },
+        secondaryButton?: { text: string; onPress: () => void }
+    ) => {
+        setDialogType(type);
+        setDialogTitle(title || '');
+        setDialogMessage(message);
+        setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+        setDialogSecondaryButton(secondaryButton);
+        setDialogVisible(true);
+    };
 
     const calculateAge = (dateOfBirth: Date) => {
         const today = new Date();
@@ -83,7 +107,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 }
             }
         } catch (err) {
-            Alert.alert("Error", "Something went wrong");
+            showDialog("error", "Something went wrong", "Error");
             return;
         }
     };
@@ -104,7 +128,31 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     resizeMode="cover"
                 />
 
-                <BlurView intensity={80} tint="dark" style={styles.gradient} />
+                {/* Blurred backdrop image for better blur effect */}
+                <Image
+                    source={
+                        item?.profile?.photos?.[0]?.url
+                            ? { uri: item.profile.photos[0].url }
+                            : require("@/assets/images/loginPageImage.png")
+                    }
+                    style={styles.blurredBackdrop}
+                    resizeMode="cover"
+                    blurRadius={20}
+                />
+
+                <BlurView 
+                    intensity={100} 
+                    tint="dark"
+                    style={styles.gradient}
+                >
+                    {/* Semi-transparent overlay to enhance blur visibility */}
+                    <LinearGradient
+                        colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0.25)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.blurOverlay}
+                    />
+                </BlurView>
 
                 <TouchableOpacity
                     activeOpacity={0.8}
@@ -130,7 +178,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
     if (!hasCards) {
         return (
-            <View style={[styles.container, styles.emptyStateWrapper]}>
+            <>
+                <CustomDialog
+                    visible={dialogVisible}
+                    type={dialogType}
+                    title={dialogTitle}
+                    message={dialogMessage}
+                    onDismiss={() => setDialogVisible(false)}
+                    primaryButton={dialogPrimaryButton}
+                    secondaryButton={dialogSecondaryButton}
+                />
+                <View style={[styles.container, styles.emptyStateWrapper]}>
                 <View style={styles.emptyCard}>
                     {/* Decorative gradient circles */}
                     <View style={styles.decorativeCircle1} />
@@ -173,12 +231,23 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     
                 </View>
             </View>
+            </>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <Swiper
+        <>
+            <CustomDialog
+                visible={dialogVisible}
+                type={dialogType}
+                title={dialogTitle}
+                message={dialogMessage}
+                onDismiss={() => setDialogVisible(false)}
+                primaryButton={dialogPrimaryButton}
+                secondaryButton={dialogSecondaryButton}
+            />
+            <View style={styles.container}>
+                <Swiper
                 ref={swiperRef}
                 cards={data}
                 renderCard={(item: CardItem) => renderCard(item)}
@@ -274,6 +343,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 />
             </View>
         </View>
+        </>
     );
 };
 
@@ -327,18 +397,38 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary.white,
     },
     image: { width: "100%", height: "100%" },
+    blurredBackdrop: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 85,
+        width: "100%",
+    },
     gradient: {
         position: "absolute",
         left: 0,
         right: 0,
         bottom: 0,
-        height: 80,
+        height: 85,
+        overflow: "hidden",
+    },
+    blurOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
     },
     footer: {
         position: "absolute",
         left: 16,
         right: 16,
-        bottom: 16,
+        bottom: 0,
+        height: 85,
+        justifyContent: "center",
     },
     name: { color: Colors.textColor, fontSize: 22 },
     job: { color: Colors.textColor, marginTop: 4 },

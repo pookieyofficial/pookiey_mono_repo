@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Linking, Platform, TouchableOpacity } from 'react-native'
+import { View, Linking, Platform, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -19,6 +20,127 @@ import { useFocusEffect } from '@react-navigation/native'
 import * as Device from 'expo-device'
 import Ionicons from '@expo/vector-icons/build/Ionicons'
 import CustomDialog, { DialogType } from '@/components/CustomDialog'
+
+// GPS Radar Scanning Animation Component
+const CircularLoader: React.FC<{ message?: string }> = ({ message }) => {
+  const size = 120
+  const strokeWidth = 1.5
+
+  const scanAnim = useRef(new Animated.Value(0)).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
+  const fadeAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    // Radar scanning sweep animation (360 degrees)
+    const scanAnimation = Animated.loop(
+      Animated.timing(scanAnim, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    )
+
+    // Pulse animation for center dot
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.3,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    )
+
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start()
+
+    scanAnimation.start()
+    pulseAnimation.start()
+
+    return () => {
+      scanAnimation.stop()
+      pulseAnimation.stop()
+    }
+  }, [])
+
+  const rotation = scanAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  })
+
+  const opacity = pulseAnim.interpolate({
+    inputRange: [1, 1.3],
+    outputRange: [0.7, 1],
+  })
+
+  // Create concentric circles for radar effect
+  const circles = [1, 0.75, 0.5, 0.25]
+
+  return (
+    <Animated.View style={[loaderStyles.container, { opacity: fadeAnim }]}>
+      <View style={loaderStyles.loaderWrapper}>
+        {/* Concentric circles (radar grid) */}
+        {circles.map((scale, index) => (
+          <View
+            key={`circle-${index}`}
+            style={[
+              loaderStyles.radarCircle,
+              {
+                width: size * scale,
+                height: size * scale,
+                borderRadius: (size * scale) / 2,
+                borderWidth: strokeWidth,
+                borderColor: `${Colors.primaryBackgroundColor}${Math.floor(25 - index * 5)}`,
+              },
+            ]}
+          />
+        ))}
+
+        {/* Scanning sweep triangle (radar beam) */}
+        <Animated.View
+          style={[
+            loaderStyles.scanSweepContainer,
+            {
+              transform: [{ rotate: rotation }],
+            },
+          ]}
+        >
+          {/* Gradient triangle using overlapping translucent layers */}
+          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleOuter]} />
+          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleMid]} />
+          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleInner]} />
+        </Animated.View>
+
+        {/* Center pulsing dot */}
+        <Animated.View
+          style={[
+            loaderStyles.centerDot,
+            {
+              transform: [{ scale: pulseAnim }],
+              opacity: opacity,
+              backgroundColor: Colors.primaryBackgroundColor,
+            },
+          ]}
+        />
+      </View>
+      {message && (
+        <ThemedText style={loaderStyles.message}>{message}</ThemedText>
+      )}
+    </Animated.View>
+  )
+}
 
 export default function index() {
   const { t } = useTranslation();
@@ -423,35 +545,30 @@ export default function index() {
   initializeProfilesRef.current = initializeProfiles
 
   useEffect(() => {
-    // Only initialize profiles if permissions are checked and granted
-    if (permissionsChecked && idToken) {
+    if (idToken) {
       initializeProfilesRef.current()
     }
-  }, [idToken, permissionsChecked])
+  }, [idToken])
 
   useEffect(() => {
-    // Only load stories if permissions are checked
-    if (permissionsChecked) {
-      loadStories()
+    // Load stories in background - don't wait for permissions
+    if (token) {
+      loadStories().catch((error) => {
+        console.error('Error loading stories in background:', error)
+      })
     }
-  }, [loadStories, permissionsChecked])
+  }, [token])
 
-  // Refresh profiles when screen comes into focus (e.g., after updating dating preferences)
-  // Only refresh if we already have profiles (user returned from another screen, not initial load)
   useFocusEffect(
     useCallback(() => {
-      if (permissionsChecked && idToken && profiles.length > 0 && !isRefreshingRef.current) {
+      if (idToken && profiles.length > 0 && !isRefreshingRef.current) {
         initializeProfilesRef.current()
       }
-    }, [permissionsChecked, idToken, profiles.length])
+    }, [idToken, profiles.length])
   )
 
-  // Re-check permissions when user returns (e.g. after changing OS settings)
-  // Only re-check if permissions weren't already granted to avoid unnecessary checks
   useFocusEffect(
     useCallback(() => {
-      // Only re-check if permissions aren't already checked
-      // This prevents constant re-checking when permissions are already granted
       if (!permissionsChecked && !isCheckingPermissionsRef.current) {
         ensurePermissions()
       }
@@ -544,9 +661,7 @@ export default function index() {
 
         {isLoading && profiles.length === 0
           ?
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ThemedText>{t('home.loadingProfiles')}</ThemedText>
-          </View>
+          <CircularLoader message={t('home.loadingProfiles')} />
           :
           <SwipeDeck key={deckKey} data={profiles} onSwiped={onSwiped} onMatch={onMatch} onCardPress={onCardPress} />
         }
@@ -555,3 +670,90 @@ export default function index() {
     </SafeAreaView>
   )
 }
+
+const loaderStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 24,
+  },
+  loaderWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 120,
+    height: 120,
+  },
+  radarCircle: {
+    position: 'absolute',
+    borderStyle: 'dashed',
+  },
+  scanSweepContainer: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    top: 0,
+    left: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanTriangle: {
+    position: 'absolute',
+    width: 0,
+    height: 0,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    // Position: point at exact center
+    top: 0,
+    left: '50%',
+  },
+  triangleOuter: {
+    // Outer layer - very translucent
+    borderLeftWidth: 26,
+    borderRightWidth: 26,
+    borderBottomWidth: 60,
+    borderBottomColor: `${Colors.primaryBackgroundColor}20`,
+    marginLeft: -26,
+  },
+  triangleMid: {
+    // Middle layer - medium translucent
+    borderLeftWidth: 20,
+    borderRightWidth: 20,
+    borderBottomWidth: 50,
+    borderBottomColor: `${Colors.primaryBackgroundColor}50`,
+    marginLeft: -20,
+    top: 5,
+  },
+  triangleInner: {
+    // Inner layer - more visible but still translucent
+    borderLeftWidth: 14,
+    borderRightWidth: 14,
+    borderBottomWidth: 40,
+    borderBottomColor: `${Colors.primaryBackgroundColor}80`,
+    marginLeft: -14,
+    top: 10,
+    shadowColor: Colors.primaryBackgroundColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  centerDot: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    shadowColor: Colors.primaryBackgroundColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  message: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    fontFamily: 'HellixMedium',
+    marginTop: 8,
+  },
+})

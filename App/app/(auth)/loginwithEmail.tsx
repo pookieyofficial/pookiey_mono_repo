@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import CustomBackButton from '@/components/CustomBackButton';
@@ -117,12 +117,6 @@ export default function LoginWithEmail() {
     statusMessage || `Enter the 6-digit code we sent to ${normalizedEmail}.`;
 
   const otpDigits = Array.from({ length: OTP_LENGTH }).map((_, index) => otp[index] || '');
-
-  if (isLoading) {
-    return (
-      <CustomLoader messages={[isOtpStep ? t('auth.loggingIn') : t('auth.sendingMagicLink')]} />
-    )
-  }
 
   if (isDeepLinkProcessing) {
     return (
@@ -248,19 +242,12 @@ export default function LoginWithEmail() {
             </View>
           )}
 
-          {/* Footer
-          <View style={styles.footer}>
-            <ThemedText type="default" style={styles.footerText}>
-              We'll send you a secure link to sign in
-            </ThemedText>
-          </View> */}
-
           {/* Continue Button */}
           <View style={styles.footer}>
-
             <MainButton
               title={isOtpStep ? 'Verify & Sign In' : t('auth.continue')}
               onPress={handlePrimaryAction}
+              disabled={isLoading }
             />
           </View>
         </View>
@@ -412,5 +399,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginTop: 12,
+  },
+  loadingIndicator: {
+    marginRight: 10,
+  },
+  loadingText: {
+    color: Colors.primary.white,
+    fontSize: 16,
+    fontFamily: 'HellixSemiBold',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primaryBackgroundColor,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
   },
 });

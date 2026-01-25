@@ -1,9 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
 import { VoiceCallUI } from '@/components/VoiceCallUI';
 import { useTwilioVoice } from '@/hooks/useTwilioVoice';
 import { useMessagingStore } from '@/store/messagingStore';
 import { AudioDevice } from '@twilio/voice-react-native-sdk';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 type CallContextValue = {
   makeCall: (matchId: string, receiverId: string, receiverIdentity: string) => Promise<void>;
@@ -44,6 +44,33 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   } = useTwilioVoice();
   const [outgoingMatchId, setOutgoingMatchId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<DialogType>('info');
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogPrimaryButton, setDialogPrimaryButton] = useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+  const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
+  const [dialogCancelButton, setDialogCancelButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
+
+  // Show dialog helper function
+  const showDialog = (
+    type: DialogType,
+    message: string,
+    title?: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void },
+    cancelButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogType(type);
+    setDialogTitle(title || '');
+    setDialogMessage(message);
+    setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+    setDialogSecondaryButton(secondaryButton);
+    setDialogCancelButton(cancelButton);
+    setDialogVisible(true);
+  };
 
   const caller = useMemo(() => {
     if (!incomingCall?.matchId) return null;
@@ -91,7 +118,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const onAudioDevicePress = useCallback(async () => {
     const devices = audioDevices || [];
     if (!devices.length) {
-      Alert.alert('Audio output', 'No audio devices found.');
+      showDialog('info', 'No audio devices found.', 'Audio output');
       return;
     }
 
@@ -106,17 +133,69 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    Alert.alert(
-      'Audio output',
-      'Choose where you want to hear the call',
-      [
-        ...devices.map((d) => ({
-          text: d.name,
-          onPress: () => selectAudioDevice(d),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ]
-    );
+    // For multiple devices, show selection dialog
+    // Since CustomDialog supports limited buttons, we'll show the first 2 devices as buttons
+    // and list others in the message, or show all in message with instructions
+    if (devices.length > 2) {
+      const deviceList = devices.map((d, idx) => `${idx + 1}. ${d.name}`).join('\n');
+      const firstDevice = devices[0];
+      const secondDevice = devices[1];
+      
+      showDialog(
+        'info',
+        `Available audio devices:\n${deviceList}\n\nTap a button to select, or use the toggle for quick switching.`,
+        'Audio output',
+        {
+          text: firstDevice.name,
+          onPress: () => {
+            setDialogVisible(false);
+            selectAudioDevice(firstDevice);
+          },
+        },
+        secondDevice ? {
+          text: secondDevice.name,
+          onPress: () => {
+            setDialogVisible(false);
+            selectAudioDevice(secondDevice);
+          },
+        } : undefined,
+        {
+          text: 'Cancel',
+          onPress: () => setDialogVisible(false),
+        }
+      );
+    } else if (devices.length === 2) {
+      // Two devices - show both as buttons
+      const firstDevice = devices[0];
+      const secondDevice = devices[1];
+      
+      showDialog(
+        'info',
+        'Choose where you want to hear the call',
+        'Audio output',
+        {
+          text: firstDevice.name,
+          onPress: () => {
+            setDialogVisible(false);
+            selectAudioDevice(firstDevice);
+          },
+        },
+        {
+          text: secondDevice.name,
+          onPress: () => {
+            setDialogVisible(false);
+            selectAudioDevice(secondDevice);
+          },
+        },
+        {
+          text: 'Cancel',
+          onPress: () => setDialogVisible(false),
+        }
+      );
+    } else if (devices.length === 1) {
+      // Single device - just select it
+      await selectAudioDevice(devices[0]);
+    }
   }, [audioDevices, selectedAudioDevice?.uuid, selectAudioDevice]);
 
   const ctx = useMemo<CallContextValue>(
@@ -154,6 +233,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   return (
     <CallContext.Provider value={ctx}>
       {children}
+
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogType}
+        title={dialogTitle}
+        message={dialogMessage}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogPrimaryButton}
+        secondaryButton={dialogSecondaryButton}
+        cancelButton={dialogCancelButton}
+      />
 
       {/* Global voice call UI (so incoming calls show on any screen while app is open) */}
       <VoiceCallUI

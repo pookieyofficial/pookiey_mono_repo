@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   Linking,
-  Alert,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { subscriptionAPI, SubscriptionPlan } from '@/APIs/subscriptionAPIs';
 import CustomBackButton from '@/components/CustomBackButton';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 const POOKIEY_WEB_URL = process.env.EXPO_PUBLIC_POOKIEY_WEB_URL;
 
@@ -39,6 +39,14 @@ export default function PricePlansScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<DialogType>('info');
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogPrimaryButton, setDialogPrimaryButton] = useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+  const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
+
   useEffect(() => {
     const loadPlans = async () => {
       if (!token) return;
@@ -59,13 +67,29 @@ export default function PricePlansScreen() {
     loadPlans();
   }, [token]);
 
+  // Show dialog helper function
+  const showDialog = (
+    type: DialogType,
+    message: string,
+    title?: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogType(type);
+    setDialogTitle(title || '');
+    setDialogMessage(message);
+    setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+    setDialogSecondaryButton(secondaryButton);
+    setDialogVisible(true);
+  };
+
   const handleOpenWeb = () => {
     if (!POOKIEY_WEB_URL) {
-      Alert.alert('Not available', 'Purchase link is not configured.');
+      showDialog('warning', 'Purchase link is not configured.', 'Not available');
       return;
     }
     Linking.openURL(POOKIEY_WEB_URL).catch(() => {
-      Alert.alert('Error', 'Could not open the website.');
+      showDialog('error', 'Could not open the website.', 'Error');
     });
   };
 
@@ -134,8 +158,18 @@ export default function PricePlansScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
+    <>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogType}
+        title={dialogTitle}
+        message={dialogMessage}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogPrimaryButton}
+        secondaryButton={dialogSecondaryButton}
+      />
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <View style={styles.container}>
         <CustomBackButton />
 
         <View style={styles.header}>
@@ -176,6 +210,7 @@ export default function PricePlansScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </>
   );
 }
 

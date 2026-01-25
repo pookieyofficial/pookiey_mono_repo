@@ -306,8 +306,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
   return (
     <SafeAreaView style={styles.safeAreaContainer} edges={[]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <View style={styles.container}>
+      <View style={styles.container}> 
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}

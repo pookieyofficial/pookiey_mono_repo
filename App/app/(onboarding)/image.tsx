@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Dimensions, ScrollView, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,6 +15,7 @@ import { requestPresignedURl, uploadMultipleTos3 } from '@/hooks/uploadTos3';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { compressImageToJPEG } from '@/utils/imageCompression';
 import { useTranslation } from 'react-i18next';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_SIZE = (screenWidth - 80) / 3;
@@ -27,6 +28,21 @@ export default function PremiumImageSelectorScreen() {
   const [selectedImageMimeTypes, setSelectedImageMimeTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (type: DialogType, title: string, message: string) => {
+    setDialogConfig({ type, title, message });
+    setDialogVisible(true);
+  };
 
   useEffect(() => {
     console.log({ photos })
@@ -137,7 +153,7 @@ export default function PremiumImageSelectorScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (permissionResult.granted === false) {
-        Alert.alert(t('image.permissionRequired'), t('image.grantCameraRoll'));
+        showDialog('warning', t('image.permissionRequired'), t('image.grantCameraRoll'));
         return;
       }
 
@@ -174,7 +190,7 @@ export default function PremiumImageSelectorScreen() {
         ]).start();
       }
     } catch (error) {
-      Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
+      showDialog('error', t('profile.error'), t('profile.failedToSelectImage'));
       console.error('Image picker error:', error);
     } finally {
       setIsLoading(false);
@@ -279,6 +295,13 @@ export default function PremiumImageSelectorScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+      />
       <CustomBackButton />
 
       {/* Modern Header */}

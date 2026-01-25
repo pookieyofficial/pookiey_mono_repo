@@ -13,41 +13,20 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Modal,
-  TouchableWithoutFeedback,
   Platform,
-  Alert,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import { Ionicons } from '@expo/vector-icons';
 import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
 import { compressImageToJPEG } from '@/utils/imageCompression';
 import { useUser } from '@/hooks/useUser';
 import * as FileSystem from 'expo-file-system/legacy';
-
-// Define color scheme
-const Colors = {
-  primaryBackgroundColor: "#4B164C",
-  secondaryBackgroundColor: "#FCF3FA",
-  primaryForegroundColor: "#4B164C",
-  secondaryForegroundColor: "#8E4C8F",
-  buttonBackgroundColor: "#4B164C",
-  buttonForegroundColor: "#FFFFFF",
-  parentBackgroundColor: "#FFFFFF",
-  iconsColor: "#4B164C",
-  titleColor: "#1A1A1A",
-  textColor: "#FFFFFF",
-  inputBackgroundColor: "#F8F8F8",
-  inputTextColor: "#333333",
-  placeholderColor: "#888888",
-  borderColor: "#E8E8E8",
-  successColor: "#4ADE80",
-  errorColor: "#EF4444",
-};
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 
@@ -60,6 +39,56 @@ export default function ProfileScreen() {
   const [tempDate, setTempDate] = useState(birthday ? new Date(birthday) : new Date());
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedPhotoURL, setUploadedPhotoURL] = useState<string | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: DialogType;
+    title: string;
+    message: string;
+    primaryButton?: { text: string; onPress: () => void };
+    secondaryButton?: { text: string; onPress: () => void };
+    cancelButton?: { text: string; onPress: () => void };
+  }>({
+    type: 'error',
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (
+    type: DialogType,
+    title: string,
+    message: string,
+    onPrimaryPress?: () => void,
+    onSecondaryPress?: () => void,
+    onCancelPress?: () => void
+  ) => {
+    const config: typeof dialogConfig = {
+      type,
+      title,
+      message,
+    };
+
+    if (onPrimaryPress) {
+      config.primaryButton = {
+        text: t('profile.takePhoto') || 'Take Photo',
+        onPress: onPrimaryPress,
+      };
+    }
+    if (onSecondaryPress) {
+      config.secondaryButton = {
+        text: t('profile.chooseFromLibrary') || 'Choose from Library',
+        onPress: onSecondaryPress,
+      };
+    }
+    if (onCancelPress) {
+      config.cancelButton = {
+        text: t('profile.cancel') || 'Cancel',
+        onPress: onCancelPress,
+      };
+    }
+
+    setDialogConfig(config);
+    setDialogVisible(true);
+  };
   
   // Initialize name from provider if available, otherwise from store
   const getInitialFirstName = () => {
@@ -110,12 +139,12 @@ export default function ProfileScreen() {
 
   const handleConfirm = () => {
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert(t('profile.missingInfo'), t('profile.enterBothNames'));
+      showDialog('error', t('profile.missingInfo'), t('profile.enterBothNames'));
       return;
     }
 
     if (!birthday) {
-      Alert.alert(t('profile.missingInfo'), t('profile.selectBirthday'));
+      showDialog('error', t('profile.missingInfo'), t('profile.selectBirthday'));
       return;
     }
 
@@ -124,10 +153,7 @@ export default function ProfileScreen() {
     const age = calculateAge(birthdayDate);
     
     if (age < 18) {
-      Alert.alert(
-        t('profile.ageRestriction'),
-        t('profile.mustBe18'),
-      );
+      showDialog('warning', t('profile.ageRestriction'), t('profile.mustBe18'));
       return;
     }
 
@@ -135,15 +161,10 @@ export default function ProfileScreen() {
     router.push('/(onboarding)/referral');
   };
 
-  const handleBirthdayChange = (event: any, selectedDate: any) => {
-
-    // only close picker on android on user confirm click, on iOS it is default.
-    Platform.OS === "android" && setShowDatePicker(false);
-
-    if (selectedDate) {
-      setTempDate(selectedDate);
-      setBirthday(selectedDate.toISOString());
-    }
+  const handleBirthdayChange = (selectedDate: Date) => {
+    setTempDate(selectedDate);
+    setBirthday(selectedDate.toISOString());
+    setShowDatePicker(false);
   };
 
   const formatDate = (dateString: any) => {
@@ -221,7 +242,7 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       setIsUploading(false);
-      Alert.alert(t('profile.error'), t('profile.failedToUploadImage'));
+      showDialog('error', t('profile.error'), t('profile.failedToUploadImage'));
       throw error;
     }
   };
@@ -231,7 +252,7 @@ export default function ProfileScreen() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(t('profile.permissionRequired'), t('profile.cameraRollPermission'));
+        showDialog('warning', t('profile.permissionRequired'), t('profile.cameraRollPermission'));
         return;
       }
 
@@ -249,7 +270,7 @@ export default function ProfileScreen() {
         await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
-      Alert.alert(t('profile.error'), t('profile.failedToSelectImage'));
+      showDialog('error', t('profile.error'), t('profile.failedToSelectImage'));
     }
   };
 
@@ -258,7 +279,7 @@ export default function ProfileScreen() {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(t('profile.permissionRequired'), t('profile.cameraPermission'));
+        showDialog('warning', t('profile.permissionRequired'), t('profile.cameraPermission'));
         return;
       }
 
@@ -275,33 +296,44 @@ export default function ProfileScreen() {
         await uploadProfilePicture(selectedUri);
       }
     } catch (error) {
-      Alert.alert(t('profile.error'), t('profile.failedToTakePhoto'));
+      showDialog('error', t('profile.error'), t('profile.failedToTakePhoto'));
     }
   };
 
   const showImagePickerOptions = () => {
-    Alert.alert(
+    showDialog(
+      'info',
       t('profile.selectProfilePicture'),
       t('profile.chooseOption'),
-      [
-        {
-          text: t('profile.chooseFromLibrary'),
-          onPress: pickImage,
-        },
-        {
-          text: t('profile.takePhoto'),
-          onPress: takePhoto,
-        },
-        {
-          text: t('profile.cancel'),
-          style: 'cancel',
-        },
-      ]
+      () => {
+        setDialogVisible(false);
+        takePhoto();
+      },
+      () => {
+        setDialogVisible(false);
+        pickImage();
+      },
+      () => {
+        setDialogVisible(false);
+      }
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogConfig.primaryButton || {
+          text: t('auth.ok') || 'OK',
+          onPress: () => setDialogVisible(false),
+        }}
+        secondaryButton={dialogConfig.secondaryButton}
+        cancelButton={dialogConfig.cancelButton}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -313,7 +345,7 @@ export default function ProfileScreen() {
           <View style={styles.content}>
             <View style={styles.header}>
               <ThemedText type="title" style={styles.title}>{t('profile.title')}</ThemedText>
-              <ThemedText type='subtitle' style={styles.subtitle}>{t('profile.subtitle')}</ThemedText>
+              <ThemedText type='default' style={styles.subtitle}>{t('profile.subtitle')}</ThemedText>
             </View>
 
             <View style={styles.profilePictureContainer}>
@@ -337,11 +369,11 @@ export default function ProfileScreen() {
                     </>
                   ) : (
                     <View style={styles.profileImagePlaceholder}>
-                      <Ionicons name="person" size={60} color={Colors.secondaryForegroundColor} />
+                      <Ionicons name="person" size={60} color={Colors.text.tertiary} />
                     </View>
                   )}
                   <View style={styles.cameraIcon}>
-                    <Ionicons name="camera" size={20} color={Colors.textColor} />
+                    <Ionicons name="camera" size={20} color={Colors.primary.white} />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -369,7 +401,7 @@ export default function ProfileScreen() {
                   value={firstName}
                   onChangeText={setFirstName}
                   placeholder="David"
-                  placeholderTextColor={Colors.placeholderColor}
+                  placeholderTextColor={Colors.text.tertiary}
                 />
               </View>
 
@@ -380,7 +412,7 @@ export default function ProfileScreen() {
                   value={lastName}
                   onChangeText={setLastName}
                   placeholder="Peterson"
-                  placeholderTextColor={Colors.placeholderColor}
+                  placeholderTextColor={Colors.text.tertiary}
                 />
               </View>
 
@@ -392,7 +424,7 @@ export default function ProfileScreen() {
                 >
                   <View style={styles.birthdayContent}>
                     <View style={styles.calendarIconContainer}>
-                      <Ionicons name="calendar" size={20} color={Colors.primaryForegroundColor} />
+                      <Ionicons name="calendar" size={20} color={Colors.primaryBackgroundColor} />
                     </View>
                     <ThemedText type='default' style={[
                       styles.birthdayText,
@@ -412,31 +444,13 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
 
-        {showDatePicker && (
-          <Modal
-            transparent={true}
-            animationType="slide"
-            visible={showDatePicker}
-            onRequestClose={() => setShowDatePicker(false)}
-          >
-            <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
-              <View style={styles.modalOverlay} />
-            </TouchableWithoutFeedback>
-
-            <View style={styles.datePickerContainer}>
-
-              <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleBirthdayChange}
-                maximumDate={new Date()}
-                themeVariant="light"
-                textColor={Colors.primaryForegroundColor}
-              />
-            </View>
-          </Modal>
-        )}
+        <CustomDatePicker
+          visible={showDatePicker}
+          value={tempDate}
+          maximumDate={new Date()}
+          onConfirm={handleBirthdayChange}
+          onCancel={() => setShowDatePicker(false)}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -445,7 +459,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.parentBackgroundColor,
+    backgroundColor: Colors.primary.white,
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -463,14 +477,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: Colors.titleColor,
+    color: Colors.onboarding.titleText,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.secondaryForegroundColor,
+    color: Colors.onboarding.descriptionText,
     textAlign: 'center',
   },
   profilePictureContainer: {
@@ -521,7 +534,7 @@ const styles = StyleSheet.create({
   },
   profilePictureHint: {
     fontSize: 14,
-    color: Colors.secondaryForegroundColor,
+    color: Colors.text.secondary,
     marginTop: 8,
   },
   uploadingOverlay: {
@@ -547,7 +560,6 @@ const styles = StyleSheet.create({
   editOptionText: {
     fontSize: 14,
     color: Colors.primaryBackgroundColor,
-    fontWeight: '600',
   },
   inputContainer: {
     flex: 1,
@@ -558,26 +570,24 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    color: Colors.primaryForegroundColor,
+    color: Colors.text.primary,
     marginBottom: 8,
-    fontWeight: '600',
     letterSpacing: 0.2,
   },
   textInput: {
-    backgroundColor: Colors.inputBackgroundColor,
+    backgroundColor: '#F8F8F8',
     borderWidth: 1,
-    borderColor: Colors.borderColor,
+    borderColor: '#E8E8E8',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: Colors.inputTextColor,
-    fontWeight: '500',
+    color: Colors.text.primary,
   },
   birthdayButton: {
-    backgroundColor: Colors.inputBackgroundColor,
+    backgroundColor: '#F8F8F8',
     borderWidth: 1,
-    borderColor: Colors.borderColor,
+    borderColor: '#E8E8E8',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 16,
@@ -595,60 +605,9 @@ const styles = StyleSheet.create({
   },
   birthdayText: {
     fontSize: 16,
-    color: Colors.placeholderColor,
-    fontWeight: '500',
+    color: Colors.text.tertiary,
   },
   birthdayTextSelected: {
-    color: Colors.inputTextColor,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  datePickerContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.parentBackgroundColor,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderColor,
-  },
-  datePickerCancel: {
-    padding: 8,
-  },
-  datePickerCancelText: {
-    color: Colors.secondaryForegroundColor,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.titleColor,
-  },
-  datePickerConfirm: {
-    padding: 8,
-  },
-  datePickerConfirmText: {
-    color: Colors.primaryBackgroundColor,
-    fontSize: 16,
-    fontWeight: '600',
+    color: Colors.text.primary,
   },
 });

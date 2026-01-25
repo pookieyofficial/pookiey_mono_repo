@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
-  Alert,
   ActivityIndicator,
   Dimensions,
   Animated,
@@ -27,6 +26,7 @@ import { storyAPI } from '@/APIs/storyAPIs';
 import { useStoryStore, StoryItem } from '@/store/storyStore';
 import { useAuthStore } from '@/store/authStore';
 import { getUserByIdAPI } from '@/APIs/userAPIs';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -61,6 +61,15 @@ export default function StoriesScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const storyTimer = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<Video>(null);
+
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<DialogType>('info');
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogPrimaryButton, setDialogPrimaryButton] = useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+  const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
+  const [dialogCancelButton, setDialogCancelButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
 
   // Refresh stories (reload from API)
   const loadStories = useCallback(async () => {
@@ -149,7 +158,7 @@ export default function StoriesScreen() {
     } catch (error: any) {
       console.error('Error loading stories:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load stories';
-      Alert.alert('Error', errorMessage);
+      showDialog('error', errorMessage, 'Error');
       // Even on error, ensure "Your Story" exists if we have user info
       if (dbUser?.user_id) {
         const myStory: StoryItem = {
@@ -181,6 +190,24 @@ export default function StoriesScreen() {
     setRefreshing(true);
     loadStories();
   }, [loadStories]);
+
+  // Show dialog helper function
+  const showDialog = (
+    type: DialogType,
+    message: string,
+    title?: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void },
+    cancelButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogType(type);
+    setDialogTitle(title || '');
+    setDialogMessage(message);
+    setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+    setDialogSecondaryButton(secondaryButton);
+    setDialogCancelButton(cancelButton);
+    setDialogVisible(true);
+  };
 
   const handleStoryPress = (item: StoryItem, category: 'myStory' | 'friends' | 'discover', indexInCategory: number) => {
     if (!categorizedStories) return;
@@ -257,65 +284,65 @@ export default function StoriesScreen() {
     const storyId = current.story.id;
     setShowMenu(false);
 
-    Alert.alert(
-      'Delete Story',
+    showDialog(
+      'warning',
       'Are you sure you want to delete this story?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeletingStoryId(storyId);
-              if (!token) {
-                Alert.alert('Error', 'Please log in to delete stories');
-                return;
-              }
-
-              await storyAPI.deleteStory(storyId, token);
-              
-              // Refresh stories first
-              await loadStories();
-              
-              // Get updated stories after refresh
-              const updatedStories = getAllStories();
-              if (updatedStories.length === 0 || currentUserIndex >= updatedStories.length) {
-                handleCloseStory();
-                return;
-              }
-              
-              const updatedUser = updatedStories[currentUserIndex];
-              
-              // If this was the last story for this user, move to next user or close
-              if (updatedUser.stories.length === 0) {
-                if (currentUserIndex < updatedStories.length - 1) {
-                  // Move to next user
-                  setCurrentUserIndex(currentUserIndex + 1);
-                  setCurrentStoryIndex(0);
-                } else {
-                  // No more stories, close viewer
-                  handleCloseStory();
-                }
-              } else {
-                // Adjust current story index if needed
-                if (currentStoryIndex >= updatedUser.stories.length) {
-                  setCurrentStoryIndex(updatedUser.stories.length - 1);
-                }
-                // Stay on current story (index may have shifted)
-              }
-            } catch (error: any) {
-              console.error('Error deleting story:', error);
-              Alert.alert('Error', error?.response?.data?.message || 'Failed to delete story');
-            } finally {
-              setDeletingStoryId(null);
+      'Delete Story',
+      {
+        text: 'Delete',
+        onPress: async () => {
+          setDialogVisible(false);
+          try {
+            setDeletingStoryId(storyId);
+            if (!token) {
+              showDialog('error', 'Please log in to delete stories', 'Error');
+              return;
             }
-          },
+
+            await storyAPI.deleteStory(storyId, token);
+            
+            // Refresh stories first
+            await loadStories();
+            
+            // Get updated stories after refresh
+            const updatedStories = getAllStories();
+            if (updatedStories.length === 0 || currentUserIndex >= updatedStories.length) {
+              handleCloseStory();
+              return;
+            }
+            
+            const updatedUser = updatedStories[currentUserIndex];
+            
+            // If this was the last story for this user, move to next user or close
+            if (updatedUser.stories.length === 0) {
+              if (currentUserIndex < updatedStories.length - 1) {
+                // Move to next user
+                setCurrentUserIndex(currentUserIndex + 1);
+                setCurrentStoryIndex(0);
+              } else {
+                // No more stories, close viewer
+                handleCloseStory();
+              }
+            } else {
+              // Adjust current story index if needed
+              if (currentStoryIndex >= updatedUser.stories.length) {
+                setCurrentStoryIndex(updatedUser.stories.length - 1);
+              }
+              // Stay on current story (index may have shifted)
+            }
+          } catch (error: any) {
+            console.error('Error deleting story:', error);
+            showDialog('error', error?.response?.data?.message || 'Failed to delete story', 'Error');
+          } finally {
+            setDeletingStoryId(null);
+          }
         },
-      ]
+      },
+      undefined,
+      {
+        text: 'Cancel',
+        onPress: () => setDialogVisible(false),
+      }
     );
   };
 
@@ -663,7 +690,7 @@ export default function StoriesScreen() {
       // Fetch full user details from API
       try {
         if (!token) {
-          Alert.alert('Error', 'Please log in to view profiles');
+          showDialog('error', 'Please log in to view profiles', 'Error');
           return;
         }
         
@@ -677,17 +704,27 @@ export default function StoriesScreen() {
             }
           });
         } else {
-          Alert.alert('Error', 'Failed to load user profile');
+          showDialog('error', 'Failed to load user profile', 'Error');
         }
       } catch (error: any) {
         console.error('Error fetching user profile:', error);
-        Alert.alert('Error', error?.response?.data?.message || 'Failed to load user profile');
+        showDialog('error', error?.response?.data?.message || 'Failed to load user profile', 'Error');
       }
     };
 
     return (
-      <View style={styles.storyViewerContainer} {...panResponder.panHandlers}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <>
+        <CustomDialog
+          visible={dialogVisible}
+          type={dialogType}
+          title={dialogTitle}
+          message={dialogMessage}
+          onDismiss={() => setDialogVisible(false)}
+          primaryButton={dialogPrimaryButton}
+          secondaryButton={dialogSecondaryButton}
+          cancelButton={dialogCancelButton}
+        />
+        <View style={styles.storyViewerContainer} {...panResponder.panHandlers}>
         
         {/* Story Media (Image or Video) */}
         {story.type === 'video' ? (
@@ -822,6 +859,7 @@ export default function StoriesScreen() {
           />
         </View>
       </View>
+      </>
     );
   }
 
@@ -895,7 +933,18 @@ export default function StoriesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogType}
+        title={dialogTitle}
+        message={dialogMessage}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogPrimaryButton}
+        secondaryButton={dialogSecondaryButton}
+        cancelButton={dialogCancelButton}
+      />
+      <SafeAreaView style={styles.container} edges={['top']}>
       {/* Enhanced Header with gradient */}
       <View style={styles.headerSection}>
         <ThemedText type='title' style={styles.headerTitle}>{('Stories')}</ThemedText>
@@ -1063,6 +1112,7 @@ export default function StoriesScreen() {
         </View>
       )}
     </SafeAreaView>
+    </>
   );
 }
 

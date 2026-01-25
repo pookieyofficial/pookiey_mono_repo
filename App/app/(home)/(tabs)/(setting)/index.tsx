@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { Colors } from '../../../../constants/Colors'
 import { ThemedText } from '@/components/ThemedText'
-import { Ionicons } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/store/authStore'
 import { truncateText } from '@/utils/truncateTexts'
 import { useTranslation } from 'react-i18next'
@@ -49,6 +49,21 @@ const Settings = () => {
     router.push('/(home)/(tabs)/(setting)/deleteAccount')
   }
 
+  const formatDate = (date: Date | string, format?: string) => {
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return 'N/A'
+
+    const day = d.getDate()
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    const month = monthNames[d.getMonth()]
+    const year = d.getFullYear()
+
+    if (day === 1 || day === 21 || day === 31) return `${day}st of ${month} ${year}`
+    if (day === 2 || day === 22) return `${day}nd of ${month} ${year}`
+    if (day === 3 || day === 23) return `${day}rd of ${month} ${year}`
+    return `${day}th of ${month} ${year}`
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Settings Header */}
@@ -79,6 +94,17 @@ const Settings = () => {
                 <ThemedText type='defaultSemiBold' style={styles.profileName}>
                   {dbUser?.profile?.firstName} {dbUser?.profile?.lastName}
                 </ThemedText>
+              )}
+
+              {dbUser?.subscription?.status === "active" && (
+                <View style={styles.profileStatusContainer}>
+
+                  <AntDesign name="crown" size={20} color={Colors.primary.white} />
+
+                  <ThemedText style={[styles.profileStatus, { color: Colors.primary.white }]}>
+                    {dbUser?.subscription?.plan?.toUpperCase()}
+                  </ThemedText>
+                </View>
               )}
 
               {dbUser?.profile?.bio ? (
@@ -183,14 +209,36 @@ const Settings = () => {
             style={[styles.settingItem, styles.ExtraAccountItem]}
             onPress={() => handleButtonPress('Price Plans')}
             activeOpacity={0.7}
+            disabled={dbUser?.subscription?.status === "active"}
           >
             <View style={styles.settingIconContainer}>
-              <Ionicons name="pricetags" size={24} color={Colors.primary.red} />
+              <AntDesign name="crown" size={24} color={Colors.primary.red} />
             </View>
-            <ThemedText style={styles.settingText}>
-              Subscribe to Pookiey!
-            </ThemedText>
-            <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+
+            {dbUser?.subscription?.status === "active" ? (
+              <View style={styles.subscriptionInfo}>
+                <ThemedText type='defaultSemiBold' style={styles.subscriptionTitle}>
+                  Your {dbUser?.subscription?.plan?.toUpperCase()} subscription is active
+                </ThemedText>
+                <ThemedText type='default' style={styles.subscriptionSubtext}>
+                  Valid till {dbUser?.subscription?.endDate
+                    ? formatDate(dbUser?.subscription?.endDate)
+                    : "N/A"
+                  }
+                </ThemedText>
+              </View>
+            ) : (
+              <ThemedText style={styles.settingText}>
+                Subscribe to Pookiey!
+              </ThemedText>
+            )}
+
+            {dbUser?.subscription?.status === "active" ? (
+              <Ionicons name="checkmark-circle" size={18} color={Colors.primary.red} />
+            ) : (
+              <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+
+            )}
           </TouchableOpacity>
 
           <View style={styles.decorativeBorder} />
@@ -288,7 +336,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.titleColor,
     marginLeft: 12,
   },
@@ -302,6 +350,34 @@ const styles = StyleSheet.create({
   },
   ExtraAccountItem: {
     marginTop: 20,
+  },
+  profileStatusContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: Colors.primary.red,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignContent: 'center',
+    justifyContent: 'center',
+  },
+  subscriptionInfo: {
+    flex: 1,
+    marginLeft: 12,
+    gap: 2,
+  },
+  subscriptionTitle: {
+    fontSize: 15,
+    color: Colors.titleColor,
+  },
+  subscriptionSubtext: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: 0,
   },
 })
 

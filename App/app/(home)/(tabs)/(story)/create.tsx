@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
   Dimensions,
   Platform,
@@ -27,6 +26,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { compressImageToJPEG } from '@/utils/imageCompression';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -47,6 +47,14 @@ export default function CreateStoryScreen() {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [uploading, setUploading] = useState(false);
   const videoRef = useRef<Video>(null);
+
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<DialogType>('info');
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogPrimaryButton, setDialogPrimaryButton] = useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+  const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
 
   // File size limits
   const MAX_IMAGE_SIZE = 7 * 1024 * 1024; // 7 MB in bytes
@@ -81,6 +89,22 @@ export default function CreateStoryScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
+  // Show dialog helper function
+  const showDialog = (
+    type: DialogType,
+    message: string,
+    title?: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogType(type);
+    setDialogTitle(title || '');
+    setDialogMessage(message);
+    setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+    setDialogSecondaryButton(secondaryButton);
+    setDialogVisible(true);
+  };
+
   // Take photo
   const handleTakePhoto = async () => {
     if (!cameraRef.current) return;
@@ -95,7 +119,7 @@ export default function CreateStoryScreen() {
         try {
           const fileInfo = await FileSystem.getInfoAsync(photo.uri);
           if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_IMAGE_SIZE) {
-            Alert.alert('File too large', `Image size must be less than 7 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`);
+            showDialog('error', `Image size must be less than 7 MB. Current size: ${(fileInfo.size / (1024 * 1024)).toFixed(2)} MB`, 'File too large');
             return;
           }
         } catch (error) {
@@ -107,7 +131,7 @@ export default function CreateStoryScreen() {
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      showDialog('error', 'Failed to take photo', 'Error');
     }
   };
 
@@ -142,7 +166,7 @@ export default function CreateStoryScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant gallery permissions');
+        showDialog('warning', 'Please grant gallery permissions', 'Permission needed');
         return;
       }
 
@@ -161,9 +185,10 @@ export default function CreateStoryScreen() {
         
         // Check file size
         if (asset.fileSize && asset.fileSize > maxSize) {
-          Alert.alert(
-            'File too large',
-            `${isVideo ? 'Video' : 'Image'} size must be less than ${isVideo ? '30' : '7'} MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`
+          showDialog(
+            'error',
+            `${isVideo ? 'Video' : 'Image'} size must be less than ${isVideo ? '30' : '7'} MB. Current size: ${(asset.fileSize / (1024 * 1024)).toFixed(2)} MB`,
+            'File too large'
           );
           return;
         }
@@ -172,7 +197,7 @@ export default function CreateStoryScreen() {
         if (isVideo && asset.duration) {
           const durationInSeconds = asset.duration / 1000;
           if (durationInSeconds > MAX_VIDEO_DURATION) {
-            Alert.alert('Video too long', `Video must be ${MAX_VIDEO_DURATION} seconds or less. Current duration: ${durationInSeconds.toFixed(1)} seconds`);
+            showDialog('error', `Video must be ${MAX_VIDEO_DURATION} seconds or less. Current duration: ${durationInSeconds.toFixed(1)} seconds`, 'Video too long');
             return;
           }
         }
@@ -182,18 +207,18 @@ export default function CreateStoryScreen() {
       }
     } catch (error) {
       console.error('Error picking from gallery:', error);
-      Alert.alert('Error', 'Failed to pick media');
+      showDialog('error', 'Failed to pick media', 'Error');
     }
   };
 
   const handlePublish = async () => {
     if (!token) {
-      Alert.alert('Error', 'Please log in to create a story');
+      showDialog('error', 'Please log in to create a story', 'Error');
       return;
     }
 
     if (!capturedMedia || !mediaType) {
-      Alert.alert('Error', 'Please capture or select media first');
+      showDialog('error', 'Please capture or select media first', 'Error');
       return;
     }
 
@@ -350,19 +375,21 @@ export default function CreateStoryScreen() {
         setLoading(false);
       }
 
-      Alert.alert(
-        'Success', 
-        saved ? 'Story published and saved to your gallery!' : 'Story published!', 
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
+      showDialog(
+        'success',
+        saved ? 'Story published and saved to your gallery!' : 'Story published!',
+        'Success',
+        {
+          text: 'OK',
+          onPress: () => {
+            setDialogVisible(false);
+            router.back();
           },
-        ]
+        }
       );
     } catch (error: any) {
       console.error('Error creating story:', error);
-      Alert.alert('Error', error.message || 'Failed to create story');
+      showDialog('error', error.message || 'Failed to create story', 'Error');
     } finally {
       setUploading(false);
     }
@@ -408,7 +435,17 @@ export default function CreateStoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogType}
+        title={dialogTitle}
+        message={dialogMessage}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogPrimaryButton}
+        secondaryButton={dialogSecondaryButton}
+      />
+      <View style={styles.container}>
       {capturedMedia ? (
         /* Preview Mode */
         <>
@@ -420,7 +457,7 @@ export default function CreateStoryScreen() {
                 resizeMode="cover"
                 onError={(error) => {
                   console.error('Image load error:', error);
-                  Alert.alert('Error', 'Failed to load image preview');
+                  showDialog('error', 'Failed to load image preview', 'Error');
                 }}
                 onLoad={() => {
                   console.log('Image loaded successfully');
@@ -437,7 +474,7 @@ export default function CreateStoryScreen() {
                 useNativeControls={true}
                 onError={(error) => {
                   console.error('Video load error:', error);
-                  Alert.alert('Error', 'Failed to load video preview');
+                  showDialog('error', 'Failed to load video preview', 'Error');
                 }}
                 onLoad={() => {
                   console.log('Video loaded successfully');
@@ -543,6 +580,7 @@ export default function CreateStoryScreen() {
         </>
       )}
     </View>
+    </>
   );
 }
 

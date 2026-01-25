@@ -170,7 +170,6 @@ export default function LandingScreen({ onComplete }: OnboardingProps) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={Colors.onboarding.background} />
 
             <View style={styles.content}>
                 <View style={styles.topSection}>

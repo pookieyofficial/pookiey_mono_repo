@@ -37,7 +37,6 @@ const ImageGalleryViewer: React.FC<ImageGalleryViewerProps> = ({
   if (!photos || photos.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color={Colors.primary.white} />
         </TouchableOpacity>
@@ -112,7 +111,6 @@ const ImageGalleryViewer: React.FC<ImageGalleryViewerProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
       {/* Swipeable Main Image Section */}
       <FlatList

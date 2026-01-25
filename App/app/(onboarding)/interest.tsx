@@ -5,16 +5,16 @@ import { Colors } from '@/constants/Colors';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interests = [
@@ -39,6 +39,7 @@ const interests = [
 export default function InterestScreen() {
     const { t } = useTranslation();
     const { interests: storedInterests, setInterests } = useOnboardingStore();
+    const [dialogVisible, setDialogVisible] = useState(false);
 
     const handleBack = () => {
         router.back();
@@ -46,7 +47,7 @@ export default function InterestScreen() {
 
     const handleContinue = () => {
         if (storedInterests.length < 2 || storedInterests.length > 5) {
-            Alert.alert(t('interest.errorTitle'), t('interest.errorMessage'));
+            setDialogVisible(true);
         } else {
             router.push('/(onboarding)/image');
         }
@@ -97,6 +98,13 @@ export default function InterestScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <CustomDialog
+                visible={dialogVisible}
+                type="error"
+                title={t('interest.errorTitle')}
+                message={t('interest.errorMessage')}
+                onDismiss={() => setDialogVisible(false)}
+            />
             <CustomBackButton />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>

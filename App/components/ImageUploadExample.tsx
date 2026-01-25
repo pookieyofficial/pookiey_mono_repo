@@ -6,30 +6,14 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useImageCompression } from '@/hooks/useImageCompression';
 import { UploadedImageResult } from '@/utils/imageCompression';
+import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
-/**
- * Example component demonstrating how to use the image compression and upload hook
- * 
- * Usage in your components:
- * 
- * 1. Import the hook:
- *    import { useImageCompression } from '@/hooks/useImageCompression';
- * 
- * 2. Use in your component:
- *    const { isUploading, pickAndUploadSingle, pickAndUploadMultiple } = useImageCompression();
- * 
- * 3. Call the methods:
- *    const result = await pickAndUploadSingle();
- *    if (result) {
- *      console.log('Uploaded image URL:', result.s3Url);
- *    }
- */
+
 export default function ImageUploadExample() {
   const {
     isUploading,
@@ -41,6 +25,30 @@ export default function ImageUploadExample() {
   } = useImageCompression();
 
   const [uploadedImages, setUploadedImages] = useState<UploadedImageResult[]>([]);
+
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogType, setDialogType] = useState<DialogType>('info');
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogPrimaryButton, setDialogPrimaryButton] = useState<{ text: string; onPress: () => void }>({ text: 'OK', onPress: () => setDialogVisible(false) });
+  const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
+
+  // Show dialog helper function
+  const showDialog = (
+    type: DialogType,
+    message: string,
+    title?: string,
+    primaryButton?: { text: string; onPress: () => void },
+    secondaryButton?: { text: string; onPress: () => void }
+  ) => {
+    setDialogType(type);
+    setDialogTitle(title || '');
+    setDialogMessage(message);
+    setDialogPrimaryButton(primaryButton || { text: 'OK', onPress: () => setDialogVisible(false) });
+    setDialogSecondaryButton(secondaryButton);
+    setDialogVisible(true);
+  };
 
   /**
    * Handle single image upload
@@ -54,10 +62,10 @@ export default function ImageUploadExample() {
 
       if (result) {
         setUploadedImages([...uploadedImages, result]);
-        Alert.alert('Success', 'Image uploaded successfully!');
+        showDialog('success', 'Image uploaded successfully!', 'Success');
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to upload image');
+      showDialog('error', 'Failed to upload image', 'Error');
     }
   };
 
@@ -70,16 +78,26 @@ export default function ImageUploadExample() {
 
       if (results.length > 0) {
         setUploadedImages([...uploadedImages, ...results]);
-        Alert.alert('Success', `${results.length} images uploaded successfully!`);
+        showDialog('success', `${results.length} images uploaded successfully!`, 'Success');
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to upload images');
+      showDialog('error', 'Failed to upload images', 'Error');
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <>
+      <CustomDialog
+        visible={dialogVisible}
+        type={dialogType}
+        title={dialogTitle}
+        message={dialogMessage}
+        onDismiss={() => setDialogVisible(false)}
+        primaryButton={dialogPrimaryButton}
+        secondaryButton={dialogSecondaryButton}
+      />
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
         <Text style={styles.title}>Image Upload Example</Text>
         <Text style={styles.subtitle}>
           Compressed to JPEG and uploaded to S3
@@ -172,6 +190,7 @@ if (result) {
         </View>
       </View>
     </ScrollView>
+    </>
   );
 }
 

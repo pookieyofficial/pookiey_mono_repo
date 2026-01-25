@@ -142,7 +142,6 @@ export default function Page() {
           </ThemedText>
         </View>
       </ScrollView>
-      <StatusBar style="auto" />
     </SafeAreaView>
   );
 }

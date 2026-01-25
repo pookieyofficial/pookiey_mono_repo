@@ -18,7 +18,7 @@ interface CustomDialogProps {
     onDismiss: () => void;
     primaryButton?: DialogButton;
     secondaryButton?: DialogButton;
-    cancelButton?: DialogButton; // Third button for cancel actions
+    cancelButton?: DialogButton; // Third button for cancel actions 
     autoHide?: number;
 }
 
@@ -94,33 +94,38 @@ export default function CustomDialog({
                 </Dialog.Content>
 
                 <Dialog.Actions style={styles.actionsContainer}>
-                    {cancelButton && (
+                    <View style={styles.actionsRow}>
+                        {cancelButton && (
+                            <Button
+                                onPress={cancelButton.onPress}
+                                textColor={Colors.text.secondary}
+                                labelStyle={styles.cancelButton}
+                                style={styles.button}
+                            >
+                                {cancelButton.text}
+                            </Button>
+                        )}
+                        {secondaryButton && (
+                            <Button
+                                onPress={secondaryButton.onPress}
+                                textColor={Colors.primaryBackgroundColor}
+                                labelStyle={styles.secondaryButton}
+                                style={styles.button}
+                            >
+                                {secondaryButton.text}
+                            </Button>
+                        )}
                         <Button
-                            onPress={cancelButton.onPress}
-                            textColor={Colors.text.secondary}
-                            labelStyle={styles.cancelButton}
-                        >
-                            {cancelButton.text}
-                        </Button>
-                    )}
-                    {secondaryButton && (
-                        <Button
-                            onPress={secondaryButton.onPress}
+                            onPress={primaryButton.onPress}
                             textColor={Colors.primaryBackgroundColor}
-                            labelStyle={styles.secondaryButton}
+                            labelStyle={styles.primaryButton}
+                            mode="contained"
+                            buttonColor={Colors.primaryBackgroundColor}
+                            style={styles.button}
                         >
-                            {secondaryButton.text}
+                            {primaryButton.text}
                         </Button>
-                    )}
-                    <Button
-                        onPress={primaryButton.onPress}
-                        textColor={Colors.primaryBackgroundColor}
-                        labelStyle={styles.primaryButton}
-                        mode="contained"
-                        buttonColor={Colors.primaryBackgroundColor}
-                    >
-                        {primaryButton.text}
-                    </Button>
+                    </View>
                 </Dialog.Actions>
             </Dialog>
         </Portal>
@@ -130,7 +135,8 @@ export default function CustomDialog({
 const styles = StyleSheet.create({
     dialog: {
         borderRadius: 20,
-        marginHorizontal: 10,
+        marginHorizontal: 16,
+        maxWidth: '100%',
         backgroundColor: Colors.primary.white,
         elevation: 8,
         shadowColor: '#000',
@@ -149,41 +155,56 @@ const styles = StyleSheet.create({
     },
     icon: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontFamily: 'HellixBold',
     },
     titleText: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: 'HellixBold',
         textAlign: 'left',
         color: Colors.titleColor,
     },
     message: {
         fontSize: 15,
+        fontFamily: 'HellixMedium',
         color: Colors.text.primary,
         textAlign: 'left',
         lineHeight: 22,
     },
     primaryButton: {
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: 'HellixSemiBold',
         color: '#FFFFFF',
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 4,
     },
     secondaryButton: {
         fontSize: 15,
-        fontWeight: '600',
-        paddingHorizontal: 12,
+        fontFamily: 'HellixSemiBold',
+        paddingHorizontal: 10,
         paddingVertical: 4,
     },
     cancelButton: {
         fontSize: 15,
-        fontWeight: '500',
-        paddingHorizontal: 12,
+        fontFamily: 'HellixMedium',
+        paddingHorizontal: 10,
         paddingVertical: 4,
     },
     actionsContainer: {
         paddingHorizontal: 8,
         paddingBottom: 8,
+        paddingTop: 8,
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        width: '100%',
+    },
+    button: {
+        minWidth: 70,
+        marginLeft: 4,
+        marginRight: 4,
+        flexShrink: 1,
     },
 });
