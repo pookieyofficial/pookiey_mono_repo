@@ -1,11 +1,13 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
+type MaterialCommunityIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -13,21 +15,21 @@ type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
-  'house.fill': 'home' as MaterialIconName,
-  'house': 'home' as MaterialIconName,
-  'message': 'question-answer' as MaterialIconName, // Rounded chat bubble (most rounded option)
-  'message.fill': 'question-answer' as MaterialIconName, // Rounded chat bubble filled
-  'gearshape': 'settings' as MaterialIconName,
-  'gearshape.fill': 'settings' as MaterialIconName,
-  'paperplane.fill': 'send' as MaterialIconName,
-  'gear.circle.fill': 'settings' as MaterialIconName,
-  'heart.fill': 'favorite' as MaterialIconName,
-  'chevron.left.forwardslash.chevron.right': 'code' as MaterialIconName,
-  'chevron.right': 'chevron-right' as MaterialIconName,
-  'camera.fill': 'camera' as MaterialIconName,
-  'camera': 'camera' as MaterialIconName,
-  'fire': 'fire' as MaterialIconName,
-  'fire.fill': 'fire' as MaterialIconName
+  'house': { icon: 'home-outline', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'house.fill': { icon: 'home', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'message': { icon: 'message-outline', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'message.fill': { icon: 'message', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'gearshape': { icon: 'cog-outline', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'gearshape.fill': { icon: 'cog', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'paperplane.fill': { icon: 'send', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'gear.circle.fill': { icon: 'settings', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'heart': { icon: 'favorite-border', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'heart.fill': { icon: 'favorite', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'chevron.left.forwardslash.chevron.right': { icon: 'code', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'chevron.right': { icon: 'chevron-right', library: 'material' } as { icon: MaterialIconName; library: 'material' },
+  'camera': { icon: 'camera-outline', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  'camera.fill': { icon: 'camera', library: 'community' } as { icon: MaterialCommunityIconName; library: 'community' },
+  
 } as const;
 
 type IconSymbolName = keyof typeof MAPPING;
@@ -49,5 +51,25 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const mapping = MAPPING[name];
+
+  if (mapping.library === 'community') {
+    return (
+      <MaterialCommunityIcons
+        color={color}
+        size={size}
+        name={mapping.icon as MaterialCommunityIconName}
+        style={style}
+      />
+    );
+  }
+
+  return (
+    <MaterialIcons
+      color={color}
+      size={size}
+      name={mapping.icon as MaterialIconName}
+      style={style}
+    />
+  );
 }

@@ -28,3 +28,33 @@ export const getUserByIdAPI = async (userId: string, token: string) => {
     });
     return response.data;
 };
+
+// Get users who liked the current user
+export const getUsersWhoLikedMeAPI = async (token: string, page: number = 1, limit: number = 20) => {
+    const response = await axios.get(`${BASE_URL}/user/get-users-who-liked-me`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        params: {
+            page,
+            limit,
+        },
+    });
+    return response.data;
+};
+
+// Get users who matched with the current user
+export const getUserMatchesAPI = async (token: string, page: number = 1, limit: number = 20) => {
+    const response = await axios.get(`${BASE_URL}/user/get-user-matches`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        params: {
+            page,
+            limit,
+        },
+    });
+    return response.data;
+};

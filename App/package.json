@@ -79,7 +79,8 @@
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^3.4.17",
     "zustand": "^5.0.8",
-    "expo-updates": "~29.0.15"
+    "expo-updates": "~29.0.15",
+    "react-native-pager-view": "6.9.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

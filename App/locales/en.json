@@ -189,6 +189,7 @@
   "tabs": {
     "home": "Home",
     "chats": "Chats",
+    "likes": "Likes",
     "stories": "Stories",
     "setting": "Setting"
   },
@@ -218,6 +219,15 @@
     "cancel": "Cancel",
     "language": "Language",
     "updateLocation": "Update Location"
+  },
+  "likes": {
+    "engagements": "Engagements",
+    "whoLikedYou": "Who Liked You",
+    "youMatched": "You Matched",
+    "noLikesYet": "No Likes Yet",
+    "noMatchesYet": "No Matches Yet",
+    "startSwiping": "Start swiping to get more likes!",
+    "keepSwiping": "Keep swiping to find your match!"
   },
   "deleteAccount": {
     "title": "Delete Account",
