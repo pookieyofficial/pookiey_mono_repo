@@ -19,6 +19,7 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomDialog, { DialogType } from "./CustomDialog";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -113,7 +114,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         }
     };
 
-    const renderCard = (item: CardItem) => {
+    const renderCard = (item: CardItem, index: number) => {
         if (!item) return null;
         const age = calculateAge(item?.profile?.dateOfBirth);
 
@@ -127,7 +128,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             );
 
         return (
-            <View style={styles.card}>
+            <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onCardPress?.(item);
+                }}
+                style={styles.card}
+            >
                 <Image
                     source={
                         item?.profile?.photos?.[0]?.url
@@ -150,8 +158,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     blurRadius={20}
                 />
 
-                <BlurView 
-                    intensity={100} 
+                <BlurView
+                    intensity={100}
                     tint="dark"
                     style={styles.gradient}
                 >
@@ -164,33 +172,28 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     />
                 </BlurView>
 
-                <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => onCardPress?.(item)}
-                >
-                    <View style={styles.footer}>
-                        <View style={styles.nameRowInCard}>
-                            {isSubscribedUser && (
-                                <Ionicons
-                                    name="diamond"
-                                    size={22}
-                                    color="#FFD700"
-                                    style={styles.cardDiamondIcon}
-                                />
-                            )}
-                            <ThemedText type="bold" style={styles.name}>
-                                {item?.profile?.firstName} {item?.profile?.lastName}, {age}
-                            </ThemedText>
-                        </View>
-
-                        {item?.profile?.occupation && (
-                            <ThemedText type="default" style={styles.job}>
-                                {item.profile.occupation}
-                            </ThemedText>
+                <View style={styles.footer}>
+                    <View style={styles.nameRowInCard}>
+                        {isSubscribedUser && (
+                            <Ionicons
+                                name="diamond"
+                                size={22}
+                                color="#FFD700"
+                                style={styles.cardDiamondIcon}
+                            />
                         )}
+                        <ThemedText type="bold" style={styles.name}>
+                            {item?.profile?.firstName} {item?.profile?.lastName}, {age}
+                        </ThemedText>
                     </View>
-                </TouchableOpacity>
-            </View>
+
+                    {item?.profile?.occupation && (
+                        <ThemedText type="default" style={styles.job}>
+                            {item.profile.occupation}
+                        </ThemedText>
+                    )}
+                </View>
+            </TouchableOpacity>
         );
     };
 
@@ -209,48 +212,48 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     secondaryButton={dialogSecondaryButton}
                 />
                 <View style={[styles.container, styles.emptyStateWrapper]}>
-                <View style={styles.emptyCard}>
-                    {/* Decorative gradient circles */}
-                    <View style={styles.decorativeCircle1} />
-                    <View style={styles.decorativeCircle2} />
-                    
-                    {/* Icon with gradient background */}
-                    <LinearGradient
-                        colors={[`${Colors.primaryBackgroundColor}20`, `${Colors.primaryBackgroundColor}08`]}
-                        style={styles.emptyBadge}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <View style={styles.emptyBadgeInner}>
-                            <Heart
-                                width={48}
-                                height={48}
+                    <View style={styles.emptyCard}>
+                        {/* Decorative gradient circles */}
+                        <View style={styles.decorativeCircle1} />
+                        <View style={styles.decorativeCircle2} />
+
+                        {/* Icon with gradient background */}
+                        <LinearGradient
+                            colors={[`${Colors.primaryBackgroundColor}20`, `${Colors.primaryBackgroundColor}08`]}
+                            style={styles.emptyBadge}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <View style={styles.emptyBadgeInner}>
+                                <Heart
+                                    width={48}
+                                    height={48}
+                                    color={Colors.primaryBackgroundColor}
+                                    fill={Colors.primaryBackgroundColor}
+                                    strokeWidth={2}
+                                />
+                            </View>
+                        </LinearGradient>
+
+                        {/* Location icon */}
+                        <View style={styles.locationIconContainer}>
+                            <MapPin
+                                width={20}
+                                height={20}
                                 color={Colors.primaryBackgroundColor}
-                                fill={Colors.primaryBackgroundColor}
-                                strokeWidth={2}
+                                strokeWidth={2.5}
                             />
                         </View>
-                    </LinearGradient>
 
-                    {/* Location icon */}
-                    <View style={styles.locationIconContainer}>
-                        <MapPin
-                            width={20}
-                            height={20}
-                            color={Colors.primaryBackgroundColor}
-                            strokeWidth={2.5}
-                        />
+                        <ThemedText type="title" style={styles.emptyTitle}>
+                            No nearby profiles... yet
+                        </ThemedText>
+                        <ThemedText type="default" style={styles.emptySubtitle}>
+                            We couldn't find anyone around you right now. Come back again in some time.
+                        </ThemedText>
+
                     </View>
-
-                    <ThemedText type="title" style={styles.emptyTitle}>
-                        No nearby profiles... yet
-                    </ThemedText>
-                    <ThemedText type="default" style={styles.emptySubtitle}>
-                        We couldn't find anyone around you right now. Come back again in some time.
-                    </ThemedText>
-                    
                 </View>
-            </View>
             </>
         );
     }
@@ -268,101 +271,156 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             />
             <View style={styles.container}>
                 <Swiper
-                ref={swiperRef}
-                cards={data}
-                renderCard={(item: CardItem) => renderCard(item)}
-                keyExtractor={(card: CardItem) =>
-                    String(card?.user_id ?? card?.id ?? card?._id ?? '')
-                }
-                cardIndex={cardIndex}
-                onSwiped={(index) => {
-                    setCardIndex(index + 1);
-                }}
-                onSwipedLeft={(index) => {
-                    const card = data?.[index];
-                    if (card) {
-                        handleInteraction(card, 'left');
-                        onSwiped?.(card, 'left');
+                    ref={swiperRef}
+                    cards={data}
+                    renderCard={(item: CardItem, index: number) => renderCard(item, index)}
+                    keyExtractor={(card: CardItem) =>
+                        String(card?.user_id ?? card?.id ?? card?._id ?? '')
                     }
-                }}
-                onSwipedRight={(index) => {
-                    const card = data?.[index];
-                    if (card) {
-                        handleInteraction(card, 'right');
-                        onSwiped?.(card, 'right');
-                    }
-                }}
-                onSwipedTop={(index) => {
-                    const card = data?.[index];
-                    if (card) {
-                        handleInteraction(card, 'up');
-                        onSwiped?.(card, 'up');
-                    }
-                }}
-                stackSize={3}
-                useViewOverflow={false}
-                backgroundColor="transparent"
-                marginBottom={insets.bottom + 130}
-                overlayLabels={{
-                    left: {
-                        element: (
-                            <View style={styles.overlayIconContainer}>
-                                <X width={72} height={72} color="#FF6B6B" strokeWidth={3.5} />
-                            </View>
-                        ),
-                        style: {
-                            wrapper: styles.overlayWrapperCenter,
+                    cardIndex={cardIndex}
+                    onSwiped={(index) => {
+                        setCardIndex(index + 1);
+                    }}
+                    onSwipedLeft={(index) => {
+                        const card = data?.[index];
+                        if (card) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            handleInteraction(card, 'left');
+                            onSwiped?.(card, 'left');
+                        }
+                    }}
+                    onSwipedRight={(index) => {
+                        const card = data?.[index];
+                        if (card) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            handleInteraction(card, 'right');
+                            onSwiped?.(card, 'right');
+                        }
+                    }}
+                    onSwipedTop={(index) => {
+                        const card = data?.[index];
+                        if (card) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                            handleInteraction(card, 'up');
+                            onSwiped?.(card, 'up');
+                        }
+                    }}
+                    stackSize={3}
+                    useViewOverflow={false}
+                    backgroundColor="transparent"
+                    marginBottom={insets.bottom + 170}
+                    overlayLabels={{
+                        left: {
+                            element: (
+                                <View style={styles.overlayContainer}>
+                                    {/* Orange gradient overlay for dislike */}
+                                    <View style={styles.overlayGradientWrapper}>
+                                        <LinearGradient
+                                            colors={[
+                                                'rgba(255, 165, 0, 0.5)',
+                                                'rgba(255, 165, 0, 0.3)',
+                                                'rgba(255, 165, 0, 0)'
+                                            ]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 0 }}
+                                            style={styles.overlayGradientFull}
+                                        />
+                                    </View>
+                                    <View style={styles.overlayIconContainer}>
+                                        <Plus
+                                            style={{ transform: [{ rotate: "45deg" }] }}
+                                            strokeWidth={4}
+                                            width={80}
+                                            height={80}
+                                            fill={Colors.text.light}
+                                            color="orange"
+                                        />
+                                    </View>
+                                </View>
+                            ),
+                            style: {
+                                wrapper: styles.overlayWrapperFull,
+                            },
                         },
-                    },
-                    right: {
-                        element: (
-                            <View style={styles.overlayIconContainer}>
-                                <Heart
-                                    width={72}
-                                    height={72}
-                                    color={Colors.primaryBackgroundColor}
-                                    fill={Colors.primaryBackgroundColor}
-                                    strokeWidth={3}
-                                />
-                            </View>
-                        ),
-                        style: {
-                            wrapper: styles.overlayWrapperCenter,
+                        right: {
+                            element: (
+                                <View style={styles.overlayContainer}>
+                                    {/* Primary color gradient overlay for like */}
+                                    <View style={styles.overlayGradientWrapper}>
+                                        <LinearGradient
+                                            colors={[
+                                                'rgba(233, 64, 87, 0)',
+                                                'rgba(233, 64, 87, 0.3)',
+                                                'rgba(233, 64, 87, 0.5)'
+                                            ]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 0 }}
+                                            style={styles.overlayGradientFull}
+                                        />
+                                    </View>
+                                    <View style={styles.overlayIconContainer}>
+                                        <Heart
+                                            width={80}
+                                            height={80}
+                                            color={Colors.text.light}
+                                            fill={Colors.primaryBackgroundColor}
+                                            strokeWidth={3}
+                                        />
+                                    </View>
+                                </View>
+                            ),
+                            style: {
+                                wrapper: styles.overlayWrapperFull,
+                            },
                         },
-                    },
-                    top: {
-                        element: (
-                            <View style={styles.overlayIconContainer}>
-                                <Star
-                                    width={72}
-                                    height={72}
-                                    color={Colors.primaryBackgroundColor}
-                                    fill={Colors.primaryBackgroundColor}
-                                    strokeWidth={3}
-                                />
-                            </View>
-                        ),
-                        style: {
-                            wrapper: styles.overlayWrapperCenter,
+                        top: {
+                            element: (
+                                <View style={styles.overlayContainer}>
+                                    {/* Primary color gradient overlay for superlike */}
+                                    <View style={styles.overlayGradientWrapper}>
+                                        <LinearGradient
+                                            colors={[
+                                                'rgba(233, 64, 87, 0)',
+                                                'rgba(233, 64, 87, 0.3)',
+                                                'rgba(233, 64, 87, 0.5)'
+                                            ]}
+                                            start={{ x: 0, y: 1 }}
+                                            end={{ x: 0, y: 0 }}
+                                            style={styles.overlayGradientFull}
+                                        />
+                                    </View>
+                                    <View style={styles.overlayIconContainer}>
+                                        <Star
+                                            width={80}
+                                            height={80}
+                                            color={Colors.text.light}
+                                            fill={Colors.primaryBackgroundColor}
+                                            strokeWidth={3}
+                                        />
+                                    </View>
+                                </View>
+                            ),
+                            style: {
+                                wrapper: styles.overlayWrapperFull,
+                            },
                         },
-                    },
-                }}
-                animateOverlayLabelsOpacity
-            />
-            {/* Bottom buttons */}
-            <View
-                style={[
-                    styles.bottomSection,
-                    { bottom: Math.max(insets.bottom + 8, 16) },
-                ]}
-            >
-                <ActionRow
-                    onLeft={() => swiperRef.current?.swipeLeft()}
-                    onRight={() => swiperRef.current?.swipeRight()}
-                    onUp={() => swiperRef.current?.swipeTop()}
+                    }}
+                    animateOverlayLabelsOpacity
                 />
+                {/* Bottom buttons */}
+                <View
+                    style={[
+                        styles.bottomSection,
+                        { bottom: Math.max(insets.bottom + 8, 16) },
+                    ]}
+                >
+                    <ActionRow
+                        onLeft={() => swiperRef.current?.swipeLeft()}
+                        onRight={() => swiperRef.current?.swipeRight()}
+                        onUp={() => swiperRef.current?.swipeTop()}
+                    />
+                </View>
             </View>
-        </View>
         </>
     );
 };
@@ -469,9 +527,40 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    overlayContainer: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        borderRadius: 18,
+        overflow: 'hidden',
+        // Ensure container matches card dimensions
+        maxWidth: SCREEN_WIDTH * 0.85,
+        maxHeight: SCREEN_HEIGHT * 0.55,
+    },
+    overlayGradientWrapper: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        borderRadius: 18,
+        overflow: 'hidden',
+        // Ensure it doesn't exceed card dimensions
+        maxWidth: SCREEN_WIDTH * 0.85,
+        maxHeight: SCREEN_HEIGHT * 0.55,
+    },
+    overlayGradientFull: {
+        width: '100%',
+        height: '100%',
+    },
     overlayIconContainer: {
         alignItems: "center",
         justifyContent: "center",
+        width: '100%',
+        height: '100%',
+        zIndex: 1,
     },
     overlayWrapperCenter: {
         position: "absolute",
@@ -481,6 +570,20 @@ const styles = StyleSheet.create({
         right: 0,
         alignItems: "center",
         justifyContent: "center",
+    },
+    overlayWrapperFull: {
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: '100%',
+        borderRadius: 18,
+        overflow: 'hidden',
+        // Ensure the wrapper matches card dimensions exactly
+        maxWidth: SCREEN_WIDTH * 0.85,
+        maxHeight: SCREEN_HEIGHT * 0.55,
     },
     actions: {
         width: "100%",
