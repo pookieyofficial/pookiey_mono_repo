@@ -92,14 +92,12 @@ export default function ReportsPage() {
 
     try {
       setActionLoading(supportId);
-      console.log("Updating support status:", { supportId, status, response });
       
       const responseBody: any = { status };
       if (response && response.trim()) {
         responseBody.response = response.trim();
       }
       
-      console.log("Sending request to:", `/api/v1/admin/support/${supportId}`, responseBody);
       
       const response_data = await callBackend(
         supabase,
@@ -110,7 +108,6 @@ export default function ReportsPage() {
         }
       );
       
-      console.log("Update response:", response_data);
       
       if (response_data.success) {
         setShowResponseInput(null);

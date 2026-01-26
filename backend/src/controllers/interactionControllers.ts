@@ -106,7 +106,6 @@ export const interaction = async (req: Request, res: Response) => {
         res.json({ success: true, data: newInteraction[0], isMatch: false });
     } catch (error) {
         await session.abortTransaction();
-        console.error("interaction error:", error);
         res.status(400).json({ message: "Interaction failed" });
     } finally {
         session.endSession();

@@ -8,10 +8,8 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  StatusBar,
   Modal,
   Pressable,
-  Animated
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -357,10 +355,10 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
             {/* Back Button at top */}
             <CustomBackButton
+              backgroundColor={Colors.dark.background}
               variant="overlay"
-              topOffset={8}
+              topOffset={insets.top}
               onPress={() => {
-                // Check if we came from story viewer
                 if (returnToStory === 'true') {
                   router.push('/(home)/(tabs)/(story)/' as any);
                 } else {

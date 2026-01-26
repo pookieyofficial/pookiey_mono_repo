@@ -1,7 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { View, Linking, Platform, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SwipeDeck, { SwipeAction } from '@/components/SwipeDeck'
 import { ThemedText } from '@/components/ThemedText'
@@ -20,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import * as Device from 'expo-device'
 import Ionicons from '@expo/vector-icons/build/Ionicons'
 import CustomDialog, { DialogType } from '@/components/CustomDialog'
+import { getActiveAnnouncementAPI } from '@/APIs/announcementAPIs'
 
 // GPS Radar Scanning Animation Component
 const CircularLoader: React.FC<{ message?: string }> = ({ message }) => {
@@ -162,8 +162,11 @@ export default function index() {
   const lastLocationSentRef = useRef<string | null>(null)
   const lastPushTokenSentRef = useRef<string | null>(null)
   const permissionDialogShownRef = useRef<string | null>(null)
-  const userDismissedAlertRef = useRef(false) 
-  const lastPermissionStateRef = useRef<string | null>(null) 
+  const userDismissedAlertRef = useRef(false)
+  const lastPermissionStateRef = useRef<string | null>(null)
+  const lastAnnouncementCheckRef = useRef<number>(0)
+  const lastShownAnnouncementIdRef = useRef<string | null>(null)
+  const lastAnnouncementShownTimeRef = useRef<number>(0)
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()
@@ -209,13 +212,11 @@ export default function index() {
         const localTokens = getNotificationTokens()
         const dbTokens = Array.isArray(dbUser?.notificationTokens) ? dbUser!.notificationTokens : []
         const merged = Array.from(new Set([...dbTokens, ...localTokens, pushToken]))
-        console.log(merged)
 
         const response = await updateUser(idToken as string, { notificationTokens: merged })
         if (response?.success && response?.data) {
           setDBUser(response.data)
         }
-        console.log(response)
 
         lastPushTokenSentRef.current = pushToken
       } catch (e) {
@@ -261,7 +262,6 @@ export default function index() {
             city = addressParts.join(', ') || undefined
           }
         } catch (e) {
-          console.log('Home: reverse geocode failed:', e)
         }
 
         await updateLocationInApi(
@@ -272,7 +272,6 @@ export default function index() {
           city,
         )
       } catch (e) {
-        console.log('Home: unable to fetch current location:', e)
       }
 
       // 2) Notifications permission + update token via API
@@ -396,7 +395,6 @@ export default function index() {
     try {
       setStoryLoading(true)
       const data = await storyAPI.getStories(token)
-      console.log('Stories loaded from home page:', data)
 
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -568,7 +566,7 @@ export default function index() {
 
   // Track if profiles have been loaded initially to avoid unnecessary refreshes
   const profilesLoadedRef = useRef(false)
-  
+
   useFocusEffect(
     useCallback(() => {
       // Only refresh if we don't have profiles yet (first load)
@@ -586,6 +584,63 @@ export default function index() {
         ensurePermissions()
       }
     }, [ensurePermissions, permissionsChecked])
+  )
+
+  // Check for active announcements when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const checkAnnouncement = async () => {
+        const now = Date.now()
+
+        if (now - lastAnnouncementCheckRef.current < 5000) {
+          return
+        }
+
+        // Don't check for announcements for 30 seconds after showing one
+        if (now - lastAnnouncementShownTimeRef.current < 30000) {
+          return
+        }
+
+        lastAnnouncementCheckRef.current = now
+
+        if (!token) {
+          return
+        }
+
+        if (!dbUser?.profile?.isOnboarded) {
+          return
+        }
+
+        try {
+          const activeAnnouncement = await getActiveAnnouncementAPI(token)
+
+          if (activeAnnouncement) {
+
+            if (lastShownAnnouncementIdRef.current === activeAnnouncement._id) {
+              return
+            }
+
+            lastShownAnnouncementIdRef.current = activeAnnouncement._id
+            lastAnnouncementShownTimeRef.current = now
+
+            setTimeout(() => {
+              router.push('/(home)/annoucements' as any)
+            }, 500)
+          } else {
+
+            lastShownAnnouncementIdRef.current = null
+          }
+        } catch (error: any) {
+          console.error('Error checking for announcements:', error)
+        }
+      }
+
+      const timer = setTimeout(() => {
+        checkAnnouncement()
+      }, 1500)
+
+      return () => clearTimeout(timer)
+    }, [token, dbUser, router])
   )
 
   const loadMoreProfiles = async () => {

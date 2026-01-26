@@ -38,7 +38,6 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
         userId: item.userId,
       },
     });
-    console.log('item', item.avatar);
   };
 
   return (

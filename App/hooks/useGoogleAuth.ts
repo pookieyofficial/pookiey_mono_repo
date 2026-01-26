@@ -19,7 +19,6 @@ export function useGoogleAuth() {
       setLoading(true);
 
       const redirectUri = AuthSession.makeRedirectUri({});
-      console.log({ redirectUri });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

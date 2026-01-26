@@ -103,7 +103,6 @@ export default function StoriesScreen() {
       const friendsPageNum = page?.friends || friendsPage;
       const discoverPageNum = page?.discover || discoverPage;
       const data = await storyAPI.getStories(token, friendsPageNum, 10, discoverPageNum, 10);
-      console.log('Stories refreshed:', data);
       
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -473,12 +472,10 @@ export default function StoriesScreen() {
     
     // Prevent duplicate view tracking
     if (viewedStoryIds.has(storyId)) {
-      console.log('Story already tracked as viewed:', storyId);
       return;
     }
 
     try {
-      console.log('Marking story as viewed:', storyId);
       await storyAPI.viewStory(storyId, token);
       
       // Mark as viewed in local state to prevent duplicates

@@ -31,9 +31,7 @@ const generateUniqueReferralCode = async (): Promise<string> => {
 
 export const getMe = async (req: Request, res: Response) => {
     try {
-        console.info("getMe controller");
         const user = req.user;
-        console.log({ user })
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -41,15 +39,12 @@ export const getMe = async (req: Request, res: Response) => {
         res.json({ success: true, data: user });
     }
     catch (error) {
-        console.log('getMe error:', error);
         res.status(400).json({ message: "Get user failed" });
     }
 };
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        console.info("createUser controller");
-
         // Get user data from verified token (middleware sets this)
         const tokenUser = req.user as any;
         const { displayName, photoURL, provider = "google" } = req.body;
@@ -57,9 +52,6 @@ export const createUser = async (req: Request, res: Response) => {
         const user_id = tokenUser.user_id;
         const email = tokenUser.email;
         const phoneNumber = tokenUser.phoneNumber;
-
-        console.log("Token user data:", { user_id, email, phoneNumber, provider });
-        console.log("Request body data:", { displayName, photoURL, provider });
 
         if (!user_id) {
             return res.status(400).json({ success: false, message: "Supabase ID is required" });
@@ -112,7 +104,6 @@ export const createUser = async (req: Request, res: Response) => {
         res.json({ success: true, data: response });
     }
     catch (error: any) {
-        console.log("Create user error:", error);
         res.status(400).json({ success: false, message: "Create user failed", error: error.message });
     }
 };
@@ -145,7 +136,6 @@ export const getReferralCode = async (req: Request, res: Response) => {
             data: { referralCode: updatedUser?.referralCode || referralCode },
         });
     } catch (error: any) {
-        console.error("getReferralCode error:", error);
         res.status(400).json({
             success: false,
             message: error?.message || "Could not fetch referral code",
@@ -156,7 +146,6 @@ export const getReferralCode = async (req: Request, res: Response) => {
 // Update user
 export const updateUser = async (req: Request, res: Response) => {
     try {
-        console.info("updateUser controller");
         const user = req.user;
         if (!user) {
             res.status(400).json({ message: "User not found" });
@@ -168,7 +157,6 @@ export const updateUser = async (req: Request, res: Response) => {
         }
 
         const updates = parseForMonggoSetUpdates(req.body);
-        console.log({ updates })
 
         const updatedUser = await User.findOneAndUpdate(
             { user_id: (user as any)?.user_id },
@@ -182,7 +170,6 @@ export const updateUser = async (req: Request, res: Response) => {
         res.json({ success: true, data: updatedUser });
     }
     catch (error) {
-        console.error('updateUser error:', error);
         res.status(400).json({ message: "Update user failed" });
     }
 };
@@ -190,7 +177,6 @@ export const updateUser = async (req: Request, res: Response) => {
 // Get user by ID
 export const getUserById = async (req: Request, res: Response) => {
     try {
-        console.info("getUserById controller");
         const { userId } = req.params;
         const currentUserId = (req.user as any)?.user_id;
 
@@ -206,7 +192,6 @@ export const getUserById = async (req: Request, res: Response) => {
 
         res.json({ success: true, data: user });
     } catch (error) {
-        console.error("getUserById error:", error);
         res.status(400).json({ success: false, message: "Get user failed" });
     }
 };
@@ -214,7 +199,6 @@ export const getUserById = async (req: Request, res: Response) => {
 // Get users
 export const getUsers = async (req: Request, res: Response) => {
     try {
-        console.info("getUsers controller");
 
         const authUser = req.user as IUser | undefined;
         const currentUserId = authUser?.user_id;
@@ -337,12 +321,8 @@ export const getUsers = async (req: Request, res: Response) => {
         );
 
         const users = await User.aggregate(pipeline);
-        console.log("------------------------------------------------------")
-        console.log("------------------------------------------------------")
-        console.log(users)
         res.json({ success: true, data: users });
     } catch (error) {
-        console.error("getUsers error:", error);
         res.status(400).json({ success: false, message: "Get users failed" });
     }
 };
@@ -350,7 +330,6 @@ export const getUsers = async (req: Request, res: Response) => {
 // Delete account
 export const deleteAccount = async (req: Request, res: Response) => {
     try {
-        console.info("deleteAccount controller");
         const user = req.user as IUser | undefined;
 
         if (!user) {
@@ -370,7 +349,6 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: "Account deleted successfully", data: updatedUser });
     } catch (error) {
-        console.error("deleteAccount error:", error);
         res.status(400).json({ success: false, message: "Delete account failed" });
     }
 };
@@ -378,7 +356,6 @@ export const deleteAccount = async (req: Request, res: Response) => {
 // Validate and process referral code
 export const validateAndProcessReferral = async (req: Request, res: Response) => {
     try {
-        console.info("validateAndProcessReferral controller");
         const user = req.user as IUser | undefined;
         const { referralCode } = req.body;
 
@@ -432,7 +409,6 @@ export const validateAndProcessReferral = async (req: Request, res: Response) =>
             data: referral,
         });
     } catch (error: any) {
-        console.error("validateAndProcessReferral error:", error);
 
         // Handle duplicate key error
         if (error.code === 11000) {
@@ -452,7 +428,6 @@ export const validateAndProcessReferral = async (req: Request, res: Response) =>
 // Get user matches
 export const getUserMatches = async (req: Request, res: Response) => {
     try {
-        console.info("getUserMatches controller");
         const user = req.user as IUser | undefined;
         if (!user) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -507,7 +482,6 @@ export const getUserMatches = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("getUserMatches error:", error);
         res.status(400).json({ success: false, message: "Get user matches failed" });
     }
 };
@@ -515,7 +489,6 @@ export const getUserMatches = async (req: Request, res: Response) => {
 // Get users who liked the current user (but current user hasn't liked them back)
 export const getUsersWhoLikedMe = async (req: Request, res: Response) => {
     try {
-        console.info("getUsersWhoLikedMe controller");
         const user = req.user as IUser | undefined;
         if (!user) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -599,7 +572,6 @@ export const getUsersWhoLikedMe = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("getUsersWhoLikedMe error:", error);
         res.status(400).json({ success: false, message: "Get users who liked me failed" });
     }
 };

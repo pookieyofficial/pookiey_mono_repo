@@ -32,9 +32,6 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
         const { imageExtension, mimeTypes }: PresignedUrlRequest = req.body;
         const userId = (req as any).user.user_id;
 
-        console.log('Generating presigned URLs for user:', userId);
-        console.log('Requested mime types:', mimeTypes || imageExtension);
-
         const requestedMimeTypes = Array.isArray(mimeTypes) && mimeTypes.length > 0
             ? mimeTypes
             : Array.isArray(imageExtension) && imageExtension.length > 0
@@ -65,7 +62,6 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
                 // Organize uploads by user ID folder
                 const key = `users/${userId}/${uuidv4()}.${safeExt}`;
                 
-                console.log(`Generated S3 key for user ${userId}:`, key);
                 
                 const params = {
                     Bucket: process.env.AWS_BUCKET_NAME!,
@@ -85,7 +81,6 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
                 };
             })
         );
-        console.log("urls", urls);
 
         return res.status(200).json({
             success: true,
@@ -95,7 +90,6 @@ export const getPresignedUrls = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error('Error generating presigned URLs:', error);
         
         return res.status(500).json({
             success: false,

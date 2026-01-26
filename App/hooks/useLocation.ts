@@ -18,14 +18,11 @@ export function useLocation() {
         setError('');
         
         try {
-            console.log('Requesting location permission...');
             
             // Check current permission status first
             const currentPermission = await Location.getForegroundPermissionsAsync();
-            console.log('Current permission status:', currentPermission.status);
             
             if (currentPermission.status === 'granted') {
-                console.log('Permission already granted');
                 setHasPermission(true);
                 
                 // Get current location
@@ -44,9 +41,7 @@ export function useLocation() {
             }
             
             // Request permission
-            console.log('Requesting new permission...');
             const { status } = await Location.requestForegroundPermissionsAsync();
-            console.log('Permission request result:', status);
             
             if (status !== 'granted') {
                 const errorMessage = status === 'denied' 
@@ -60,12 +55,10 @@ export function useLocation() {
             setHasPermission(true);
 
             // Get current location
-            console.log('Getting current location...');
             const currentLocation = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.Balanced,
                 // timeout: 15000, // 15 second timeout
             });
-            console.log('Got location:', currentLocation.coords);
             setLocation(currentLocation);
 
             // Get address from coordinates
@@ -76,7 +69,6 @@ export function useLocation() {
 
             return true;
         } catch (error: any) {
-            console.error('Error in requestLocationPermission:', error);
             let errorMessage = 'Failed to get location. Please try again.';
             
             if (error.code === 'E_LOCATION_TIMEOUT') {
@@ -116,7 +108,6 @@ export function useLocation() {
                 setAddress('Address not available');
             }
         } catch (error) {
-            console.error('Error getting address:', error);
             setAddress('Address not available');
         }
     };
@@ -148,16 +139,13 @@ export function useLocation() {
 
     const checkLocationPermission = async () => {
         try {
-            console.log('Checking location permission...');
             const { status } = await Location.getForegroundPermissionsAsync();
-            console.log('Permission check result:', status);
             
             const isGranted = status === 'granted';
             setHasPermission(isGranted);
             
             // If permission is granted, try to get location immediately
             if (isGranted && !location) {
-                console.log('Permission granted, getting location...');
                 try {
                     const currentLocation = await Location.getCurrentPositionAsync({
                         accuracy: Location.Accuracy.Balanced,
@@ -169,14 +157,12 @@ export function useLocation() {
                         currentLocation.coords.longitude
                     );
                 } catch (locationError) {
-                    console.log('Could not get location automatically:', locationError);
                     // Don't set error here, just log it
                 }
             }
             
             return isGranted;
         } catch (error) {
-            console.error('Error checking location permission:', error);
             return false;
         }
     };

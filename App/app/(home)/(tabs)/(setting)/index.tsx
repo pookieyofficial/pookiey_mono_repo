@@ -22,7 +22,6 @@ const Settings = () => {
   const { setLanguage } = useOnboardingStore()
 
   const handleButtonPress = (buttonName: string) => {
-    console.log(`${buttonName} pressed`)
 
     if (buttonName === 'Dating Preference') {
       router.push('/(home)/(tabs)/(setting)/datingPreferences')

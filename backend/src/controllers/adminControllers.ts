@@ -105,7 +105,6 @@ export const getUserAnalytics = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getUserAnalytics error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch user analytics" });
     }
 };
@@ -113,7 +112,7 @@ export const getUserAnalytics = async (req: Request, res: Response) => {
 export const getUsersList = async (req: Request, res: Response) => {
     try {
         const { filter = "all", status, page = 1, limit = 50, search } = req.query;
-        
+
         // Validate and sanitize pagination parameters
         const pageNum = Math.max(1, Number(page) || 1);
         const limitNum = Math.min(200, Math.max(10, Number(limit) || 50)); // Min 10, Max 200
@@ -176,7 +175,6 @@ export const getUsersList = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getUsersList error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch users" });
     }
 };
@@ -250,7 +248,6 @@ export const getInteractionStats = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getInteractionStats error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch interaction stats" });
     }
 };
@@ -259,15 +256,15 @@ export const getUserDetails = async (req: Request, res: Response) => {
     try {
         const { userId } = req.params;
         const decodedUserId = decodeURIComponent(userId);
-        
+
         // Try to find user by email first, then by user_id
         let user = await User.findOne({ email: decodedUserId }).lean();
-        
+
         if (!user) {
             // If not found by email, try by user_id
             user = await User.findOne({ user_id: decodedUserId }).lean();
         }
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -373,7 +370,6 @@ export const getUserDetails = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getUserDetails error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch user details" });
     }
 };
@@ -381,7 +377,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
 export const getUserInteractions = async (req: Request, res: Response) => {
     try {
         const { userId } = req.params; // This is actually email now
-        
+
         // Find user by email to get user_id
         const user = await User.findOne({ email: decodeURIComponent(userId) });
         if (!user) {
@@ -409,7 +405,6 @@ export const getUserInteractions = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getUserInteractions error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch user interactions" });
     }
 };
@@ -465,7 +460,6 @@ export const getUsersByLocation = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getUsersByLocation error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch users by location" });
     }
 };
@@ -519,7 +513,6 @@ export const getPremiumStats = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getPremiumStats error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch premium stats" });
     }
 };
@@ -565,7 +558,6 @@ export const getReports = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getReports error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch reports" });
     }
 };
@@ -576,14 +568,14 @@ export const updateUserStatus = async (req: Request, res: Response) => {
         const { status } = req.body; // status: "active" | "banned" | "deleted" | "suspended"
 
         const decodedUserId = decodeURIComponent(userId);
-        
+
         // Try to find user by email first, then by user_id
         let user = await User.findOne({ email: decodedUserId });
-        
+
         if (!user) {
             user = await User.findOne({ user_id: decodedUserId });
         }
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -606,7 +598,6 @@ export const updateUserStatus = async (req: Request, res: Response) => {
             message: `User status updated to ${status} successfully`,
         });
     } catch (error) {
-        console.error("updateUserStatus error:", error);
         res.status(500).json({ success: false, message: "Failed to update user status" });
     }
 };
@@ -617,14 +608,14 @@ export const moderateUser = async (req: Request, res: Response) => {
         const { action, reason } = req.body; // action: "warn" | "shadowBan" | "ban"
 
         const decodedUserId = decodeURIComponent(userId);
-        
+
         // Try to find user by email first, then by user_id
         let user = await User.findOne({ email: decodedUserId });
-        
+
         if (!user) {
             user = await User.findOne({ user_id: decodedUserId });
         }
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -635,7 +626,6 @@ export const moderateUser = async (req: Request, res: Response) => {
         } else if (action === "warn") {
             // You might want to add a warnings array to User model
             // For now, just log it
-            console.log(`Warning issued to user ${user.email}: ${reason}`);
         } else if (action === "shadowBan") {
             // Shadow ban - user appears active but their content is hidden
             // You might want to add a shadowBanned field
@@ -649,7 +639,6 @@ export const moderateUser = async (req: Request, res: Response) => {
             message: `User ${action}ed successfully`,
         });
     } catch (error) {
-        console.error("moderateUser error:", error);
         res.status(500).json({ success: false, message: "Failed to moderate user" });
     }
 };
@@ -711,7 +700,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getDashboardStats error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch dashboard stats" });
     }
 };
@@ -777,8 +765,6 @@ export const getSupportMessages = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("getSupportMessages error:", error);
-        res.status(500).json({ success: false, message: "Failed to fetch support messages" });
     }
 };
 
@@ -788,7 +774,6 @@ export const updateSupportStatus = async (req: Request, res: Response) => {
         const { status, response, priority } = req.body;
         const admin = req.user as any as IUser;
 
-        console.log("updateSupportStatus called:", { supportId, status, response, priority, adminId: admin?.user_id, body: req.body });
 
         if (!supportId) {
             return res.status(400).json({
@@ -822,7 +807,7 @@ export const updateSupportStatus = async (req: Request, res: Response) => {
 
         // Build update object
         const updateData: any = {};
-        
+
         if (status) {
             updateData.status = status as "pending" | "in_progress" | "resolved" | "closed";
         }
@@ -845,11 +830,8 @@ export const updateSupportStatus = async (req: Request, res: Response) => {
         );
 
         if (!supportMessage) {
-            console.error("Support message not found:", supportId);
             return res.status(404).json({ success: false, message: "Support message not found" });
         }
-
-        console.log("Support message updated successfully:", supportMessage._id);
 
         res.json({
             success: true,
@@ -857,11 +839,10 @@ export const updateSupportStatus = async (req: Request, res: Response) => {
             message: `Support message updated successfully`,
         });
     } catch (error) {
-        console.error("updateSupportStatus error:", error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        res.status(500).json({ 
-            success: false, 
-            message: `Failed to update support message status: ${errorMessage}` 
+        res.status(500).json({
+            success: false,
+            message: `Failed to update support message status: ${errorMessage}`
         });
     }
 };

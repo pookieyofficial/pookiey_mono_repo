@@ -98,83 +98,83 @@ export default function ImageUploadExample() {
       />
       <ScrollView style={styles.container}>
         <View style={styles.content}>
-        <Text style={styles.title}>Image Upload Example</Text>
-        <Text style={styles.subtitle}>
-          Compressed to JPEG and uploaded to S3
-        </Text>
+          <Text style={styles.title}>Image Upload Example</Text>
+          <Text style={styles.subtitle}>
+            Compressed to JPEG and uploaded to S3
+          </Text>
 
-        {/* Upload Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, isUploading && styles.buttonDisabled]}
-            onPress={handleSingleUpload}
-            disabled={isUploading}
-          >
-            {isUploading ? (
-              <ActivityIndicator color={Colors.primary.white} />
-            ) : (
-              <Text style={styles.buttonText}>Pick & Upload Single Image</Text>
-            )}
-          </TouchableOpacity>
+          {/* Upload Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, isUploading && styles.buttonDisabled]}
+              onPress={handleSingleUpload}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <ActivityIndicator color={Colors.primary.white} />
+              ) : (
+                <Text style={styles.buttonText}>Pick & Upload Single Image</Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, isUploading && styles.buttonDisabled]}
-            onPress={handleMultipleUpload}
-            disabled={isUploading}
-          >
-            {isUploading ? (
-              <ActivityIndicator color={Colors.primary.white} />
-            ) : (
-              <Text style={styles.buttonText}>Pick & Upload Multiple Images</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Progress Indicator */}
-        {isUploading && (
-          <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>Uploading... {progress}%</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
-            </View>
-          </View>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={resetError} style={styles.errorButton}>
-              <Text style={styles.errorButtonText}>Dismiss</Text>
+            <TouchableOpacity
+              style={[styles.button, isUploading && styles.buttonDisabled]}
+              onPress={handleMultipleUpload}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <ActivityIndicator color={Colors.primary.white} />
+              ) : (
+                <Text style={styles.buttonText}>Pick & Upload Multiple Images</Text>
+              )}
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* Uploaded Images Display */}
-        {uploadedImages.length > 0 && (
-          <View style={styles.imagesContainer}>
-            <Text style={styles.imagesTitle}>
-              Uploaded Images ({uploadedImages.length})
-            </Text>
-            <View style={styles.imagesGrid}>
-              {uploadedImages.map((img, index) => (
-                <View key={index} style={styles.imageCard}>
-                  <Image source={{ uri: img.s3Url }} style={styles.image} />
-                  <Text style={styles.imageInfo} numberOfLines={1}>
-                    {img.width}x{img.height}
-                  </Text>
-                </View>
-              ))}
+          {/* Progress Indicator */}
+          {isUploading && (
+            <View style={styles.progressContainer}>
+              <Text style={styles.progressText}>Uploading... {progress}%</Text>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Usage Instructions */}
-        <View style={styles.instructionsContainer}>
-          <Text style={styles.instructionsTitle}>How to use in your code:</Text>
-          <View style={styles.codeBlock}>
-            <Text style={styles.codeText}>
-              {`// Import the hook
+          {/* Error Display */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={resetError} style={styles.errorButton}>
+                <Text style={styles.errorButtonText}>Dismiss</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Uploaded Images Display */}
+          {uploadedImages.length > 0 && (
+            <View style={styles.imagesContainer}>
+              <Text style={styles.imagesTitle}>
+                Uploaded Images ({uploadedImages.length})
+              </Text>
+              <View style={styles.imagesGrid}>
+                {uploadedImages.map((img, index) => (
+                  <View key={index} style={styles.imageCard}>
+                    <Image source={{ uri: img.s3Url }} style={styles.image} />
+                    <Text style={styles.imageInfo} numberOfLines={1}>
+                      {img.width}x{img.height}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Usage Instructions */}
+          <View style={styles.instructionsContainer}>
+            <Text style={styles.instructionsTitle}>How to use in your code:</Text>
+            <View style={styles.codeBlock}>
+              <Text style={styles.codeText}>
+                {`// Import the hook
 import { useImageCompression } from '@/hooks/useImageCompression';
 
 // In your component
@@ -183,13 +183,12 @@ const { isUploading, pickAndUploadSingle } = useImageCompression();
 // Upload an image
 const result = await pickAndUploadSingle();
 if (result) {
-  console.log('S3 URL:', result.s3Url);
 }`}
-            </Text>
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </>
   );
 }

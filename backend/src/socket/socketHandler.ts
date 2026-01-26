@@ -20,7 +20,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
     io.use(async (socket: AuthenticatedSocket, next) => {
         try {
             const userId = socket.handshake.auth.userId;
-            
+
             if (!userId) {
                 return next(new Error("Authentication error: userId is required"));
             }
@@ -34,7 +34,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
 
     io.on("connection", (socket: AuthenticatedSocket) => {
         const userId = socket.userId;
-        console.log(`User connected: ${userId}`);
 
         // User joins their own room
         if (userId) {
@@ -52,9 +51,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 }
 
                 socket.join(`match:${matchId}`);
-                console.log(`User ${userId} joined match ${matchId}`);
             } catch (error) {
-                console.error("Error joining match:", error);
                 socket.emit("error", { message: "Failed to join match" });
             }
         });
@@ -62,7 +59,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
         // Leave a match room
         socket.on("leave_match", (matchId: string) => {
             socket.leave(`match:${matchId}`);
-            console.log(`User ${userId} left match ${matchId}`);
         });
 
         // Send a message
@@ -149,11 +145,9 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                         });
                     }
                 } catch (notifyError) {
-                    console.error("Error sending push notification:", notifyError);
                 }
 
             } catch (error) {
-                console.error("Error sending message:", error);
                 socket.emit("error", { message: "Failed to send message" });
             }
         });
@@ -202,9 +196,9 @@ export const initializeSocket = (httpServer: HTTPServer) => {
 
                 // Notify the sender that their messages were read
                 const senderId = match.user1Id === userId ? match.user2Id : match.user1Id;
-                io.to(`user:${senderId}`).emit("messages_read", { 
+                io.to(`user:${senderId}`).emit("messages_read", {
                     matchId,
-                    count: result.modifiedCount 
+                    count: result.modifiedCount
                 });
 
                 // Emit inbox_update to the user who read the messages to update their local inbox
@@ -213,7 +207,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 });
 
             } catch (error) {
-                console.error("Error marking messages as read:", error);
                 socket.emit("error", { message: "Failed to mark messages as read" });
             }
         });
@@ -254,7 +247,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
 
                     ack?.({ receiverOnline });
                 } catch (error) {
-                    console.error("Error checking call presence:", error);
                     ack?.({ receiverOnline: false });
                 }
             }
@@ -294,7 +286,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                         receiverId,
                         reason: "offline",
                     });
-                    console.log(`Call unavailable (offline): ${userId} -> ${receiverId} (match: ${matchId})`);
                     return;
                 }
 
@@ -311,9 +302,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                     receiverId,
                 });
 
-                console.log(`Call initiated: ${userId} -> ${receiverId} (match: ${matchId})`);
-            } catch (error) {
-                console.error("Error initiating call:", error);
+            } catch (error) {   
                 socket.emit("error", { message: "Failed to initiate call" });
             }
         });
@@ -326,7 +315,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 receiverId: userId,
                 receiverIdentity: userId,
             });
-            console.log(`Call answered: ${userId} answered call from ${callerId}`);
         });
 
         socket.on("call_reject", (data: { matchId: string; callerId: string }) => {
@@ -336,7 +324,6 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 matchId,
                 receiverId: userId,
             });
-            console.log(`Call rejected: ${userId} rejected call from ${callerId}`);
         });
 
         socket.on("call_end", (data: { matchId: string; otherUserId: string }) => {
@@ -346,11 +333,9 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                 matchId,
                 endedBy: userId,
             });
-            console.log(`Call ended: ${userId} ended call in match ${matchId}`);
         });
 
         socket.on("disconnect", () => {
-            console.log(`User disconnected: ${userId}`);
         });
     });
 

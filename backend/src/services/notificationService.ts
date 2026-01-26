@@ -60,14 +60,11 @@ export async function sendMessageNotification({
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('❌ Failed to send notification:', result);
       throw new Error(result?.errors?.[0]?.message || 'Expo push error');
     }
 
-    console.log('✅ Notification sent successfully:', result?.data || result);
     return result;
   } catch (error) {
-    console.error('🚨 Error sending notification:', error);
     throw error;
   }
 }

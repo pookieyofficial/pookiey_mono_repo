@@ -197,7 +197,6 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
 
-          console.log('🔄 handleAuthSuccess - calling getOrCreateUser...');
           const { getOrCreateUser } = useUser();
 
           const response = await getOrCreateUser(accessToken, supabaseUser);
@@ -275,7 +274,6 @@ export const useAuthStore = create<AuthStore>()(
 
           // Don't do anything if auth state hasn't changed, except on explicit SIGNED_IN
           if (event !== 'SIGNED_IN' && lastAuthState === isAuthenticated) {
-            console.log('⏭️ Auth state unchanged, skipping');
             return;
           }
 
@@ -335,7 +333,6 @@ export const useAuthStore = create<AuthStore>()(
         if (state) {
           state.isLoading = false;
           state.isInitialized = true;
-          console.log('Store rehydrated - user:', state.user?.email);
         }
       },
     }

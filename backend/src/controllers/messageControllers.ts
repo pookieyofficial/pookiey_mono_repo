@@ -140,7 +140,6 @@ export const getInbox = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error fetching inbox:", error);
         res.status(500).json({
             error: "Failed to fetch inbox",
             details: error instanceof Error ? error.message : "Unknown error"
@@ -182,7 +181,6 @@ export const getMessages = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error fetching messages:", error);
         res.status(500).json({
             error: "Failed to fetch messages",
             details: error instanceof Error ? error.message : "Unknown error"
@@ -244,7 +242,6 @@ export const sendMessage = async (req: Request, res: Response) => {
             ? receiverUser!.notificationTokens
             : [];
 
-        console.log("receiverTokens", receiverTokens);
 
         if (receiverTokens.length > 0) {
             await sendMessageNotification({
@@ -269,7 +266,6 @@ export const sendMessage = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error sending message:", error);
         res.status(500).json({
             error: "Failed to send message",
             details: error instanceof Error ? error.message : "Unknown error"
@@ -315,7 +311,6 @@ export const markAsRead = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error marking messages as read:", error);
         res.status(500).json({
             error: "Failed to mark messages as read",
             details: error instanceof Error ? error.message : "Unknown error"
@@ -351,7 +346,6 @@ export const deleteMessage = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error deleting message:", error);
         res.status(500).json({
             error: "Failed to delete message",
             details: error instanceof Error ? error.message : "Unknown error"

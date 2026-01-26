@@ -19,10 +19,3 @@ const getBaseUrl = () => {
 
 const API_BASE_URL = getBaseUrl();
 export const getPresignedUrlAPI = API_BASE_URL ? `${API_BASE_URL}/aws/get-s3-presigned-url` : '';
-
-if (API_BASE_URL) {
-  console.log('🔗 AWS API Base URL:', API_BASE_URL);
-  console.log('🔗 Presigned URL endpoint:', getPresignedUrlAPI);
-} else {
-  console.error('❌ Failed to construct API base URL');
-}

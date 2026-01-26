@@ -121,10 +121,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🚀 Initializing centralized auth system...');
       setupAuthListener();
       await getInitialSession();
-      console.log('✅ Centralized auth system initialized');
     };
 
     initializeAuth();

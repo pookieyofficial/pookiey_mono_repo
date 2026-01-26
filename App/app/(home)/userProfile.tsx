@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity, StatusBar } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -17,7 +17,7 @@ const UserProfile = () => {
   const { userId, returnToStory } = useLocalSearchParams<{ userId?: string; returnToStory?: string }>()
   const router = useRouter()
   const { token } = useAuth()
-  
+
   const [user, setUser] = useState<DBUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [dialogVisible, setDialogVisible] = useState(false)
@@ -80,7 +80,8 @@ const UserProfile = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="default" />
       <CustomDialog
         visible={dialogVisible}
         type="error"
@@ -93,7 +94,7 @@ const UserProfile = () => {
         }}
       />
       <UserProfileView user={user} />
-    </SafeAreaView>
+    </View>
   )
 }
 

@@ -47,8 +47,6 @@ export default function AdminLayout({
           router.push("/");
         }
       } catch (error) {
-        // If the API call fails (403 Forbidden or any error), user is not admin
-        console.error("Admin verification failed:", error);
         setIsAdmin(false);
         router.push("/");
       } finally {

@@ -39,6 +39,7 @@ export default function CustomBackButton({
     const buttonBackgroundStyle = variant === 'overlay'
         ? [
             styles.backButtonBackgroundOverlay,
+            { backgroundColor: backgroundColor },
         ]
         : styles.backButtonBackground;
 

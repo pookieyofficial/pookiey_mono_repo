@@ -62,11 +62,9 @@ export default function NotificationScreen() {
                     const token = await Notifications.getExpoPushTokenAsync({
                         projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
                     });
-                    console.log('Token:', token);
 
                     if (token?.data) {
                         addNotificationToken(token.data);
-                        console.log('Notification token stored:', token.data);
                     }
                 } else {
                     console.warn('Must use physical device for Push Notifications');

@@ -98,7 +98,6 @@ export default function ChatRoom() {
   };
 
   useLayoutEffect(() => {
-    console.log('userAvatar', userAvatar);
     navigation.setOptions({
       headerShown: true,
       headerTitle: '',

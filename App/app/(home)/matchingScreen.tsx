@@ -26,8 +26,6 @@ const MatchingScreen = () => {
     const userName = params.userName as string
     const userAvatar = params.userAvatar as string
 
-    console.log('Match screen params:', { match, user1, user2 })
-
     // Default data fallback (for development/testing)
     const defaultMatchData = {
         displayName: 'Jake Smith',
@@ -41,7 +39,6 @@ const MatchingScreen = () => {
         photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     }
 
-    // Use actual data from backend (user2 is the matched person, user1 is current user)
     const displayMatchName = user2?.profile?.firstName || defaultMatchData.displayName
     const displayMatchPhoto = user2?.profile?.photos?.[0]?.url
     const displayUserPhoto = user1?.profile?.photos?.[0]?.url
@@ -67,8 +64,6 @@ const MatchingScreen = () => {
     }, [leftCardAnim, rightCardAnim]);
 
     const handleSayHello = () => {
-        console.log('User said hello to:', displayMatchName)
-        console.log('Match details:', { match, user1, user2 })
         router.replace({
             pathname: '/(home)/(tabs)/(chats)',
             params: {

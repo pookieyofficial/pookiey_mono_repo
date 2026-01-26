@@ -34,7 +34,6 @@ const formatStoryUser = async (userId: string, currentUserId: string, userStorie
 // Get stories organized by friends (matched users) and discover
 export const getStories = async (req: Request, res: Response) => {
     try {
-        console.info("getStories controller");
         const currentUserId = (req.user as any)?.user_id;
 
         if (!currentUserId) {
@@ -278,7 +277,6 @@ export const getStories = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("getStories error:", error);
         res.status(400).json({ success: false, message: "Get stories failed" });
     }
 };
@@ -286,7 +284,6 @@ export const getStories = async (req: Request, res: Response) => {
 // Create a new story
 export const createStory = async (req: Request, res: Response) => {
     try {
-        console.info("createStory controller");
         const currentUserId = (req.user as any)?.user_id;
 
         if (!currentUserId) {
@@ -328,7 +325,6 @@ export const createStory = async (req: Request, res: Response) => {
             data: newStory
         });
     } catch (error) {
-        console.error("createStory error:", error);
         res.status(400).json({ success: false, message: "Create story failed" });
     }
 };
@@ -336,7 +332,6 @@ export const createStory = async (req: Request, res: Response) => {
 // Mark story as viewed
 export const viewStory = async (req: Request, res: Response) => {
     try {
-        console.info("viewStory controller");
         const currentUserId = (req.user as any)?.user_id;
         const { storyId } = req.params;
 
@@ -363,7 +358,6 @@ export const viewStory = async (req: Request, res: Response) => {
 
         res.json({ success: true, data: story });
     } catch (error) {
-        console.error("viewStory error:", error);
         res.status(400).json({ success: false, message: "View story failed" });
     }
 };
@@ -371,7 +365,6 @@ export const viewStory = async (req: Request, res: Response) => {
 // Like/Unlike a story
 export const likeStory = async (req: Request, res: Response) => {
     try {
-        console.info("likeStory controller");
         const currentUserId = (req.user as any)?.user_id;
         const { storyId } = req.params;
 
@@ -411,7 +404,6 @@ export const likeStory = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("likeStory error:", error);
         res.status(400).json({ success: false, message: "Like story failed" });
     }
 };
@@ -419,7 +411,6 @@ export const likeStory = async (req: Request, res: Response) => {
 // Get viewers of a story (only for own stories)
 export const getStoryViewers = async (req: Request, res: Response) => {
     try {
-        console.info("getStoryViewers controller");
         const currentUserId = (req.user as any)?.user_id;
         const { storyId } = req.params;
 
@@ -461,7 +452,6 @@ export const getStoryViewers = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("getStoryViewers error:", error);
         res.status(400).json({ success: false, message: "Get story viewers failed" });
     }
 };
@@ -469,7 +459,6 @@ export const getStoryViewers = async (req: Request, res: Response) => {
 // Delete a story
 export const deleteStory = async (req: Request, res: Response) => {
     try {
-        console.info("deleteStory controller");
         const currentUserId = (req.user as any)?.user_id;
         const { storyId } = req.params;
 
@@ -492,7 +481,6 @@ export const deleteStory = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: "Story deleted successfully" });
     } catch (error) {
-        console.error("deleteStory error:", error);
         res.status(400).json({ success: false, message: "Delete story failed" });
     }
 };

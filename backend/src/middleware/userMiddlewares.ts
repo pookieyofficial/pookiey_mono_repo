@@ -4,7 +4,6 @@ import { verifySupabaseToken } from "../config/supabase";
 
 export const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log({ headers: req.headers })
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             return res.status(401).json({ message: "Unauthorized - No token provided" });
@@ -31,7 +30,6 @@ export const verifyUser = async (req: Request, res: Response, next: NextFunction
 
 
         req.user = user as any;
-        console.log("User verified", user);
         next();
     }
     catch (error) {
@@ -46,21 +44,18 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
             return res.status(401).json({ message: "Unauthorized - No token provided" });
         }
 
-        console.log({ token })
         const supabaseUser = await verifySupabaseToken(token);
         if (!supabaseUser) {
             return res.status(401).json({ message: "Unauthorized - Invalid token" });
         }
         const user = await User.findOne({ user_id: supabaseUser.id });
 
-        console.log({ user })
         req.user = {
             user_id: supabaseUser.id,
             email: supabaseUser.email,
             phoneNumber: supabaseUser.phone || supabaseUser.user_metadata?.phone,
             user: user
         } as any;
-        console.log({ reqUser: req.user })
         next();
     }
     catch (error) {

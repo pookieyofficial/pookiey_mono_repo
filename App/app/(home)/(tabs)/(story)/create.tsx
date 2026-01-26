@@ -66,11 +66,9 @@ export default function CreateStoryScreen() {
     const requestPermissions = async () => {
       try {
         if (!cameraPermission?.granted) {
-          const result = await requestCameraPermission();
-          console.log('Camera permission result:', result);
+          const result = await requestCameraPermission(); 
         }
       } catch (error) {
-        console.error('Error requesting permissions:', error);
       }
     };
     requestPermissions();
@@ -123,14 +121,12 @@ export default function CreateStoryScreen() {
             return;
           }
         } catch (error) {
-          console.error('Error checking file size:', error);
         }
 
         setCapturedMedia(photo.uri);
         setMediaType('image');
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
       showDialog('error', 'Failed to take photo', 'Error');
     }
   };
@@ -145,17 +141,14 @@ export default function CreateStoryScreen() {
       if (!permission || !permission.granted) {
         permission = await MediaLibrary.requestPermissionsAsync().catch(() => null);
         if (!permission || !permission.granted) {
-          console.log('Media library permission not granted');
           return false;
         }
       }
 
       // Save to device
       const asset = await MediaLibrary.createAssetAsync(uri);
-      console.log('Media saved to device:', asset.uri);
       return true;
     } catch (error: any) {
-      console.error('Error saving to device:', error);
       // Don't fail the upload if saving to device fails
       return false;
     }
@@ -206,7 +199,6 @@ export default function CreateStoryScreen() {
         setMediaType(isVideo ? 'video' : 'image');
       }
     } catch (error) {
-      console.error('Error picking from gallery:', error);
       showDialog('error', 'Failed to pick media', 'Error');
     }
   };
@@ -230,7 +222,6 @@ export default function CreateStoryScreen() {
 
       // Compress image to JPEG if it's an image
       if (mediaType === 'image') {
-        console.log('🔄 Compressing image for story...');
         try {
           const compressed = await compressImageToJPEG(
             capturedMedia,
@@ -238,14 +229,12 @@ export default function CreateStoryScreen() {
           );
           mediaToUpload = compressed.uri;
           mimeType = compressed.mimeType;
-          console.log('✅ Image compressed successfully');
           
           // Log compression results
           const originalInfo = await FileSystem.getInfoAsync(capturedMedia);
           if (originalInfo.exists && compressed.size) {
             const originalSize = (originalInfo as any).size;
             const compressionRatio = ((1 - compressed.size / originalSize) * 100).toFixed(1);
-            console.log(`📊 Compression: ${(originalSize / (1024 * 1024)).toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB (${compressionRatio}% reduction)`);
           }
         } catch (compressionError) {
           console.error('⚠️ Image compression failed, uploading original:', compressionError);
@@ -270,7 +259,6 @@ export default function CreateStoryScreen() {
       if (mediaType === 'image' && mediaToUpload !== capturedMedia) {
         try {
           await FileSystem.deleteAsync(mediaToUpload, { idempotent: true });
-          console.log('🗑️ Cleaned up temporary compressed file');
         } catch (cleanupError) {
           console.warn('⚠️ Failed to clean up temporary file:', cleanupError);
         }
@@ -288,14 +276,12 @@ export default function CreateStoryScreen() {
       // Save to device storage
       const saved = await saveToDevice(capturedMedia, mediaType);
       if (saved) {
-        console.log('Story saved to device gallery');
       }
 
       // Refresh stories in store
       try {
         setLoading(true);
         const data = await storyAPI.getStories(token);
-        console.log('Stories refreshed after creation:', data);
         
         // Handle new categorized structure
         if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
@@ -460,7 +446,6 @@ export default function CreateStoryScreen() {
                   showDialog('error', 'Failed to load image preview', 'Error');
                 }}
                 onLoad={() => {
-                  console.log('Image loaded successfully');
                 }}
               />
             ) : (
@@ -477,7 +462,6 @@ export default function CreateStoryScreen() {
                   showDialog('error', 'Failed to load video preview', 'Error');
                 }}
                 onLoad={() => {
-                  console.log('Video loaded successfully');
                   if (videoRef.current) {
                     videoRef.current.playAsync().catch(console.error);
                   }

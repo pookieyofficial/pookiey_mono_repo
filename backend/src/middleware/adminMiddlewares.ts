@@ -35,7 +35,6 @@ export const verifyAdmin = async (req: Request, res: Response, next: NextFunctio
         req.user = user as any;
         next();
     } catch (error) {
-        console.error("Admin verification error:", error);
         return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 };

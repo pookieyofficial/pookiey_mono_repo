@@ -83,8 +83,7 @@ export const createSupportMessage = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error creating support message:", error);
-    res.status(500).json({
+    res.status(500).json({  
       success: false,
       message: "Failed to submit support message",
     });
@@ -119,7 +118,6 @@ export const getSupportMessages = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching support messages:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch support messages",

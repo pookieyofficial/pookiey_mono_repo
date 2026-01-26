@@ -9,7 +9,7 @@ const connectDB = async (): Promise<void> => {
       dbName: "dating-app",
     });
 
-    console.log("✅ MongoDB connected successfully");
+    console.info("✅ MongoDB connected successfully");
   } catch (error) {
     console.error("❌ MongoDB connection failed:");
     process.exit(1);

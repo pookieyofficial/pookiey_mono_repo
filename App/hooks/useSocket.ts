@@ -67,7 +67,6 @@ export const useSocket = () => {
         }
       }
 
-      console.log('Connecting to socket:', SOCKET_URL);
       singletonUserId = userId;
       singletonSocket = io(SOCKET_URL, {
         auth: { userId },
@@ -81,12 +80,10 @@ export const useSocket = () => {
     const socket = singletonSocket;
 
     const onConnect = () => {
-      console.log('Socket connected successfully');
       setIsConnected(true);
     };
 
     const onDisconnect = (reason: any) => {
-      console.log('Socket disconnected:', reason);
       setIsConnected(false);
     };
 
