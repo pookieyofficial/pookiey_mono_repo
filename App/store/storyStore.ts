@@ -10,6 +10,9 @@ export interface StoryItem {
     url: string;
     duration: number;
     isSeen: boolean;
+    isLiked?: boolean;
+    likesCount?: number;
+    viewsCount?: number;
     createdAt: string | Date;
   }>;
   isMe: boolean;

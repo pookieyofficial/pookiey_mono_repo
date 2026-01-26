@@ -191,13 +191,13 @@ export const useSocket = () => {
     []
   );
 
-  const joinMatch = (matchId: string) => {
+  const joinMatch = useCallback((matchId: string) => {
     socketRef.current?.emit('join_match', matchId);
-  };
+  }, []);
 
-  const leaveMatch = (matchId: string) => {
+  const leaveMatch = useCallback((matchId: string) => {
     socketRef.current?.emit('leave_match', matchId);
-  };
+  }, []);
 
   const sendMessage = (data: {
     matchId: string;

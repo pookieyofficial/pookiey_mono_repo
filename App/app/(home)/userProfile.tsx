@@ -14,7 +14,7 @@ import { getUserByIdAPI } from '@/APIs/userAPIs'
 
 const UserProfile = () => {
   const { t } = useTranslation();
-  const { userData, returnToStory } = useLocalSearchParams<{ userData?: string; returnToStory?: string }>()
+  const { userId, returnToStory } = useLocalSearchParams<{ userId?: string; returnToStory?: string }>()
   const router = useRouter()
   const { token } = useAuth()
   
@@ -30,30 +30,22 @@ const UserProfile = () => {
     const loadUserData = async () => {
       setIsLoading(true)
       try {
-        if (userData) {
-          try {
-            const parsedUser: DBUser = JSON.parse(userData)
+        if (!userId) {
+          showDialog()
+          setIsLoading(false)
+          return
+        }
 
-            // If the incoming user object doesn't include subscription info,
-            // fetch the full user from the backend so premium status is available.
-            if ((!parsedUser.subscription || parsedUser.subscription.status === undefined) && token) {
-              try {
-                const response = await getUserByIdAPI(parsedUser.user_id, token)
-                if (response.success && response.data) {
-                  setUser(response.data as DBUser)
-                  return
-                }
-              } catch (fetchError) {
-                console.error('Error fetching full user for profile:', fetchError)
-                // Fall back to the parsed user below
-              }
-            }
+        if (!token) {
+          showDialog()
+          setIsLoading(false)
+          return
+        }
 
-            setUser(parsedUser)
-          } catch (e) {
-            console.error('Error parsing userData:', e)
-            showDialog()
-          }
+        // Always fetch fresh user data from API
+        const response = await getUserByIdAPI(userId, token)
+        if (response.success && response.data) {
+          setUser(response.data as DBUser)
         } else {
           showDialog()
         }
@@ -66,7 +58,7 @@ const UserProfile = () => {
     }
 
     loadUserData()
-  }, [userData, token])
+  }, [userId, token])
 
   const handleBack = () => {
     if (returnToStory === 'true') {

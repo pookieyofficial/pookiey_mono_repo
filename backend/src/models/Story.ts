@@ -5,6 +5,7 @@ export interface IStory extends Document {
     type: "image" | "video";
     mediaUrl: string;
     views: string[]; // Array of user IDs who viewed the story
+    likes: string[]; // Array of user IDs who liked the story
     createdAt: Date;
     expiresAt: Date; // Stories expire after 24 hours
 }
@@ -27,6 +28,10 @@ const StorySchema = new Schema<IStory>(
             required: true
         },
         views: [{
+            type: String,
+            ref: "Users"
+        }],
+        likes: [{
             type: String,
             ref: "Users"
         }],

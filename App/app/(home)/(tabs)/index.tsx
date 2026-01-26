@@ -512,10 +512,16 @@ export default function index() {
   }
 
   const onCardPress = (user: RecommendedUser) => {
+    // Use _id from RecommendedUser type, with fallback to any user_id property that might exist
+    const userId = (user as any).user_id || user._id;
+    if (!userId) {
+      console.error('No user ID found in user object:', user);
+      return;
+    }
     router.push({
       pathname: '/userProfile' as any,
       params: {
-        userData: JSON.stringify(user)
+        userId: userId
       }
     })
   }
@@ -533,6 +539,7 @@ export default function index() {
       setProfiles(initial)
       setConsumed(0)
       setDeckKey(k => k + 1) // reset deck to first card on full refresh
+      profilesLoadedRef.current = true
     } catch (error) {
       console.error('Error initializing profiles:', error)
     } finally {
@@ -559,10 +566,16 @@ export default function index() {
     }
   }, [token])
 
+  // Track if profiles have been loaded initially to avoid unnecessary refreshes
+  const profilesLoadedRef = useRef(false)
+  
   useFocusEffect(
     useCallback(() => {
-      if (idToken && profiles.length > 0 && !isRefreshingRef.current) {
+      // Only refresh if we don't have profiles yet (first load)
+      // Don't refresh every time we come back to the tab
+      if (idToken && profiles.length === 0 && !isRefreshingRef.current && !profilesLoadedRef.current) {
         initializeProfilesRef.current()
+        profilesLoadedRef.current = true
       }
     }, [idToken, profiles.length])
   )
@@ -599,6 +612,7 @@ export default function index() {
 
   const handleRefreshProfiles = async () => {
     setIsLoading(true)
+    profilesLoadedRef.current = false // Reset flag to allow refresh
     await initializeProfiles()
   }
 

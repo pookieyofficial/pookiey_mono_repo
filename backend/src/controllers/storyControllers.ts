@@ -21,6 +21,9 @@ const formatStoryUser = async (userId: string, currentUserId: string, userStorie
             url: story.mediaUrl,
             duration: story.type === "video" ? 15 : 5, // 15s for video, 5s for image
             isSeen: story.views.includes(currentUserId),
+            isLiked: story.likes?.includes(currentUserId) || false,
+            likesCount: story.likes?.length || 0,
+            viewsCount: story.views?.length || 0,
             createdAt: story.createdAt
         })),
         isMe: isMe,
@@ -37,6 +40,12 @@ export const getStories = async (req: Request, res: Response) => {
         if (!currentUserId) {
             return res.status(401).json({ success: false, message: "User not authenticated" });
         }
+
+        // Pagination parameters
+        const friendsPage = parseInt(req.query.friendsPage as string) || 1;
+        const friendsLimit = parseInt(req.query.friendsLimit as string) || 10;
+        const discoverPage = parseInt(req.query.discoverPage as string) || 1;
+        const discoverLimit = parseInt(req.query.discoverLimit as string) || 10;
 
         // Get current user's preferences
         const currentUser = await User.findOne({ user_id: currentUserId }).select("preferences profile");
@@ -191,7 +200,7 @@ export const getStories = async (req: Request, res: Response) => {
         ]);
 
         // Process matched stories
-        const matchedStories = matchedStoriesResults
+        const allMatchedStories = matchedStoriesResults
             .filter(item => item !== null)
             .sort((a, b) => {
                 const dateA = a?.latestStoryDate ? new Date(a.latestStoryDate).getTime() : 0;
@@ -200,8 +209,14 @@ export const getStories = async (req: Request, res: Response) => {
             })
             .map(({ latestStoryDate, ...rest }) => rest);
 
+        // Apply pagination for matched stories
+        const matchedStoriesStart = (friendsPage - 1) * friendsLimit;
+        const matchedStoriesEnd = matchedStoriesStart + friendsLimit;
+        const matchedStories = allMatchedStories.slice(matchedStoriesStart, matchedStoriesEnd);
+        const hasMoreFriends = matchedStoriesEnd < allMatchedStories.length;
+
         // Process discover stories
-        const discoverStories = discoverStoriesResults
+        const allDiscoverStories = discoverStoriesResults
             .filter(item => item !== null)
             .sort((a, b) => {
                 const dateA = a?.latestStoryDate ? new Date(a.latestStoryDate).getTime() : 0;
@@ -209,6 +224,12 @@ export const getStories = async (req: Request, res: Response) => {
                 return dateB - dateA;
             })
             .map(({ latestStoryDate, ...rest }) => rest);
+
+        // Apply pagination for discover stories
+        const discoverStoriesStart = (discoverPage - 1) * discoverLimit;
+        const discoverStoriesEnd = discoverStoriesStart + discoverLimit;
+        const discoverStories = allDiscoverStories.slice(discoverStoriesStart, discoverStoriesEnd);
+        const hasMoreDiscover = discoverStoriesEnd < allDiscoverStories.length;
 
         // Format own story
         let myStory = null;
@@ -225,6 +246,8 @@ export const getStories = async (req: Request, res: Response) => {
                         url: story.mediaUrl,
                         duration: story.type === "video" ? 15 : 5,
                         isSeen: true, // Own stories are always seen
+                        viewsCount: story.views?.length || 0,
+                        likesCount: story.likes?.length || 0,
                         createdAt: story.createdAt
                     })),
                     isMe: true
@@ -237,7 +260,21 @@ export const getStories = async (req: Request, res: Response) => {
             data: {
                 myStory: myStory,
                 friends: matchedStories,
-                discover: discoverStories
+                discover: discoverStories,
+                pagination: {
+                    friends: {
+                        page: friendsPage,
+                        limit: friendsLimit,
+                        hasMore: hasMoreFriends,
+                        total: allMatchedStories.length
+                    },
+                    discover: {
+                        page: discoverPage,
+                        limit: discoverLimit,
+                        hasMore: hasMoreDiscover,
+                        total: allDiscoverStories.length
+                    }
+                }
             }
         });
     } catch (error) {
@@ -328,6 +365,104 @@ export const viewStory = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("viewStory error:", error);
         res.status(400).json({ success: false, message: "View story failed" });
+    }
+};
+
+// Like/Unlike a story
+export const likeStory = async (req: Request, res: Response) => {
+    try {
+        console.info("likeStory controller");
+        const currentUserId = (req.user as any)?.user_id;
+        const { storyId } = req.params;
+
+        if (!currentUserId) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+
+        const story = await Story.findById(storyId);
+
+        if (!story) {
+            return res.status(404).json({ success: false, message: "Story not found" });
+        }
+
+        // Toggle like
+        const isLiked = story.likes?.includes(currentUserId) || false;
+        if (isLiked) {
+            // Unlike: remove from likes array
+            story.likes = story.likes.filter((userId: string) => userId !== currentUserId);
+        } else {
+            // Like: add to likes array if not already there
+            if (!story.likes) {
+                story.likes = [];
+            }
+            if (!story.likes.includes(currentUserId)) {
+                story.likes.push(currentUserId);
+            }
+        }
+
+        await story.save();
+
+        res.json({
+            success: true,
+            data: {
+                storyId: story._id,
+                isLiked: !isLiked,
+                likesCount: story.likes?.length || 0
+            }
+        });
+    } catch (error) {
+        console.error("likeStory error:", error);
+        res.status(400).json({ success: false, message: "Like story failed" });
+    }
+};
+
+// Get viewers of a story (only for own stories)
+export const getStoryViewers = async (req: Request, res: Response) => {
+    try {
+        console.info("getStoryViewers controller");
+        const currentUserId = (req.user as any)?.user_id;
+        const { storyId } = req.params;
+
+        if (!currentUserId) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+
+        const story = await Story.findById(storyId);
+
+        if (!story) {
+            return res.status(404).json({ success: false, message: "Story not found" });
+        }
+
+        // Only allow viewing viewers for own stories
+        if (story.userId !== currentUserId) {
+            return res.status(403).json({ success: false, message: "You can only view viewers of your own stories" });
+        }
+
+        // Get user details for viewers
+        const viewerIds = story.views || [];
+        const likes = story.likes || [];
+        const viewers = await User.find({ user_id: { $in: viewerIds } })
+            .select("user_id displayName photoURL profile")
+            .limit(100); // Limit to 100 viewers for performance
+
+        const viewersData = viewers.map(user => ({
+            id: user.user_id,
+            username: user.displayName || `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || "User",
+            avatar: user.profile?.photos?.[0]?.url || user.photoURL || "",
+            hasLiked: likes.includes(user.user_id), // Check if this viewer has liked the story
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                storyId: story._id,
+                viewers: viewersData,
+                totalViewers: viewerIds.length
+            }
+        });
+    } catch (error) {
+        console.error("getStoryViewers error:", error);
+        res.status(400).json({ success: false, message: "Get story viewers failed" });
     }
 };
 

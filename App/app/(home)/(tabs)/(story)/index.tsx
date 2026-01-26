@@ -13,6 +13,7 @@ import {
   StatusBar,
   Modal,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import { useStoryStore, StoryItem } from '@/store/storyStore';
 import { useAuthStore } from '@/store/authStore';
 import { getUserByIdAPI } from '@/APIs/userAPIs';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -58,6 +60,22 @@ export default function StoriesScreen() {
   const [showMenu, setShowMenu] = useState(false);
   const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null);
   const [wasViewingStory, setWasViewingStory] = useState<number | null>(null);
+  const [showViewers, setShowViewers] = useState(false);
+  const [storyViewers, setStoryViewers] = useState<any[]>([]);
+  const [loadingViewers, setLoadingViewers] = useState(false);
+  const [storyLikes, setStoryLikes] = useState<Record<string, { isLiked: boolean; likesCount: number }>>({});
+  const pausedProgressRef = useRef<number | null>(null);
+  const isPausedRef = useRef(false);
+  const currentProgressRef = useRef<number>(0);
+  const progressListenerRef = useRef<string | null>(null);
+  
+  // Pagination state
+  const [friendsPage, setFriendsPage] = useState(1);
+  const [discoverPage, setDiscoverPage] = useState(1);
+  const [hasMoreFriends, setHasMoreFriends] = useState(false);
+  const [hasMoreDiscover, setHasMoreDiscover] = useState(false);
+  const [loadingMoreFriends, setLoadingMoreFriends] = useState(false);
+  const [loadingMoreDiscover, setLoadingMoreDiscover] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const storyTimer = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<Video>(null);
@@ -71,26 +89,65 @@ export default function StoriesScreen() {
   const [dialogSecondaryButton, setDialogSecondaryButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
   const [dialogCancelButton, setDialogCancelButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
 
-  // Refresh stories (reload from API)
-  const loadStories = useCallback(async () => {
+  // Refresh stories (reload from API) with pagination support
+  const loadStories = useCallback(async (page?: { friends?: number; discover?: number }, append?: boolean) => {
     if (!token) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
-      const data = await storyAPI.getStories(token);
+      if (!append) {
+        setLoading(true);
+      }
+      const friendsPageNum = page?.friends || friendsPage;
+      const discoverPageNum = page?.discover || discoverPage;
+      const data = await storyAPI.getStories(token, friendsPageNum, 10, discoverPageNum, 10);
       console.log('Stories refreshed:', data);
       
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
         // New structure with categorized stories
-        const categorizedStories = {
+        let categorizedStories = {
           myStory: data.myStory || null,
           friends: Array.isArray(data.friends) ? data.friends : [],
           discover: Array.isArray(data.discover) ? data.discover : []
+        };
+        
+        // Append if loading more
+        if (append) {
+          const currentStories = categorizedStories;
+          if (page?.friends && currentStories.friends) {
+            categorizedStories.friends = [...(categorizedStories.friends || []), ...currentStories.friends];
+          }
+          if (page?.discover && currentStories.discover) {
+            categorizedStories.discover = [...(categorizedStories.discover || []), ...currentStories.discover];
+          }
+        } else {
+          // Reset pages when loading fresh
+          setFriendsPage(1);
+          setDiscoverPage(1);
         }
+        
+        // Update pagination info
+        if (data.pagination) {
+          setHasMoreFriends(data.pagination.friends?.hasMore || false);
+          setHasMoreDiscover(data.pagination.discover?.hasMore || false);
+        }
+        
+        // Update likes state
+        const likesMap: Record<string, { isLiked: boolean; likesCount: number }> = {};
+        [...(categorizedStories.friends || []), ...(categorizedStories.discover || [])].forEach(user => {
+          user.stories?.forEach((story: any) => {
+            if (story.id) {
+              likesMap[story.id] = {
+                isLiked: story.isLiked || false,
+                likesCount: story.likesCount || 0
+              };
+            }
+          });
+        });
+        setStoryLikes(prev => ({ ...prev, ...likesMap }));
         
         // Ensure "Your Story" exists even if empty
         if (!categorizedStories.myStory && dbUser?.user_id) {
@@ -346,6 +403,71 @@ export default function StoriesScreen() {
     );
   };
 
+  // Handle story like
+  const handleStoryLike = useCallback(async (storyId: string) => {
+    if (!token || !storyId) return;
+    
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const result = await storyAPI.likeStory(storyId, token);
+      
+      // Update local likes state
+      setStoryLikes(prev => ({
+        ...prev,
+        [storyId]: {
+          isLiked: result.isLiked,
+          likesCount: result.likesCount
+        }
+      }));
+    } catch (error: any) {
+      console.error('Error liking story:', error);
+      showDialog('error', error?.response?.data?.message || 'Failed to like story', 'Error');
+    }
+  }, [token]);
+
+  // Handle getting story viewers - open modal immediately, fetch in background
+  const handleGetViewers = useCallback(async (storyId: string) => {
+    if (!token || !storyId) return;
+    
+    // Open modal immediately
+    setShowViewers(true);
+    setLoadingViewers(true);
+    setStoryViewers([]); // Clear previous viewers
+    
+    // Fetch data in background
+    try {
+      const result = await storyAPI.getStoryViewers(storyId, token);
+      setStoryViewers(result.viewers || []);
+    } catch (error: any) {
+      console.error('Error getting story viewers:', error);
+      showDialog('error', error?.response?.data?.message || 'Failed to load viewers', 'Error');
+      // Close modal on error
+      setShowViewers(false);
+    } finally {
+      setLoadingViewers(false);
+    }
+  }, [token]);
+
+  // Load more friends stories
+  const loadMoreFriends = useCallback(async () => {
+    if (loadingMoreFriends || !hasMoreFriends) return;
+    setLoadingMoreFriends(true);
+    const nextPage = friendsPage + 1;
+    setFriendsPage(nextPage);
+    await loadStories({ friends: nextPage }, true);
+    setLoadingMoreFriends(false);
+  }, [friendsPage, hasMoreFriends, loadingMoreFriends, loadStories]);
+
+  // Load more discover stories
+  const loadMoreDiscover = useCallback(async () => {
+    if (loadingMoreDiscover || !hasMoreDiscover) return;
+    setLoadingMoreDiscover(true);
+    const nextPage = discoverPage + 1;
+    setDiscoverPage(nextPage);
+    await loadStories({ discover: nextPage }, true);
+    setLoadingMoreDiscover(false);
+  }, [discoverPage, hasMoreDiscover, loadingMoreDiscover, loadStories]);
+
   const handleStorySeen = useCallback(async (storyId: string) => {
     if (!token || !storyId) return;
     
@@ -463,7 +585,7 @@ export default function StoriesScreen() {
 
   // Handle video playback status
   const handleVideoStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (status.isLoaded) {
+    if (status.isLoaded && !isPausedRef.current) {
       // Update progress bar based on video position
       if (status.durationMillis && status.durationMillis > 0) {
         const progress = status.positionMillis / status.durationMillis;
@@ -478,6 +600,73 @@ export default function StoriesScreen() {
   }, [progressAnim, nextStory]);
 
   // Start story progress animation
+  // Pause story progress
+  const pauseStoryProgress = useCallback(() => {
+    if (isPausedRef.current) return;
+    
+    const current = getCurrentStory();
+    if (!current) return;
+    
+    isPausedRef.current = true;
+    
+    // Save current progress value from the ref (updated by listener)
+    pausedProgressRef.current = currentProgressRef.current;
+    
+    // Stop animation
+    progressAnim.stopAnimation();
+    
+    // Stop timer if running
+    if (storyTimer.current) {
+      clearTimeout(storyTimer.current);
+      storyTimer.current = null;
+    }
+    
+    // Pause video if playing
+    if (current.story.type === 'video' && videoRef.current) {
+      videoRef.current.pauseAsync().catch(() => {});
+    }
+  }, [getCurrentStory, progressAnim]);
+  
+  // Resume story progress
+  const resumeStoryProgress = useCallback(() => {
+    if (!isPausedRef.current) return;
+    
+    const current = getCurrentStory();
+    if (!current) return;
+    
+    isPausedRef.current = false;
+    const pausedValue = pausedProgressRef.current ?? 0;
+    pausedProgressRef.current = null;
+    
+    // Resume video if it's a video
+    if (current.story.type === 'video' && videoRef.current) {
+      videoRef.current.playAsync().catch(() => {});
+      return; // Video handles its own progress
+    }
+    
+    // Resume animation from where it paused
+    const remainingDuration = (current.story.duration * 1000 || STORY_DURATION) * (1 - pausedValue);
+    if (remainingDuration > 0) {
+      progressAnim.setValue(pausedValue);
+      const animation = Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: remainingDuration,
+        useNativeDriver: false,
+      });
+      
+      animation.start(({ finished }) => {
+        if (finished) {
+          nextStory();
+        }
+      });
+      
+      return () => animation.stop();
+    } else {
+      // If no time remaining, go to next story
+      nextStory();
+    }
+  }, [getCurrentStory, progressAnim, nextStory]);
+
   const startStoryProgress = useCallback(() => {
     const current = getCurrentStory();
     if (!current) return;
@@ -487,14 +676,28 @@ export default function StoriesScreen() {
       handleStorySeen(current.story.id);
     }
 
+    // Set up progress listener to track current value
+    if (progressListenerRef.current) {
+      progressAnim.removeListener(progressListenerRef.current);
+    }
+    progressListenerRef.current = progressAnim.addListener(({ value }) => {
+      currentProgressRef.current = value;
+    });
+
     // For videos, let the video control the progress
     if (current.story.type === 'video') {
       // Video will handle its own playback and completion
-      return;
+      return () => {
+        if (progressListenerRef.current) {
+          progressAnim.removeListener(progressListenerRef.current);
+          progressListenerRef.current = null;
+        }
+      };
     }
 
     // For images, use animation
     progressAnim.setValue(0);
+    currentProgressRef.current = 0;
     const animation = Animated.timing(progressAnim, {
       toValue: 1,
       duration: current.story.duration * 1000 || STORY_DURATION,
@@ -502,49 +705,65 @@ export default function StoriesScreen() {
     });
     
     animation.start(({ finished }) => {
-      if (finished) {
+      if (finished && !isPausedRef.current) {
         nextStory();
       }
     });
 
-    return () => animation.stop();
+    return () => {
+      animation.stop();
+      if (progressListenerRef.current) {
+        progressAnim.removeListener(progressListenerRef.current);
+        progressListenerRef.current = null;
+      }
+    };
   }, [getCurrentStory, progressAnim, handleStorySeen, nextStory]);
 
   // Handle story selection
   useEffect(() => {
     if (selectedStoryIndex !== null) {
-      // getAllStories already slices from selectedStoryIndex, so start at 0
       setCurrentUserIndex(0);
       setCurrentStoryIndex(0);
       progressAnim.setValue(0);
-      setWasViewingStory(null); // Clear the flag when starting a new story
+      setWasViewingStory(null);
+      isPausedRef.current = false;
+      pausedProgressRef.current = null;
     } else {
-      // When story viewer closes, ensure video is stopped
       if (videoRef.current) {
         videoRef.current.pauseAsync()
           .then(() => videoRef.current?.unloadAsync())
           .catch(() => {});
       }
       progressAnim.stopAnimation();
+      isPausedRef.current = false;
+      pausedProgressRef.current = null;
     }
   }, [selectedStoryIndex, progressAnim]);
+  
+  // Pause/resume story when viewers modal opens/closes
+  useEffect(() => {
+    if (selectedStoryIndex === null) return;
+    
+    if (showViewers) {
+      pauseStoryProgress();
+    } else {
+      // Only resume if we were paused (not if story just changed)
+      if (isPausedRef.current) {
+        resumeStoryProgress();
+      }
+    }
+  }, [showViewers, selectedStoryIndex, pauseStoryProgress, resumeStoryProgress]);
 
-  // Handle screen focus - resume story if we were viewing one
   useFocusEffect(
     useCallback(() => {
-      // When screen comes into focus, check if we were viewing a story
       if (wasViewingStory !== null && selectedStoryIndex === null) {
-        // Small delay to ensure navigation is complete
         setTimeout(() => {
-          // Resume the story viewer
           setSelectedStoryIndex(wasViewingStory);
           setWasViewingStory(null);
         }, 100);
       }
       
-      // Cleanup when screen loses focus
       return () => {
-        // Pause story when navigating away
         if (selectedStoryIndex !== null) {
           if (storyTimer.current) {
             clearTimeout(storyTimer.current);
@@ -559,18 +778,14 @@ export default function StoriesScreen() {
     }, [wasViewingStory, selectedStoryIndex, progressAnim])
   );
 
-  // Start progress when story changes
   useEffect(() => {
     if (selectedStoryIndex === null) return;
     
     const current = getCurrentStory();
     if (!current) return;
     
-    // Reset progress
     progressAnim.setValue(0);
     
-    // For videos, we rely on shouldPlay={true} and onLoad callback
-    // For images, start the timer animation
     if (current.story.type !== 'video') {
       const cleanup = startStoryProgress();
       return () => {
@@ -587,7 +802,6 @@ export default function StoriesScreen() {
     };
   }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim]);
   
-  // Separate cleanup for when story viewer closes completely
   useEffect(() => {
     if (selectedStoryIndex === null && videoRef.current) {
       videoRef.current.pauseAsync()
@@ -596,7 +810,6 @@ export default function StoriesScreen() {
     }
   }, [selectedStoryIndex]);
 
-  // Pan responder for swipe gestures
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -623,12 +836,10 @@ export default function StoriesScreen() {
 
 
 
-  // Handle case when story becomes invalid during viewing
   useEffect(() => {
     if (selectedStoryIndex !== null) {
       const current = getCurrentStory();
       if (!current) {
-        // Use setTimeout to avoid setState during render
         const timer = setTimeout(() => {
           handleCloseStory();
         }, 0);
@@ -637,31 +848,25 @@ export default function StoriesScreen() {
     }
   }, [selectedStoryIndex, getCurrentStory, handleCloseStory]);
 
-  // If story is selected, show story viewer directly (no modal)
   if (selectedStoryIndex !== null) {
     const allStories = getAllStories();
     const current = getCurrentStory();
 
-    // Return null while waiting for the useEffect to close
     if (!current) {
       return null;
     }
 
     const { user, story } = current;
-    // insets is already defined at the top of the component
     const progressWidth = progressAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ['0%', '100%'],
     });
 
-    // Handle profile click - navigate to user profile
     const handleProfilePress = async () => {
-      // Pause story playback before navigating
       if (storyTimer.current) {
         clearTimeout(storyTimer.current);
         storyTimer.current = null;
       }
-      // Stop and unload video if playing
       if (videoRef.current) {
         try {
           await videoRef.current.pauseAsync();
@@ -672,12 +877,9 @@ export default function StoriesScreen() {
       }
       progressAnim.stopAnimation();
       
-      // Store the current story index to resume later
       setWasViewingStory(selectedStoryIndex);
       
       if (user.isMe) {
-        // Navigate to settings/profile for own profile
-        // Store that we're coming from story viewer so we can return
         router.push({
           pathname: '/(home)/(tabs)/(setting)/profile' as any,
           params: {
@@ -699,8 +901,8 @@ export default function StoriesScreen() {
           router.push({
             pathname: '/userProfile' as any,
             params: {
-              userData: JSON.stringify(response.data),
-              returnToStory: 'true' // Flag to indicate we should return to story tab
+              userId: response.data.user_id,
+              returnToStory: 'true'
             }
           });
         } else {
@@ -795,12 +997,23 @@ export default function StoriesScreen() {
             
             {/* Close/Menu Button */}
             {user.isMe ? (
-              <TouchableOpacity 
-                onPress={() => setShowMenu(true)} 
-                style={styles.storyMenuButton}
-              >
-                <Ionicons name="ellipsis-vertical" size={24} color={Colors.primary.white} />
-              </TouchableOpacity>
+              <View style={styles.storyHeaderRight}>
+                <TouchableOpacity 
+                  onPress={() => handleGetViewers(story.id)} 
+                  style={styles.storyViewersButton}
+                >
+                  <Ionicons name="eye-outline" size={24} color={Colors.primary.white} />
+                  <ThemedText style={styles.storyViewersCount}>
+                    {story.viewsCount || 0}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setShowMenu(true)} 
+                  style={styles.storyMenuButton}
+                >
+                  <Ionicons name="ellipsis-vertical" size={24} color={Colors.primary.white} />
+                </TouchableOpacity>
+              </View>
             ) : (
               <TouchableOpacity onPress={handleCloseStory} style={styles.storyCloseButton}>
                 <Ionicons name="close" size={28} color={Colors.primary.white} />
@@ -845,6 +1058,23 @@ export default function StoriesScreen() {
           </Pressable>
         </Modal>
 
+        {/* Like Button - Bottom Right */}
+        {!user.isMe && (
+          <View style={styles.storyActionsContainer}>
+            <TouchableOpacity
+              style={styles.storyLikeButton}
+              onPress={() => handleStoryLike(story.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={storyLikes[story.id]?.isLiked ? "heart" : "heart-outline"}
+                size={28}
+                color={storyLikes[story.id]?.isLiked ? Colors.primary.red : Colors.primary.white}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Tap Areas for Navigation */}
         <View style={styles.tapContainer}>
           <TouchableOpacity
@@ -858,6 +1088,76 @@ export default function StoriesScreen() {
             activeOpacity={1}
           />
         </View>
+
+        {/* Viewers Modal */}
+        <Modal
+          visible={showViewers}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowViewers(false)}
+        >
+          <View style={styles.viewersModalContainer}>
+            <View style={[
+              styles.viewersModalContent,
+              // Calculate height based on number of viewers, with min and max constraints
+              {
+                height: Math.min(
+                  Math.max(
+                    // Header height (~70px) + viewer item height (~74px each) + padding (40px)
+                    70 + (storyViewers.length * 74) + 40,
+                    150 // Minimum height
+                  ),
+                  SCREEN_HEIGHT * 0.7 // Maximum height
+                )
+              }
+            ]}>
+              <View style={styles.viewersModalHeader}>
+                <ThemedText type="title" style={styles.viewersModalTitle}>
+                  Viewers ({storyViewers.length})
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={() => setShowViewers(false)}
+                  style={styles.viewersModalClose}
+                >
+                  <Ionicons name="close" size={28} color={Colors.titleColor} />
+                </TouchableOpacity>
+              </View>
+              {loadingViewers ? (
+                <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} style={styles.viewersLoader} />
+              ) : storyViewers.length === 0 ? (
+                <View style={styles.viewersEmpty}>
+                  <ThemedText style={styles.viewersEmptyText}>No viewers yet</ThemedText>
+                </View>
+              ) : (
+                <FlatList
+                  data={storyViewers}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.viewerItem}
+                      onPress={() => {
+                        setShowViewers(false);
+                        handleProfilePress();
+                      }}
+                    >
+                      <View style={styles.viewerAvatarContainer}>
+                        <Image source={{ uri: item.avatar }} style={styles.viewerAvatar} />
+                        {item.hasLiked && (
+                          <View style={styles.viewerLikeBadge}>
+                            <Ionicons name="heart" size={16} color={Colors.primary.red} />
+                          </View>
+                        )}
+                      </View>
+                      <ThemedText style={styles.viewerName}>{item.username}</ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  // Only scroll if content exceeds calculated height
+                  scrollEnabled={storyViewers.length > 8}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
       </View>
       </>
     );
@@ -1096,6 +1396,21 @@ export default function StoriesScreen() {
                     contentContainerStyle={styles.discoverListContainer}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={true}
+                    ListFooterComponent={
+                      hasMoreDiscover ? (
+                        <TouchableOpacity
+                          style={styles.loadMoreButton}
+                          onPress={loadMoreDiscover}
+                          disabled={loadingMoreDiscover}
+                        >
+                          {loadingMoreDiscover ? (
+                            <ActivityIndicator size="small" color={Colors.primaryBackgroundColor} />
+                          ) : (
+                            <ThemedText style={styles.loadMoreText}>Load More</ThemedText>
+                          )}
+                        </TouchableOpacity>
+                      ) : null
+                    }
                   />
                 </View>
               )}
@@ -1106,10 +1421,16 @@ export default function StoriesScreen() {
           }
         />
       ) : (
-        <View style={styles.emptyContainer}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.emptyContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
+          }
+        >
           <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
           <ThemedText type="subtitle" style={styles.emptyText}>No stories yet</ThemedText>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
     </>
@@ -1348,6 +1669,140 @@ const styles = StyleSheet.create({
   storyMenuButton: {
     padding: 8,
     borderRadius: 20,
+  },
+  storyHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  storyViewersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryBackgroundColor,
+  },
+  storyViewersCount: {
+    color: Colors.primary.white,
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'HellixBold',
+  },
+  storyActionsContainer: {
+    position: 'absolute',
+    bottom: 50,
+    right: 20,
+    zIndex: 10,
+  },
+  storyLikeButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  viewersModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  viewersModalContent: {
+    backgroundColor: Colors.primary.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: SCREEN_HEIGHT * 0.7,
+    minHeight: 150,
+    paddingBottom: 40,
+  },
+  viewersModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text.light,
+  },
+  viewersModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.titleColor,
+  },
+  viewersModalClose: {
+    padding: 4,
+  },
+  viewersLoader: {
+    padding: 40,
+  },
+  viewersEmpty: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  viewersEmptyText: {
+    color: Colors.text.secondary,
+    fontSize: 16,
+  },
+  viewerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text.light,
+  },
+  viewerAvatarContainer: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+  },
+  viewerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  viewerLikeBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.primary.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primary.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  viewerName: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    fontWeight: '500',
+  },
+  loadMoreButton: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+  },
+  loadMoreText: {
+    color: Colors.primaryBackgroundColor,
+    fontSize: 16,
+    fontWeight: '600',
   },
   menuOverlay: {
     flex: 1,

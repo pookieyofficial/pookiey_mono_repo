@@ -222,7 +222,7 @@ export default function LikesScreen() {
     router.push({
       pathname: '/userProfile',
       params: {
-        userData: JSON.stringify(user),
+        userId: user.user_id,
       },
     });
   };

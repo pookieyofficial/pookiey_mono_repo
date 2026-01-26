@@ -76,8 +76,8 @@ export default function ChatRoom() {
   const insets = useSafeAreaInsets();
 
   // Check if user has active subscription with premium or super plan
-  const isPremium = 
-    dbUser?.subscription?.status === 'active' && 
+  const isPremium =
+    dbUser?.subscription?.status === 'active' &&
     (dbUser?.subscription?.plan === 'premium' || dbUser?.subscription?.plan === 'super');
 
   const [imageError, setImageError] = useState(false);
@@ -136,14 +136,21 @@ export default function ChatRoom() {
             </View>
           )}
           <View>
-            <ThemedText style={{ fontSize: 17, fontWeight: '600', color: '#000' }}>
-              {userName}
-            </ThemedText>
-            {isTyping && (
-              <ThemedText style={{ fontSize: 13, color: '#FF3B30', fontStyle: 'italic' }}>
-                typing...
+            <TouchableOpacity onPress={() => router.push({
+              pathname: '/(home)/userProfile',
+              params: {
+                userId: otherUserId,
+              },
+            } as any)}>
+              <ThemedText style={{ fontSize: 17, fontWeight: '600', color: '#000' }}>
+                {userName}
               </ThemedText>
-            )}
+              {isTyping && (
+                <ThemedText style={{ fontSize: 13, color: '#FF3B30', fontStyle: 'italic' }}>
+                  typing...
+                </ThemedText>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       ),
@@ -239,36 +246,50 @@ export default function ChatRoom() {
     loadMessages();
   }, [matchId]);
 
-  // Join match room on mount
+  // Join match room on mount - use ref to track if already joined to prevent duplicate joins
+  const hasJoinedRef = useRef(false);
   useEffect(() => {
-    if (matchId && isConnected) {
+    if (matchId && isConnected && !hasJoinedRef.current) {
       joinMatch(matchId);
+      hasJoinedRef.current = true;
     }
     return () => {
-      if (matchId) leaveMatch(matchId);
+      if (matchId && hasJoinedRef.current) {
+        leaveMatch(matchId);
+        hasJoinedRef.current = false;
+      }
     };
   }, [matchId, isConnected, joinMatch, leaveMatch]);
 
   // Track whether the other user is connected (for enabling the call button)
+  // Only check when component is focused and reduce frequency
   useEffect(() => {
     let cancelled = false;
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const refresh = async () => {
-      if (!matchId || !otherUserId || !isConnected) {
+      if (!matchId || !otherUserId || !isConnected || cancelled) {
         if (!cancelled) setIsOtherUserOnline(false);
         return;
       }
 
-      const online = await checkCallReady(matchId, otherUserId);
-      if (!cancelled) setIsOtherUserOnline(online);
+      try {
+        const online = await checkCallReady(matchId, otherUserId);
+        if (!cancelled) setIsOtherUserOnline(online);
+      } catch (error) {
+        console.error('Error checking call ready:', error);
+        if (!cancelled) setIsOtherUserOnline(false);
+      }
     };
 
-    refresh();
-    interval = setInterval(refresh, 4000);
+    // Initial check after a short delay
+    const initialTimeout = setTimeout(refresh, 500);
+    // Then check every 8 seconds instead of 4 to reduce load
+    interval = setInterval(refresh, 8000);
 
     return () => {
       cancelled = true;
+      clearTimeout(initialTimeout);
       if (interval) clearInterval(interval);
     };
   }, [matchId, otherUserId, isConnected, checkCallReady]);
@@ -277,7 +298,18 @@ export default function ChatRoom() {
   useEffect(() => {
     const cleanup = onNewMessage((message: Message) => {
       if (message.matchId === matchId) {
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => {
+          const messageExists = prev.some(
+            (msg) => msg._id === message._id || 
+            (msg._id === undefined && msg.text === message.text && 
+             msg.senderId === message.senderId && 
+             Math.abs(new Date(msg.createdAt).getTime() - new Date(message.createdAt).getTime()) < 1000)
+          );
+          if (messageExists) {
+            return prev;
+          }
+          return [...prev, message];
+        });
         if (message.senderId !== dbUser?.user_id) markAsRead(matchId);
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -285,7 +317,7 @@ export default function ChatRoom() {
       }
     });
     return cleanup;
-  }, [matchId, dbUser?.user_id]);
+  }, [matchId, dbUser?.user_id, markAsRead]);
 
   // Listen for typing indicators
   useEffect(() => {
@@ -660,11 +692,14 @@ export default function ChatRoom() {
   // group messages with date dividers
   const groupedMessages: any[] = [];
   let lastDate = '';
+  let dateDividerIndex = 0;
   messages.forEach((msg) => {
     const msgDate = formatDateHeader(msg.createdAt);
     if (msgDate !== lastDate) {
-      groupedMessages.push({ type: 'date', id: msgDate, date: msgDate });
+      // Use index to ensure unique keys for date dividers
+      groupedMessages.push({ type: 'date', id: `date-${dateDividerIndex}-${msgDate}`, date: msgDate });
       lastDate = msgDate;
+      dateDividerIndex++;
     }
     groupedMessages.push({ ...msg });
   });
@@ -840,106 +875,113 @@ export default function ChatRoom() {
           onPress: () => setDialogVisible(false),
         }}
       />
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 1 : 0}
-    >
-      {/* Main Chat Area */}
-      <FlatList
-        ref={flatListRef}
-        data={groupedMessages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item._id || item.id}
-        contentContainerStyle={styles.messagesList}
-        onContentSizeChange={() =>
-          flatListRef.current?.scrollToEnd({ animated: false })
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyThemedText}>
-              Start your conversation with {userName}
-            </ThemedText>
-          </View>
-        }
-      />
-
-      {isRecording && (
-        <View style={styles.recordingIndicator}>
-          <Ionicons name="mic" size={18} color="#FF3B30" style={{ marginRight: 8 }} />
-          <ThemedText style={styles.recordingText}>Recording</ThemedText>
-          <ThemedText style={styles.recordingTimer}>
-            {formatDurationLabel(recordingDurationSeconds)}
-          </ThemedText>
-          <TouchableOpacity
-            style={styles.cancelRecordingButton}
-            onPress={handleCancelRecording}
-          >
-            <ThemedText style={styles.cancelRecordingText}>Cancel</ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Input Area */}
-      <View
-        style={[
-          styles.inputContainer,
-          {
-            paddingBottom: Platform.OS === 'ios'
-              ? insets.bottom + (isKeyboardVisible ? 0 : 0)
-              : insets.bottom + (isKeyboardVisible ? keyboardHeight : 0) + 6,
-          },
-        ]}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 1 : 0}
       >
-        <TextInput
-          style={styles.input}
-          value={inputThemedText}
-          onChangeText={handleTyping}
-          placeholder="Type a message..."
-          placeholderTextColor="#999"
-          multiline
-          maxLength={1000}
-          editable={!isRecording && !uploadingAudio}
+        {/* Main Chat Area */}
+        <FlatList
+          ref={flatListRef}
+          data={groupedMessages}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => {
+            // For date dividers, use the unique id we created
+            if (item.type === 'date') {
+              return item.id || `date-${index}`;
+            }
+            // For messages, use _id with index fallback to ensure uniqueness
+            return item._id || item.id || `message-${index}-${item.createdAt}`;
+          }}
+          contentContainerStyle={styles.messagesList}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: false })
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyThemedText}>
+                Start your conversation with {userName}
+              </ThemedText>
+            </View>
+          }
         />
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!inputThemedText.trim() || uploadingAudio) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!inputThemedText.trim() || uploadingAudio}
-          >
-            {uploadingAudio ? (
-              <ActivityIndicator size="small" color="#FF3B30" />
-            ) : (
-              <Ionicons
-                name="send"
-                size={24}
-                color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
-              />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.micButton,
-              isRecording && styles.micButtonActive,
-              uploadingAudio && styles.micButtonDisabled,
-            ]}
-            onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
-            disabled={uploadingAudio}
-          >
-            <Ionicons
-              name={isRecording ? 'stop' : 'mic'}
-              size={22}
-              color={isRecording ? '#fff' : '#FF3B30'}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Voice Call UI is rendered globally via CallProvider */}
-    </KeyboardAvoidingView>
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <Ionicons name="mic" size={18} color="#FF3B30" style={{ marginRight: 8 }} />
+            <ThemedText style={styles.recordingText}>Recording</ThemedText>
+            <ThemedText style={styles.recordingTimer}>
+              {formatDurationLabel(recordingDurationSeconds)}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.cancelRecordingButton}
+              onPress={handleCancelRecording}
+            >
+              <ThemedText style={styles.cancelRecordingText}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Input Area */}
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              paddingBottom: Platform.OS === 'ios'
+                ? insets.bottom + (isKeyboardVisible ? 0 : 0)
+                : insets.bottom + (isKeyboardVisible ? keyboardHeight : 0) + 6,
+            },
+          ]}
+        >
+          <TextInput
+            style={styles.input}
+            value={inputThemedText}
+            onChangeText={handleTyping}
+            placeholder="Type a message..."
+            placeholderTextColor="#999"
+            multiline
+            maxLength={1000}
+            editable={!isRecording && !uploadingAudio}
+          />
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputThemedText.trim() || uploadingAudio) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSend}
+              disabled={!inputThemedText.trim() || uploadingAudio}
+            >
+              {uploadingAudio ? (
+                <ActivityIndicator size="small" color="#FF3B30" />
+              ) : (
+                <Ionicons
+                  name="send"
+                  size={24}
+                  color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
+                />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.micButton,
+                isRecording && styles.micButtonActive,
+                uploadingAudio && styles.micButtonDisabled,
+              ]}
+              onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
+              disabled={uploadingAudio}
+            >
+              <Ionicons
+                name={isRecording ? 'stop' : 'mic'}
+                size={22}
+                color={isRecording ? '#fff' : '#FF3B30'}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Voice Call UI is rendered globally via CallProvider */}
+      </KeyboardAvoidingView>
     </>
   );
 }
