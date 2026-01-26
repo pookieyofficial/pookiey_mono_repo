@@ -18,6 +18,7 @@ import { useUserInteraction } from "../hooks/userInteraction";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomDialog, { DialogType } from "./CustomDialog";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -116,6 +117,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         if (!item) return null;
         const age = calculateAge(item?.profile?.dateOfBirth);
 
+        // Check if user is subscribed/premium
+        const isSubscribedUser =
+            !!item?.subscription &&
+            (
+                item.subscription.status === "active" ||
+                item.subscription.plan === "premium" ||
+                item.subscription.plan === "super"
+            );
+
         return (
             <View style={styles.card}>
                 <Image
@@ -159,9 +169,19 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     onPress={() => onCardPress?.(item)}
                 >
                     <View style={styles.footer}>
-                        <ThemedText type="bold" style={styles.name}>
-                            {item?.profile?.firstName} {item?.profile?.lastName}, {age}
-                        </ThemedText>
+                        <View style={styles.nameRowInCard}>
+                            {isSubscribedUser && (
+                                <Ionicons
+                                    name="diamond"
+                                    size={22}
+                                    color="#FFD700"
+                                    style={styles.cardDiamondIcon}
+                                />
+                            )}
+                            <ThemedText type="bold" style={styles.name}>
+                                {item?.profile?.firstName} {item?.profile?.lastName}, {age}
+                            </ThemedText>
+                        </View>
 
                         {item?.profile?.occupation && (
                             <ThemedText type="default" style={styles.job}>
@@ -431,6 +451,14 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     name: { color: Colors.textColor, fontSize: 22 },
+    nameRowInCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    cardDiamondIcon: {
+        marginRight: 2,
+    },
     job: { color: Colors.textColor, marginTop: 4 },
 
     bottomSection: {
