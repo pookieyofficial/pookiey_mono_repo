@@ -97,8 +97,18 @@ export interface RecommendedUser {
         occupation?: string;
         isOnboarded: boolean;
     };
-    distance?: number; // distance in kilometers
-    age?: number; // calculated age
+    distance?: number;
+    age?: number;
+    subscription?: {
+        status: "active" | "inactive";
+        plan: "none" | "pending" | "active" | "expired" | "cancelled";
+        startDate: Date;
+        endDate: Date;
+        autoRenew: boolean;
+        lastPaymentAt: Date;
+        provider: "razorpay" | "stripe" | "paypal" | "apple" | "google";
+        updatedAt: Date;
+    };
 }
 
 export interface AuthUser {
@@ -140,7 +150,7 @@ export interface ApiResponse<T> {
 }
 
 // Common API responses
-export interface UserResponse extends ApiResponse<User> {}
-export interface UsersResponse extends ApiResponse<User[]> {}
-export interface RecommendedUsersResponse extends ApiResponse<RecommendedUser[]> {}
-export interface AuthResponse extends ApiResponse<AuthUser> {}
+export interface UserResponse extends ApiResponse<User> { }
+export interface UsersResponse extends ApiResponse<User[]> { }
+export interface RecommendedUsersResponse extends ApiResponse<RecommendedUser[]> { }
+export interface AuthResponse extends ApiResponse<AuthUser> { }

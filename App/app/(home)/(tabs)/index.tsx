@@ -162,8 +162,8 @@ export default function index() {
   const lastLocationSentRef = useRef<string | null>(null)
   const lastPushTokenSentRef = useRef<string | null>(null)
   const permissionDialogShownRef = useRef<string | null>(null)
-  const userDismissedAlertRef = useRef(false) // Track if user dismissed with "Not now"
-  const lastPermissionStateRef = useRef<string | null>(null) // Track last permission state to avoid duplicate alerts
+  const userDismissedAlertRef = useRef(false) 
+  const lastPermissionStateRef = useRef<string | null>(null) 
 
   // Story store
   const { setCategorizedStories, setLoading: setStoryLoading } = useStoryStore()

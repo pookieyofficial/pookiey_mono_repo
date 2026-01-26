@@ -8,12 +8,15 @@ import { ThemedText } from '@/components/ThemedText'
 import UserProfileView from '@/components/UserProfileView'
 import { DBUser } from '@/types/Auth'
 import { useTranslation } from 'react-i18next'
-import CustomDialog, { DialogType } from '@/components/CustomDialog'
+import CustomDialog from '@/components/CustomDialog'
+import { useAuth } from '@/hooks/useAuth'
+import { getUserByIdAPI } from '@/APIs/userAPIs'
 
 const UserProfile = () => {
   const { t } = useTranslation();
   const { userData, returnToStory } = useLocalSearchParams<{ userData?: string; returnToStory?: string }>()
   const router = useRouter()
+  const { token } = useAuth()
   
   const [user, setUser] = useState<DBUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -29,7 +32,23 @@ const UserProfile = () => {
       try {
         if (userData) {
           try {
-            const parsedUser = JSON.parse(userData)
+            const parsedUser: DBUser = JSON.parse(userData)
+
+            // If the incoming user object doesn't include subscription info,
+            // fetch the full user from the backend so premium status is available.
+            if ((!parsedUser.subscription || parsedUser.subscription.status === undefined) && token) {
+              try {
+                const response = await getUserByIdAPI(parsedUser.user_id, token)
+                if (response.success && response.data) {
+                  setUser(response.data as DBUser)
+                  return
+                }
+              } catch (fetchError) {
+                console.error('Error fetching full user for profile:', fetchError)
+                // Fall back to the parsed user below
+              }
+            }
+
             setUser(parsedUser)
           } catch (e) {
             console.error('Error parsing userData:', e)
@@ -47,7 +66,7 @@ const UserProfile = () => {
     }
 
     loadUserData()
-  }, [userData])
+  }, [userData, token])
 
   const handleBack = () => {
     if (returnToStory === 'true') {

@@ -331,6 +331,7 @@ export const getUsers = async (req: Request, res: Response) => {
                     distanceInMeters: 1,
                     age: 1,
                     sharedInterests: 1,
+                    subscription: 1,
                 },
             },
         );

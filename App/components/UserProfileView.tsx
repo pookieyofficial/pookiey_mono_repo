@@ -222,13 +222,16 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const firstName = displayUser?.profile?.firstName || displayUser?.displayName || 'User'
   // Handle occupation as both string and array
   const occupationData = displayUser?.profile?.occupation
-  const occupations = Array.isArray(occupationData) 
-    ? occupationData.filter(occ => occ && occ.trim()) 
-    : occupationData 
-      ? [occupationData] 
+  const occupations = Array.isArray(occupationData)
+    ? occupationData.filter(occ => occ && occ.trim())
+    : occupationData
+      ? [occupationData]
       : []
   const location = displayUser?.profile?.location
   const currentUserLocation = currentUser?.profile?.location
+
+  // Check if user is premium/subscribed
+  const isPremium = displayUser?.subscription?.status === 'active';
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (
@@ -243,9 +246,9 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2)
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
@@ -265,8 +268,8 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     const [lon1, lat1] = currentUserLocation.coordinates
     const [lon2, lat2] = location.coordinates
 
-    if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
-        typeof lat2 !== 'number' || typeof lon2 !== 'number') {
+    if (typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+      typeof lat2 !== 'number' || typeof lon2 !== 'number') {
       return null
     }
 
@@ -306,7 +309,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
   return (
     <SafeAreaView style={styles.safeAreaContainer} edges={[]}>
-      <View style={styles.container}> 
+      <View style={styles.container}>
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -366,192 +369,221 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
               }}
             />
 
-          {/* Header content at bottom */}
-          <View style={styles.headerContent}>
-            <View style={styles.nameRow}>
-              <View style={styles.nameContainer}>
-                <ThemedText type='bold' style={styles.userName}>
-                  {firstName}{age ? `, ${age}` : ''}
-                </ThemedText>
-                {occupations.length > 0 && (
-                  <View style={styles.occupationContainer}>
-                    {occupations.map((occ, index) => (
-                      <ThemedText key={index} style={styles.occupation}>
-                        {occ}
-                      </ThemedText>
-                    ))}
+            {/* Header content at bottom */}
+            <View style={styles.headerContent}>
+              <View style={styles.nameRow}>
+                <View style={styles.nameContainer}>
+                  <View style={styles.nameRowWithCrown}>
+                    {isPremium && (
+                      <Ionicons
+                        name="diamond"
+                        size={24}
+                        color="#FFD700"
+                        style={styles.crownIcon}
+                      />
+                    )}
+                    <ThemedText style={styles.userName}>
+                      {firstName}{age ? `, ${age}` : ''}
+                    </ThemedText>
                   </View>
-                )}
+                  {occupations.length > 0 && (
+                    <View style={styles.occupationContainer}>
+                      {occupations.map((occ, index) => (
+                        <ThemedText key={index} style={styles.occupation}>
+                          {occ}
+                        </ThemedText>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Main Content */}
-        <View style={styles.contentSection}>
-          {/* Location - Distance Only */}
-          {location && distance !== null && (
-            <View style={styles.section}>
-              <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.location')}</ThemedText>
-              <View style={styles.locationCard}>
+          {/* Main Content */}
+          <View style={styles.contentSection}>
+            {/* Premium Badge */}
+            {isPremium && (
+              <View style={styles.premiumBadge}>
                 <LinearGradient
-                  colors={[Colors.primaryBackgroundColor, '#E94057DD']}
+                  colors={['#FFD700', '#FFA500']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.locationCardGradient}
+                  style={styles.premiumBadgeGradient}
                 >
-                  <View style={styles.locationCardContent}>
-                    <View style={styles.distanceIconWrapper}>
-                      <Ionicons name="navigate" size={24} color={Colors.primaryBackgroundColor} />
-                    </View>
-                    <View style={styles.distanceInfoContainer}>
-                      <ThemedText style={styles.distanceValue}>
-                        {formatDistance(distance)}
-                      </ThemedText>
-                      <ThemedText style={styles.distanceLabel}>away from you</ThemedText>
-                    </View>
+                  <View style={styles.premiumBadgeContent}>
+                    <Ionicons name="diamond" size={20} color={Colors.primary.white} />
+                    <ThemedText style={styles.premiumBadgeText}>
+                      {firstName} is our diamond user
+                    </ThemedText>
                   </View>
                 </LinearGradient>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Occupation Section */}
-          {occupations.length > 0 && (
-            <View style={styles.section}>
-              <ThemedText type="bold" style={styles.sectionTitle}>
-                {t('profilePage.occupation') || 'Occupation'}
-              </ThemedText>
-              <View style={styles.occupationTagsContainer}>
-                {occupations.map((occ, index) => (
-                  <View key={index} style={styles.occupationTag}>
-                    <Ionicons name="briefcase" size={14} color={Colors.primaryBackgroundColor} style={{ marginRight: 6 }} />
-                    <ThemedText style={styles.occupationTagText}>{occ}</ThemedText>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* About */}
-          {bio && (
-            <View style={styles.section}>
-              <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.about')}</ThemedText>
-              <ThemedText style={styles.bioText}>{displayBio}</ThemedText>
-              {isBioLong && (
-                <TouchableOpacity onPress={() => setIsBioExpanded(!isBioExpanded)}>
-                  <ThemedText style={styles.readMoreText}>
-                    {isBioExpanded ? t('userProfileView.readLess') : t('userProfileView.readMore')}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* Interests */}
-          {interests.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.interests')}</ThemedText>
-              </View>
-              <View style={styles.tagsContainer}>
-                {interests.map((interest, i) => {
-                  const isMatch = isInterestMatch(interest)
-                  return isMatch ? (
-                    <View key={`interest-${i}`} style={styles.tagSelected}>
-                      <Ionicons name="checkmark" size={14} color={Colors.primary.white} style={{ marginRight: 4 }} />
-                      <ThemedText style={styles.tagSelectedText}>{interest}</ThemedText>
+            {/* Location - Distance Only */}
+            {location && distance !== null && (
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>{t('userProfileView.location')}</ThemedText>
+                <View style={styles.locationCard}>
+                  <LinearGradient
+                    colors={[Colors.primaryBackgroundColor, '#E94057DD']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.locationCardGradient}
+                  >
+                    <View style={styles.locationCardContent}>
+                      <View style={styles.distanceIconWrapper}>
+                        <Ionicons name="navigate" size={24} color={Colors.primaryBackgroundColor} />
+                      </View>
+                      <View style={styles.distanceInfoContainer}>
+                        <ThemedText style={styles.distanceValue}>
+                          {formatDistance(distance)}
+                        </ThemedText>
+                        <ThemedText style={styles.distanceLabel}>away from you</ThemedText>
+                      </View>
                     </View>
-                  ) : (
-                    <View key={`interest-${i}`} style={styles.tagUnselected}>
-                      <ThemedText style={styles.tagUnselectedText}>{interest}</ThemedText>
-                    </View>
-                  )
-                })}
+                  </LinearGradient>
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Gallery */}
-          {photos.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <ThemedText type="bold" style={styles.sectionTitle}>{t('userProfileView.gallery')}</ThemedText>
-                <TouchableOpacity
-                  onPress={() => {
-                    router.push({
-                      pathname: '/imageGallery',
-                      params: {
-                        photos: JSON.stringify(photos),
-                        initialIndex: '0'
-                      }
-                    })
-                  }}
-                >
-                  <ThemedText style={styles.seeAllText}>{t('userProfileView.seeAll')}</ThemedText>
-                </TouchableOpacity>
+            {/* Occupation Section */}
+            {occupations.length > 0 && (
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>
+                  {t('profilePage.occupation') || 'Occupation'}
+                </ThemedText>
+                <View style={styles.occupationTagsContainer}>
+                  {occupations.map((occ, index) => (
+                    <View key={index} style={styles.occupationTag}>
+                      <Ionicons name="briefcase" size={14} color={Colors.primaryBackgroundColor} style={{ marginRight: 6 }} />
+                      <ThemedText style={styles.occupationTagText}>{occ}</ThemedText>
+                    </View>
+                  ))}
+                </View>
               </View>
-              <View style={styles.galleryGrid}>
-                {photos.slice(0, 4).map((photoUrl, index) => (
+            )}
+
+            {/* About */}
+            {bio && (
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>{t('userProfileView.about')}</ThemedText>
+                <ThemedText style={styles.bioText}>{displayBio}</ThemedText>
+                {isBioLong && (
+                  <TouchableOpacity onPress={() => setIsBioExpanded(!isBioExpanded)}>
+                    <ThemedText style={styles.readMoreText}>
+                      {isBioExpanded ? t('userProfileView.readLess') : t('userProfileView.readMore')}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Interests */}
+            {interests.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <ThemedText style={styles.sectionTitle}>{t('userProfileView.interests')}</ThemedText>
+                </View>
+                <View style={styles.tagsContainer}>
+                  {interests.map((interest, i) => {
+                    const isMatch = isInterestMatch(interest)
+                    return isMatch ? (
+                      <View key={`interest-${i}`} style={styles.tagSelected}>
+                        <Ionicons name="checkmark" size={14} color={Colors.primary.white} style={{ marginRight: 4 }} />
+                        <ThemedText style={styles.tagSelectedText}>{interest}</ThemedText>
+                      </View>
+                    ) : (
+                      <View key={`interest-${i}`} style={styles.tagUnselected}>
+                        <ThemedText style={styles.tagUnselectedText}>{interest}</ThemedText>
+                      </View>
+                    )
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Gallery */}
+            {photos.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <ThemedText style={styles.sectionTitle}>{t('userProfileView.gallery')}</ThemedText>
                   <TouchableOpacity
-                    key={index}
-                    style={styles.galleryImageContainer}
                     onPress={() => {
                       router.push({
                         pathname: '/imageGallery',
                         params: {
                           photos: JSON.stringify(photos),
-                          initialIndex: index.toString()
+                          initialIndex: '0'
                         }
                       })
                     }}
-                    activeOpacity={0.8}
                   >
-                    <Image
-                      source={{ uri: photoUrl }}
-                      style={styles.galleryImage}
-                      resizeMode="cover"
-                    />
+                    <ThemedText style={styles.seeAllText}>{t('userProfileView.seeAll')}</ThemedText>
                   </TouchableOpacity>
-                ))}
+                </View>
+                <View style={styles.galleryGrid}>
+                  {photos.slice(0, 4).map((photoUrl, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.galleryImageContainer}
+                      onPress={() => {
+                        router.push({
+                          pathname: '/imageGallery',
+                          params: {
+                            photos: JSON.stringify(photos),
+                            initialIndex: index.toString()
+                          }
+                        })
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Image
+                        source={{ uri: photoUrl }}
+                        style={styles.galleryImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+            )}
+          </View>
+        </ScrollView>
 
-      {/* Custom Alert Modal */}
-      <Modal
-        visible={showAlert}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowAlert(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowAlert(false)}
+        {/* Custom Alert Modal */}
+        <Modal
+          visible={showAlert}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowAlert(false)}
         >
-          <Pressable style={styles.alertContainer} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.alertHeader}>
-              <ThemedText style={styles.alertTitle}>{alertMessage.title}</ThemedText>
-            </View>
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setShowAlert(false)}
+          >
+            <Pressable style={styles.alertContainer} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.alertHeader}>
+                <ThemedText style={styles.alertTitle}>{alertMessage.title}</ThemedText>
+              </View>
 
-            <View style={styles.alertContent}>
-              <ThemedText style={styles.alertMessage}>{alertMessage.message}</ThemedText>
-            </View>
+              <View style={styles.alertContent}>
+                <ThemedText style={styles.alertMessage}>{alertMessage.message}</ThemedText>
+              </View>
 
-            <View style={styles.alertActions}>
-              <TouchableOpacity
-                style={styles.alertButton}
-                onPress={() => setShowAlert(false)}
-                activeOpacity={0.8}
-              >
-                <ThemedText style={styles.alertButtonText}>{t('userProfileView.gotIt')}</ThemedText>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.alertActions}>
+                <TouchableOpacity
+                  style={styles.alertButton}
+                  onPress={() => setShowAlert(false)}
+                  activeOpacity={0.8}
+                >
+                  <ThemedText style={styles.alertButtonText}>{t('userProfileView.gotIt')}</ThemedText>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
       </View>
     </SafeAreaView>
   )
@@ -615,10 +647,20 @@ const styles = StyleSheet.create({
   },
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   nameContainer: { flex: 1 },
+  nameRowWithCrown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  crownIcon: {
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   userName: {
     fontSize: 28,
-    fontWeight: 'bold',
     color: Colors.primary.white,
+    fontFamily: 'HellixBold',
     marginBottom: 4,
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
@@ -633,6 +675,7 @@ const styles = StyleSheet.create({
   occupation: {
     fontSize: 15,
     color: Colors.primary.white,
+    fontFamily: 'HellixMedium',
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
@@ -659,7 +702,7 @@ const styles = StyleSheet.create({
   occupationTagText: {
     fontSize: 14,
     color: Colors.primaryBackgroundColor,
-    fontWeight: '600',
+    fontFamily: 'HellixSemiBold',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -688,10 +731,37 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     backgroundColor: Colors.primary.white,
   },
+  premiumBadge: {
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#FFD700',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  premiumBadgeGradient: {
+    padding: 16,
+  },
+  premiumBadgeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  premiumBadgeText: {
+    fontSize: 16,
+    color: Colors.primary.white,
+    fontFamily: 'HellixSemiBold',
+  },
   section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'HellixBold',
     color: Colors.text.primary,
     marginBottom: 12,
   },
@@ -737,7 +807,6 @@ const styles = StyleSheet.create({
   },
   distanceValue: {
     fontSize: 24,
-    fontWeight: '700',
     color: Colors.primary.white,
     marginBottom: 4,
   },
@@ -756,7 +825,6 @@ const styles = StyleSheet.create({
   readMoreText: {
     fontSize: 16,
     color: Colors.primaryBackgroundColor,
-    fontWeight: '600',
   },
 
   tagsContainer: {
@@ -777,7 +845,6 @@ const styles = StyleSheet.create({
   tagSelectedText: {
     fontSize: 12,
     color: Colors.primary.white,
-    fontWeight: '600',
   },
   tagUnselected: {
     paddingHorizontal: 16,
@@ -792,7 +859,6 @@ const styles = StyleSheet.create({
   tagUnselectedText: {
     fontSize: 14,
     color: Colors.text.primary,
-    fontWeight: '600',
   },
 
   galleryGrid: {
@@ -817,7 +883,6 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 16,
     color: Colors.primaryBackgroundColor,
-    fontWeight: '600',
   },
   headerImagePlaceholder: {
     width: '100%',
@@ -856,7 +921,6 @@ const styles = StyleSheet.create({
   },
   alertTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
     color: Colors.titleColor,
     textAlign: 'center',
   },
@@ -892,7 +956,6 @@ const styles = StyleSheet.create({
   },
   alertButtonText: {
     fontSize: 16,
-    fontWeight: '600',
     color: Colors.primary.white,
   },
 })
