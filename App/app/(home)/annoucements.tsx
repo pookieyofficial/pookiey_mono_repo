@@ -55,7 +55,7 @@ export default function AnnouncementsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary.red} />
-          <ThemedText style={styles.loadingText}>Loading announcement...</ThemedText>
+          <ThemedText style={styles.loadingText}>Loading...</ThemedText>
         </View>
       </SafeAreaView>
     );
