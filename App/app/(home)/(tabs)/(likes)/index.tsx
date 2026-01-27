@@ -176,12 +176,12 @@ export default function LikesScreen() {
 
   const handleLoadMore = async () => {
     const currentPagination = activeTabIndex === 0 ? likesPagination : matchesPagination;
-    
+
     if (loadingMore || !currentPagination.hasMore) return;
 
     setLoadingMore(true);
     const nextPage = currentPagination.page + 1;
-    
+
     try {
       if (activeTabIndex === 0) {
         await loadLikes(nextPage, true);
@@ -364,7 +364,10 @@ export default function LikesScreen() {
   if (loading && likes.length === 0 && matches.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <CustomLoader messages={['Loading...']} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
+          <ThemedText style={styles.loadingText}>Loading...</ThemedText>
+        </View>
       </SafeAreaView>
     );
   }
@@ -623,5 +626,15 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
   },
 });

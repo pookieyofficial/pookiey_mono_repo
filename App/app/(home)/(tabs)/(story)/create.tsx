@@ -35,13 +35,13 @@ export default function CreateStoryScreen() {
   const { token } = useAuth();
   const { setCategorizedStories, setLoading } = useStoryStore();
   const { dbUser } = useAuthStore();
-  
+
   // Camera states
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [mediaLibraryPermission, setMediaLibraryPermission] = useState<{ granted: boolean } | null>(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
-  
+
   // Media states
   const [capturedMedia, setCapturedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -66,7 +66,7 @@ export default function CreateStoryScreen() {
     const requestPermissions = async () => {
       try {
         if (!cameraPermission?.granted) {
-          const result = await requestCameraPermission(); 
+          const result = await requestCameraPermission();
         }
       } catch (error) {
       }
@@ -137,7 +137,7 @@ export default function CreateStoryScreen() {
     try {
       // Request permission manually to avoid AUDIO permission issue
       let permission = await MediaLibrary.getPermissionsAsync().catch(() => null);
-      
+
       if (!permission || !permission.granted) {
         permission = await MediaLibrary.requestPermissionsAsync().catch(() => null);
         if (!permission || !permission.granted) {
@@ -165,8 +165,8 @@ export default function CreateStoryScreen() {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
-        allowsEditing: true,
-        aspect: [9, 16],
+        // Allow any aspect ratio by disabling the fixed crop box
+        allowsEditing: false,
         quality: 0.8,
         videoMaxDuration: MAX_VIDEO_DURATION,
       });
@@ -175,7 +175,7 @@ export default function CreateStoryScreen() {
         const asset = result.assets[0];
         const isVideo = asset.type === 'video';
         const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-        
+
         // Check file size
         if (asset.fileSize && asset.fileSize > maxSize) {
           showDialog(
@@ -185,7 +185,7 @@ export default function CreateStoryScreen() {
           );
           return;
         }
-        
+
         // Check video duration
         if (isVideo && asset.duration) {
           const durationInSeconds = asset.duration / 1000;
@@ -194,7 +194,7 @@ export default function CreateStoryScreen() {
             return;
           }
         }
-        
+
         setCapturedMedia(asset.uri);
         setMediaType(isVideo ? 'video' : 'image');
       }
@@ -225,11 +225,11 @@ export default function CreateStoryScreen() {
         try {
           const compressed = await compressImageToJPEG(
             capturedMedia,
-             0.85 // High quality for stories
+            0.85 // High quality for stories
           );
           mediaToUpload = compressed.uri;
           mimeType = compressed.mimeType;
-          
+
           // Log compression results
           const originalInfo = await FileSystem.getInfoAsync(capturedMedia);
           if (originalInfo.exists && compressed.size) {
@@ -243,14 +243,14 @@ export default function CreateStoryScreen() {
       }
 
       const presignedUrls = await requestPresignedURl([mimeType]);
-      
+
       if (!presignedUrls || presignedUrls.length === 0) {
         throw new Error('Failed to get upload URL');
       }
 
       const { uploadUrl, fileURL } = presignedUrls[0];
       const uploadSuccess = await uploadTos3(mediaToUpload, uploadUrl, mimeType);
-      
+
       if (!uploadSuccess) {
         throw new Error('Failed to upload media');
       }
@@ -273,16 +273,11 @@ export default function CreateStoryScreen() {
         token
       );
 
-      // Save to device storage
-      const saved = await saveToDevice(capturedMedia, mediaType);
-      if (saved) {
-      }
-
       // Refresh stories in store
       try {
         setLoading(true);
         const data = await storyAPI.getStories(token);
-        
+
         // Handle new categorized structure
         if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
           // New structure with categorized stories
@@ -291,7 +286,7 @@ export default function CreateStoryScreen() {
             friends: Array.isArray(data.friends) ? data.friends : [],
             discover: Array.isArray(data.discover) ? data.discover : []
           };
-          
+
           // Ensure "Your Story" exists even if empty
           if (!categorizedStories.myStory && dbUser?.user_id) {
             categorizedStories.myStory = {
@@ -302,17 +297,17 @@ export default function CreateStoryScreen() {
               isMe: true
             };
           }
-          
+
           setCategorizedStories(categorizedStories);
         } else if (Array.isArray(data)) {
           // Fallback to old structure (flat array)
           const storiesList: StoryItem[] = data;
           const myStoryIndex = storiesList.findIndex(item => item.isMe);
-          
+
           const currentUserId = dbUser?.user_id;
           const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You';
           const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || '';
-          
+
           if (myStoryIndex === -1 && currentUserId) {
             const myStory: StoryItem = {
               id: currentUserId,
@@ -323,7 +318,7 @@ export default function CreateStoryScreen() {
             };
             storiesList.unshift(myStory);
           }
-          
+
           // Convert to categorized structure
           const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
             id: currentUserId,
@@ -332,9 +327,9 @@ export default function CreateStoryScreen() {
             stories: [],
             isMe: true
           } : null);
-          
+
           const friends = storiesList.filter(item => !item.isMe);
-          
+
           setCategorizedStories({
             myStory: myStory as StoryItem | null,
             friends: friends,
@@ -363,7 +358,7 @@ export default function CreateStoryScreen() {
 
       showDialog(
         'success',
-        saved ? 'Story published and saved to your gallery!' : 'Story published!',
+        'Story published!',
         'Success',
         {
           text: 'OK',
@@ -394,10 +389,10 @@ export default function CreateStoryScreen() {
   if (!cameraPermission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Ionicons 
-          name="camera-outline" 
-          size={80} 
-          color={Colors.text.tertiary} 
+        <Ionicons
+          name="camera-outline"
+          size={80}
+          color={Colors.text.tertiary}
         />
         <ThemedText type="subtitle" style={styles.permissionTitle}>
           Camera Access Required
@@ -405,8 +400,8 @@ export default function CreateStoryScreen() {
         <Text style={styles.permissionText}>
           We need access to your camera to capture photos for your story.
         </Text>
-        <TouchableOpacity 
-          style={styles.permissionButton} 
+        <TouchableOpacity
+          style={styles.permissionButton}
           onPress={async () => {
             await requestCameraPermission();
           }}
@@ -432,138 +427,137 @@ export default function CreateStoryScreen() {
         secondaryButton={dialogSecondaryButton}
       />
       <View style={styles.container}>
-      {capturedMedia ? (
-        /* Preview Mode */
-        <>
-          <View style={styles.previewContainer}>
-            {mediaType === 'image' ? (
-              <Image 
-                source={{ uri: capturedMedia }} 
-                style={styles.previewMedia} 
-                resizeMode="cover"
-                onError={(error) => {
-                  console.error('Image load error:', error);
-                  showDialog('error', 'Failed to load image preview', 'Error');
-                }}
-                onLoad={() => {
-                }}
-              />
-            ) : (
-              <Video
-                ref={videoRef}
-                source={{ uri: capturedMedia }}
-                style={styles.previewMedia}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={true}
-                isLooping={true}
-                useNativeControls={true}
-                onError={(error) => {
-                  console.error('Video load error:', error);
-                  showDialog('error', 'Failed to load video preview', 'Error');
-                }}
-                onLoad={() => {
-                  if (videoRef.current) {
-                    videoRef.current.playAsync().catch(console.error);
-                  }
-                }}
-              />
-            )}
-          </View>
+        {capturedMedia ? (
+          /* Preview Mode */
+          <>
+            <View style={styles.previewContainer}>
+              {mediaType === 'image' ? (
+                <Image
+                  source={{ uri: capturedMedia }}
+                  style={styles.previewMedia}
+                  // Show the full image without cropping; will letterbox if aspect ratios differ
+                  resizeMode="contain"
+                  onError={(error) => {
+                    console.error('Image load error:', error);
+                    showDialog('error', 'Failed to load image preview', 'Error');
+                  }}
+                />
+              ) : (
+                <Video
+                  ref={videoRef}
+                  source={{ uri: capturedMedia }}
+                  style={styles.previewMedia}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={true}
+                  isLooping={true}
+                  useNativeControls={true}
+                  onError={(error) => {
+                    console.error('Video load error:', error);
+                    showDialog('error', 'Failed to load video preview', 'Error');
+                  }}
+                  onLoad={() => {
+                    if (videoRef.current) {
+                      videoRef.current.playAsync().catch(console.error);
+                    }
+                  }}
+                />
+              )}
+            </View>
 
-          {/* Preview Controls */}
-          <SafeAreaView style={styles.previewHeader} edges={['top']}>
-            <View style={styles.previewHeaderContent}>
+            {/* Preview Controls */}
+            <SafeAreaView style={styles.previewHeader} edges={['top']}>
+              <View style={styles.previewHeaderContent}>
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() => {
+                    setCapturedMedia(null);
+                    setMediaType(null);
+                  }}
+                >
+                  <Ionicons name="close" size={32} color="#fff" />
+                </TouchableOpacity>
+                <ThemedText type="defaultSemiBold" style={styles.previewTitle}>
+                  Preview Your Story
+                </ThemedText>
+                <View style={{ width: 48 }} />
+              </View>
+            </SafeAreaView>
+
+            <SafeAreaView style={styles.previewFooter} edges={['bottom']}>
               <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => {
-                  setCapturedMedia(null);
-                  setMediaType(null);
-                }}
+                style={[styles.shareButton, uploading && styles.shareButtonDisabled]}
+                onPress={handlePublish}
+                disabled={uploading}
               >
+                {uploading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={styles.shareButtonText}>Uploading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="send" size={24} color="#fff" />
+                    <Text style={styles.shareButtonText}>Share Story</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </SafeAreaView>
+          </>
+        ) : (
+          /* Camera Mode */
+          <>
+            <CameraView
+              ref={cameraRef}
+              style={styles.camera}
+              facing={facing}
+            />
+
+            {/* Camera Header */}
+            <SafeAreaView style={styles.cameraHeader} edges={['top']}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
                 <Ionicons name="close" size={32} color="#fff" />
               </TouchableOpacity>
-              <ThemedText type="defaultSemiBold" style={styles.previewTitle}>
-                Preview Your Story
-              </ThemedText>
-              <View style={{ width: 48 }} />
-            </View>
-          </SafeAreaView>
-
-          <SafeAreaView style={styles.previewFooter} edges={['bottom']}>
-            <TouchableOpacity
-              style={[styles.shareButton, uploading && styles.shareButtonDisabled]}
-              onPress={handlePublish}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <>
-                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={styles.shareButtonText}>Uploading...</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="send" size={24} color="#fff" />
-                  <Text style={styles.shareButtonText}>Share Story</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </SafeAreaView>
-        </>
-      ) : (
-        /* Camera Mode */
-        <>
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing={facing}
-          />
-
-          {/* Camera Header */}
-          <SafeAreaView style={styles.cameraHeader} edges={['top']}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-              <Ionicons name="close" size={32} color="#fff" />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <ThemedText type="defaultSemiBold" style={styles.cameraTitle}>
-                Tap to Capture
-              </ThemedText>
-            </View>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
-              <Ionicons name="camera-reverse" size={32} color="#fff" />
-            </TouchableOpacity>
-          </SafeAreaView>
-
-          {/* Camera Controls */}
-          <SafeAreaView style={styles.cameraControls} edges={['bottom']}>
-            <View style={styles.controlsRow}>
-              {/* Gallery Button */}
-              <TouchableOpacity
-                style={styles.galleryButton}
-                onPress={handlePickFromGallery}
-              >
-                <Ionicons name="images" size={32} color="#fff" />
-                <Text style={styles.galleryButtonText}>Gallery</Text>
-              </TouchableOpacity>
-
-              {/* Capture Button */}
-              <TouchableOpacity
-                style={styles.captureButton}
-                onPress={handleTakePhoto}
-                activeOpacity={0.8}
-              >
-                <View style={styles.captureButtonInner} />
-              </TouchableOpacity>
-
-              {/* Help Text */}
-              <View style={styles.helpContainer}>
-                <Text style={styles.helpText}>Tap for photo</Text>
-                <Text style={styles.helpText}>Gallery for video</Text>
+              <View style={styles.headerCenter}>
+                <ThemedText type="defaultSemiBold" style={styles.cameraTitle}>
+                  Tap to Capture
+                </ThemedText>
               </View>
-            </View>
-          </SafeAreaView>
-        </>
-      )}
-    </View>
+              <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
+                <Ionicons name="camera-reverse" size={32} color="#fff" />
+              </TouchableOpacity>
+            </SafeAreaView>
+
+            {/* Camera Controls */}
+            <SafeAreaView style={styles.cameraControls} edges={['bottom']}>
+              <View style={styles.controlsRow}>
+                {/* Gallery Button */}
+                <TouchableOpacity
+                  style={styles.galleryButton}
+                  onPress={handlePickFromGallery}
+                >
+                  <Ionicons name="images" size={32} color="#fff" />
+                  <Text style={styles.galleryButtonText}>Gallery</Text>
+                </TouchableOpacity>
+
+                {/* Capture Button */}
+                <TouchableOpacity
+                  style={styles.captureButton}
+                  onPress={handleTakePhoto}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.captureButtonInner} />
+                </TouchableOpacity>
+
+                {/* Help Text */}
+                <View style={styles.helpContainer}>
+                  <Text style={styles.helpText}>Tap for photo</Text>
+                  <Text style={styles.helpText}>Gallery for video</Text>
+                </View>
+              </View>
+            </SafeAreaView>
+          </>
+        )}
+      </View>
     </>
   );
 }

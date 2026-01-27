@@ -878,8 +878,9 @@ export default function StoriesScreen() {
       
       if (user.isMe) {
         router.push({
-          pathname: '/(home)/(tabs)/(setting)/profile' as any,
+          pathname: '/(home)/userProfile' as any,
           params: {
+            userId: user.id,
             returnToStory: 'true'
           }
         });
@@ -932,20 +933,18 @@ export default function StoriesScreen() {
             ref={videoRef}
             source={{ uri: story.url }}
             style={styles.storyImage}
-            resizeMode={ResizeMode.COVER}
+            resizeMode={ResizeMode.CONTAIN}
             shouldPlay={true}
             isLooping={false}
             volume={1.0}
             isMuted={false}
             onPlaybackStatusUpdate={handleVideoStatusUpdate}
             onLoadStart={() => {
-              // Mark story as viewed when video starts loading
               if (!story.isSeen && !user.isMe) {
                 handleStorySeen(story.id);
               }
             }}
             onLoad={() => {
-              // Ensure video plays after it's fully loaded
               if (videoRef.current) {
                 videoRef.current.playAsync().catch((error) => {
                   console.error('Error playing video on load:', error);
@@ -957,7 +956,7 @@ export default function StoriesScreen() {
           <Image
             source={{ uri: story.url }}
             style={styles.storyImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         )}
 
