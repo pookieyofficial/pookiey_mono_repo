@@ -252,9 +252,9 @@ export const initializeSocket = (httpServer: HTTPServer) => {
             }
         );
 
-        socket.on("call_initiate", async (data: { matchId: string; receiverId: string }) => {
+        socket.on("call_initiate", async (data: { matchId: string; receiverId: string; callType?: "voice" | "video" }) => {
             try {
-                const { matchId, receiverId } = data;
+                const { matchId, receiverId, callType = "voice" } = data;
 
                 if (!userId) {
                     socket.emit("error", { message: "Unauthorized" });
@@ -285,24 +285,27 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                         matchId,
                         receiverId,
                         reason: "offline",
+                        callType,
                     });
                     return;
                 }
 
-                // Notify the receiver about incoming call
+                // Notify the receiver about incoming call (callType: voice | video)
                 io.to(`user:${receiverId}`).emit("call_incoming", {
                     matchId,
                     callerId: userId,
-                    callerIdentity: userId, // Twilio client identity
+                    callerIdentity: userId,
+                    callType,
                 });
 
                 // Confirm to caller
                 socket.emit("call_initiated", {
                     matchId,
                     receiverId,
+                    callType,
                 });
 
-            } catch (error) {   
+            } catch (error) {
                 socket.emit("error", { message: "Failed to initiate call" });
             }
         });

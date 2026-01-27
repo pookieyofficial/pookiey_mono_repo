@@ -34,6 +34,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       permissions: [
+        "android.permission.CAMERA",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
         "android.permission.RECORD_AUDIO",

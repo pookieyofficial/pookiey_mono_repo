@@ -67,7 +67,7 @@ export default function ChatRoom() {
   const navigation = useNavigation();
   const [isOtherUserOnline, setIsOtherUserOnline] = useState<boolean>(false);
 
-  const { makeCall } = useCall();
+  const { makeCall, makeVideoCall } = useCall();
 
   const matchId = params.matchId as string;
   const userName = params.userName as string;
@@ -153,18 +153,17 @@ export default function ChatRoom() {
           </View>
         </View>
       ),
-      headerRight: () => (
-        <View style={{ position: 'relative', marginRight: 8 }}>
-          <TouchableOpacity
-            onPress={() => {
-              if (dbUser?.user_id && otherUserId) {
-                // Check premium status first
+      headerRight: () => {
+        const canCall = dbUser?.user_id && otherUserId && isConnected && isOtherUserOnline && isPremium;
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', marginRight: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                if (!dbUser?.user_id || !otherUserId) return;
                 if (!isPremium) {
-                  showDialog('warning', 'Premium Required', 'Voice calling requires a premium subscription. Please upgrade to make calls.');
+                  showDialog('warning', 'Premium Required', 'Video calling requires a premium subscription. Please upgrade to make calls.');
                   return;
                 }
-
-                const canCallNow = isConnected && isOtherUserOnline;
                 if (!isConnected) {
                   showDialog('info', 'Connecting...', 'Please wait while we are connecting to the recipient!');
                   return;
@@ -173,40 +172,56 @@ export default function ChatRoom() {
                   showDialog('warning', 'Call unavailable', 'You can only call when the recipient is online on Pookiey!');
                   return;
                 }
-                if (canCallNow) {
+                makeVideoCall(matchId, otherUserId, otherUserId);
+              }}
+              style={{ padding: 8 }}
+            >
+              <Ionicons name="videocam" size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (dbUser?.user_id && otherUserId) {
+                  if (!isPremium) {
+                    showDialog('warning', 'Premium Required', 'Voice calling requires a premium subscription. Please upgrade to make calls.');
+                    return;
+                  }
+                  if (!isConnected) {
+                    showDialog('info', 'Connecting...', 'Please wait while we are connecting to the recipient!');
+                    return;
+                  }
+                  if (!isOtherUserOnline) {
+                    showDialog('warning', 'Call unavailable', 'You can only call when the recipient is online on Pookiey!');
+                    return;
+                  }
                   makeCall(matchId, otherUserId, otherUserId);
                 }
-              }
-            }}
-            style={{ padding: 8 }}
-          >
-            <Ionicons
-              name="call"
-              size={24}
-              color={isConnected && isOtherUserOnline && isPremium ? '#FF3B30' : '#B0B0B0'}
-            />
-          </TouchableOpacity>
-          {!isPremium && (
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 4,
-                right: 4,
-                backgroundColor: 'transparent',
-                borderRadius: 8,
-                width: 20,
-                height: 20,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 1.5,
-                borderColor: '#fff',
               }}
+              style={{ padding: 8 }}
             >
-              <Ionicons name="lock-closed" size={20} color={Colors.text.secondary} />
-            </View>
-          )}
-        </View>
-      ),
+              <Ionicons name="call" size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} />
+            </TouchableOpacity>
+            {!isPremium && (
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 4,
+                  right: 4,
+                  backgroundColor: 'transparent',
+                  borderRadius: 8,
+                  width: 20,
+                  height: 20,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderWidth: 1.5,
+                  borderColor: '#fff',
+                }}
+              >
+                <Ionicons name="lock-closed" size={20} color={Colors.text.secondary} />
+              </View>
+            )}
+          </View>
+        );
+      },
       headerStyle: {
         backgroundColor: Colors.parentBackgroundColor,
       },
@@ -235,6 +250,7 @@ export default function ChatRoom() {
     otherUserId,
     matchId,
     makeCall,
+    makeVideoCall,
     isConnected,
     isOtherUserOnline,
     isPremium,

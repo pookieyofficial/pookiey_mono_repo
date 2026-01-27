@@ -1,12 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { VoiceCallUI } from '@/components/VoiceCallUI';
+import { VideoCallUI } from '@/components/VideoCallUI';
 import { useTwilioVoice } from '@/hooks/useTwilioVoice';
+import { useTwilioVideo } from '@/hooks/useTwilioVideo';
 import { useMessagingStore } from '@/store/messagingStore';
 import { AudioDevice } from '@twilio/voice-react-native-sdk';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 type CallContextValue = {
   makeCall: (matchId: string, receiverId: string, receiverIdentity: string) => Promise<void>;
+  makeVideoCall: (matchId: string, receiverId: string, receiverIdentity: string) => Promise<void>;
   answerCall: () => Promise<void>;
   rejectCall: () => void;
   endCall: () => void;
@@ -22,7 +25,7 @@ type CallContextValue = {
     isEnded: boolean;
     error?: string;
   };
-  incomingCall: { matchId: string; callerId: string; callerIdentity: string } | null;
+  incomingCall: { matchId: string; callerId: string; callerIdentity: string; callType?: 'voice' | 'video' } | null;
 };
 
 const CallContext = createContext<CallContextValue | null>(null);
@@ -42,8 +45,29 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     selectedAudioDevice,
     selectAudioDevice,
   } = useTwilioVoice();
+  const {
+    twilioRef,
+    status: videoStatus,
+    isMuted: videoIsMuted,
+    isVideoEnabled,
+    videoTracks,
+    incomingVideoCall,
+    makeVideoCall,
+    answerVideoCall,
+    rejectVideoCall,
+    endVideoCall,
+    toggleMute: toggleVideoMute,
+    toggleVideo,
+    flipCamera,
+    onRoomDidConnect,
+    onRoomDidDisconnect,
+    onRoomDidFailToConnect,
+    onParticipantAddedVideoTrack,
+    onParticipantRemovedVideoTrack,
+  } = useTwilioVideo();
   const [outgoingMatchId, setOutgoingMatchId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+  const [activeVideoMatchId, setActiveVideoMatchId] = useState<string | null>(null);
 
   // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -90,6 +114,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, [incomingCall?.matchId]);
 
+  // Video: track active match for display name/avatar
+  useEffect(() => {
+    if (incomingVideoCall?.matchId) {
+      setActiveVideoMatchId(incomingVideoCall.matchId);
+    }
+  }, [incomingVideoCall?.matchId]);
+
+  // Clear video match when video call ends
+  useEffect(() => {
+    if (videoStatus === 'idle') {
+      setActiveVideoMatchId(null);
+    }
+  }, [videoStatus]);
+
   // Clear outgoing target when call fully ends
   useEffect(() => {
     if (callStatus.isEnded) {
@@ -106,10 +144,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
   }, [makeCall]);
 
+  const makeVideoCallWithTarget = useMemo(() => {
+    return async (matchId: string, receiverId: string, receiverIdentity: string) => {
+      setActiveVideoMatchId(matchId);
+      await makeVideoCall(matchId, receiverId, receiverIdentity);
+    };
+  }, [makeVideoCall]);
+
   const activePeer = useMemo(() => {
     if (!activeMatchId) return null;
     return inbox.find((i) => i.matchId === activeMatchId) || null;
   }, [activeMatchId, inbox]);
+
+  const videoPeer = useMemo(() => {
+    const matchId = activeVideoMatchId || incomingVideoCall?.matchId;
+    if (!matchId) return null;
+    return inbox.find((i) => i.matchId === matchId) || null;
+  }, [activeVideoMatchId, incomingVideoCall?.matchId, inbox]);
 
   const isSpeakerOn =
     selectedAudioDevice?.type === (AudioDevice as any)?.Type?.Speaker ||
@@ -201,6 +252,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const ctx = useMemo<CallContextValue>(
     () => ({
       makeCall: makeCallWithTarget,
+      makeVideoCall: makeVideoCallWithTarget,
       answerCall,
       rejectCall,
       endCall,
@@ -214,6 +266,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       makeCallWithTarget,
+      makeVideoCallWithTarget,
       answerCall,
       rejectCall,
       endCall,
@@ -229,6 +282,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const displayName = activePeer?.name || (incomingCall ? caller?.name : outgoingPeer?.name) || 'User';
   const displayAvatar = activePeer?.avatar || (incomingCall ? caller?.avatar : outgoingPeer?.avatar);
+  const videoDisplayName = videoPeer?.name || 'User';
+  const videoDisplayAvatar = videoPeer?.avatar;
+
+  const voiceVisible = callStatus.isCalling || callStatus.isRinging || callStatus.isConnected || !!incomingCall;
+  const videoVisible = !!incomingVideoCall || videoStatus !== 'idle';
 
   return (
     <CallContext.Provider value={ctx}>
@@ -247,9 +305,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
       {/* Global voice call UI (so incoming calls show on any screen while app is open) */}
       <VoiceCallUI
-        visible={
-          callStatus.isCalling || callStatus.isRinging || callStatus.isConnected || !!incomingCall
-        }
+        visible={voiceVisible && !videoVisible}
         isIncoming={!!incomingCall}
         isConnected={callStatus.isConnected}
         isRinging={callStatus.isRinging}
@@ -262,6 +318,31 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         onAnswer={answerCall}
         onReject={rejectCall}
         onEnd={endCall}
+      />
+
+      {/* Global video call UI */}
+      <VideoCallUI
+        visible={videoVisible}
+        isIncoming={!!incomingVideoCall}
+        isConnected={videoStatus === 'connected'}
+        isRinging={videoStatus === 'ringing'}
+        userName={videoDisplayName}
+        userAvatar={videoDisplayAvatar}
+        isMuted={videoIsMuted}
+        isVideoEnabled={isVideoEnabled}
+        onToggleMute={toggleVideoMute}
+        onToggleVideo={toggleVideo}
+        onFlipCamera={flipCamera}
+        onAnswer={answerVideoCall}
+        onReject={rejectVideoCall}
+        onEnd={endVideoCall}
+        twilioRef={twilioRef}
+        videoTracks={videoTracks}
+        onRoomDidConnect={onRoomDidConnect}
+        onRoomDidDisconnect={onRoomDidDisconnect}
+        onRoomDidFailToConnect={onRoomDidFailToConnect}
+        onParticipantAddedVideoTrack={onParticipantAddedVideoTrack}
+        onParticipantRemovedVideoTrack={onParticipantRemovedVideoTrack}
       />
     </CallContext.Provider>
   );
