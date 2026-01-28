@@ -34,6 +34,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       permissions: [
+        "android.permission.CAMERA",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
         "android.permission.RECORD_AUDIO",
@@ -58,7 +59,6 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      "./plugins/withTwilioVoiceAndroid",
       [
         "expo-audio",
         {

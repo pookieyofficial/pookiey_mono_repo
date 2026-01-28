@@ -29,6 +29,7 @@ export function useTwilioVoice() {
     matchId: string;
     callerId: string;
     callerIdentity: string;
+    callType?: 'voice' | 'video';
   } | null>(null);
 
   const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -152,8 +153,10 @@ export function useTwilioVoice() {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    const onIncoming = (data: { matchId: string; callerId: string; callerIdentity: string }) => {
-      setIncomingCall(data);
+    const onIncoming = (data: { matchId: string; callerId: string; callerIdentity: string; callType?: 'voice' | 'video' }) => {
+      // Only handle voice; video is handled by useTwilioVideo
+      if (data.callType === 'video') return;
+      setIncomingCall({ ...data, callType: 'voice' });
       setStatus('ringing');
     };
 

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { verifyUser } from "../middleware/userMiddlewares";
-import { createConferenceTwiMLResponse, generateVoiceToken, isTwilioConfigured } from "../services/twilioService";
+import { createConferenceTwiMLResponse, generateVoiceToken, generateVideoToken, isTwilioConfigured } from "../services/twilioService";
 import { Matches } from "../models";
 
 const callRouter = Router();
@@ -45,6 +45,55 @@ callRouter.get("/token", verifyUser, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/v1/call/video-token?room=:roomName
+ * Generate a Twilio Video token for the authenticated user (for video calls).
+ * roomName is typically the matchId.
+ */
+callRouter.get("/video-token", verifyUser, async (req: Request, res: Response) => {
+  try {
+    if (!isTwilioConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: "Video calling is not configured on the server",
+      });
+    }
+
+    const user = req.user as any;
+    const identity = user.user_id || user._id?.toString();
+    const roomName = (req.query.room as string) || "";
+
+    if (!identity) {
+      return res.status(400).json({
+        success: false,
+        message: "User identity not found",
+      });
+    }
+
+    if (!roomName) {
+      return res.status(400).json({
+        success: false,
+        message: "Query parameter 'room' is required",
+      });
+    }
+
+    const token = generateVideoToken(identity, roomName);
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        identity,
+        roomName,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to generate video token",
+    });
+  }
+});
 
 callRouter.all("/twiml", async (req: Request, res: Response) => {
   try {

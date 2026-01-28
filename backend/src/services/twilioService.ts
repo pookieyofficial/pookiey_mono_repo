@@ -44,6 +44,31 @@ export const generateVoiceToken = (identity: string): string => {
 };
 
 /**
+ * Generate an Access Token for Twilio Video (Programmable Video)
+ * Used for video calls. Room name is typically the matchId.
+ * API Key must be in US1 region for Video - see Twilio docs.
+ */
+export const generateVideoToken = (identity: string, roomName: string): string => {
+  if (!apiKey || !apiSecret) {
+    throw new Error("Twilio API Key and Secret are required for video tokens");
+  }
+
+  const AccessToken = twilio.jwt.AccessToken;
+  const VideoGrant = AccessToken.VideoGrant;
+
+  const videoGrant = new VideoGrant({ room: roomName });
+
+  const token = new AccessToken(accountSid!, apiKey, apiSecret, {
+    identity,
+    ttl: 3600,
+  });
+
+  token.addGrant(videoGrant);
+
+  return token.toJwt();
+};
+
+/**
  * Create a TwiML response for handling calls
  * This is used when a call is made through Twilio
  */
