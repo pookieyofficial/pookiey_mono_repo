@@ -252,9 +252,9 @@ export const initializeSocket = (httpServer: HTTPServer) => {
             }
         );
 
-        socket.on("call_initiate", async (data: { matchId: string; receiverId: string; callType?: "voice" | "video" }) => {
+        socket.on("call_initiate", async (data: { matchId: string; receiverId: string; callType?: "voice" | "video"; offer?: any }) => {
             try {
-                const { matchId, receiverId, callType = "voice" } = data;
+                const { matchId, receiverId, callType = "voice", offer } = data;
 
                 if (!userId) {
                     socket.emit("error", { message: "Unauthorized" });
@@ -290,12 +290,13 @@ export const initializeSocket = (httpServer: HTTPServer) => {
                     return;
                 }
 
-                // Notify the receiver about incoming call (callType: voice | video)
+                // Notify the receiver about incoming call with WebRTC offer
                 io.to(`user:${receiverId}`).emit("call_incoming", {
                     matchId,
                     callerId: userId,
                     callerIdentity: userId,
                     callType,
+                    offer, // Include WebRTC offer for WebRTC signaling
                 });
 
                 // Confirm to caller
@@ -310,13 +311,14 @@ export const initializeSocket = (httpServer: HTTPServer) => {
             }
         });
 
-        socket.on("call_answer", (data: { matchId: string; callerId: string }) => {
-            const { matchId, callerId } = data;
-            // Notify caller that call was answered
-            io.to(`user:${callerId}`).emit("call_answered", {
+        socket.on("call_answer", (data: { matchId: string; callerId: string; answer?: any }) => {
+            const { matchId, callerId, answer } = data;
+            // Notify caller that call was answered with WebRTC answer
+            io.to(`user:${callerId}`).emit("call_answer", {
                 matchId,
                 receiverId: userId,
                 receiverIdentity: userId,
+                answer, // Include WebRTC answer for WebRTC signaling
             });
         });
 
@@ -335,6 +337,16 @@ export const initializeSocket = (httpServer: HTTPServer) => {
             io.to(`user:${otherUserId}`).emit("call_ended", {
                 matchId,
                 endedBy: userId,
+            });
+        });
+
+        // WebRTC ICE candidate forwarding
+        socket.on("webrtc_ice_candidate", (data: { matchId: string; receiverId: string; candidate: any }) => {
+            const { matchId, receiverId, candidate } = data;
+            // Forward ICE candidate to the other peer
+            io.to(`user:${receiverId}`).emit("webrtc_ice_candidate", {
+                matchId,
+                candidate,
             });
         });
 

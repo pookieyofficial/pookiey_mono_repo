@@ -1,10 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { VoiceCallUI } from '@/components/VoiceCallUI';
 import { VideoCallUI } from '@/components/VideoCallUI';
-import { useTwilioVoice } from '@/hooks/useTwilioVoice';
-import { useTwilioVideo } from '@/hooks/useTwilioVideo';
+import { useWebRTCVoice } from '@/hooks/useWebRTCVoice';
+import { useWebRTCVideo } from '@/hooks/useWebRTCVideo';
 import { useMessagingStore } from '@/store/messagingStore';
-import { AudioDevice } from '@twilio/voice-react-native-sdk';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 
 type CallContextValue = {
@@ -21,6 +20,7 @@ type CallContextValue = {
   callStatus: {
     isCalling: boolean;
     isRinging: boolean;
+    isConnecting: boolean;
     isConnected: boolean;
     isEnded: boolean;
     error?: string;
@@ -41,12 +41,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     endCall,
     isMuted,
     toggleMute,
-    audioDevices,
-    selectedAudioDevice,
-    selectAudioDevice,
-  } = useTwilioVoice();
+  } = useWebRTCVoice();
   const {
-    twilioRef,
     status: videoStatus,
     isMuted: videoIsMuted,
     isVideoEnabled,
@@ -59,12 +55,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     toggleMute: toggleVideoMute,
     toggleVideo,
     flipCamera,
-    onRoomDidConnect,
-    onRoomDidDisconnect,
-    onRoomDidFailToConnect,
-    onParticipantAddedVideoTrack,
-    onParticipantRemovedVideoTrack,
-  } = useTwilioVideo();
+    localStream,
+    remoteStream,
+  } = useWebRTCVideo();
   const [outgoingMatchId, setOutgoingMatchId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [activeVideoMatchId, setActiveVideoMatchId] = useState<string | null>(null);
@@ -112,14 +105,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (incomingCall?.matchId) {
       setActiveMatchId(incomingCall.matchId);
     }
-  }, [incomingCall?.matchId]);
+  }, [incomingCall?.matchId, inbox]);
 
   // Video: track active match for display name/avatar
   useEffect(() => {
     if (incomingVideoCall?.matchId) {
       setActiveVideoMatchId(incomingVideoCall.matchId);
     }
-  }, [incomingVideoCall?.matchId]);
+  }, [incomingVideoCall?.matchId, inbox]);
 
   // Clear video match when video call ends
   useEffect(() => {
@@ -162,92 +155,18 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return inbox.find((i) => i.matchId === matchId) || null;
   }, [activeVideoMatchId, incomingVideoCall?.matchId, inbox]);
 
-  const isSpeakerOn =
-    selectedAudioDevice?.type === (AudioDevice as any)?.Type?.Speaker ||
-    (selectedAudioDevice?.name || '').toLowerCase().includes('speaker');
+  // WebRTC audio routing - simplified for now
+  // Note: Audio device selection in WebRTC requires native implementation
+  // For now, we'll use a simple speaker toggle
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
 
   const onAudioDevicePress = useCallback(async () => {
-    const devices = audioDevices || [];
-    if (!devices.length) {
-      showDialog('info', 'No audio devices found.', 'Audio output');
-      return;
-    }
-
-    // If we only have earpiece/speaker, toggle quickly
-    if (devices.length <= 2) {
-      const speaker = devices.find((d) => d.type === (AudioDevice as any)?.Type?.Speaker);
-      const earpiece = devices.find((d) => d.type === (AudioDevice as any)?.Type?.Earpiece);
-      if (speaker && earpiece) {
-        const next = selectedAudioDevice?.uuid === speaker.uuid ? earpiece : speaker;
-        await selectAudioDevice(next);
-        return;
-      }
-    }
-
-    // For multiple devices, show selection dialog
-    // Since CustomDialog supports limited buttons, we'll show the first 2 devices as buttons
-    // and list others in the message, or show all in message with instructions
-    if (devices.length > 2) {
-      const deviceList = devices.map((d, idx) => `${idx + 1}. ${d.name}`).join('\n');
-      const firstDevice = devices[0];
-      const secondDevice = devices[1];
-      
-      showDialog(
-        'info',
-        `Available audio devices:\n${deviceList}\n\nTap a button to select, or use the toggle for quick switching.`,
-        'Audio output',
-        {
-          text: firstDevice.name,
-          onPress: () => {
-            setDialogVisible(false);
-            selectAudioDevice(firstDevice);
-          },
-        },
-        secondDevice ? {
-          text: secondDevice.name,
-          onPress: () => {
-            setDialogVisible(false);
-            selectAudioDevice(secondDevice);
-          },
-        } : undefined,
-        {
-          text: 'Cancel',
-          onPress: () => setDialogVisible(false),
-        }
-      );
-    } else if (devices.length === 2) {
-      // Two devices - show both as buttons
-      const firstDevice = devices[0];
-      const secondDevice = devices[1];
-      
-      showDialog(
-        'info',
-        'Choose where you want to hear the call',
-        'Audio output',
-        {
-          text: firstDevice.name,
-          onPress: () => {
-            setDialogVisible(false);
-            selectAudioDevice(firstDevice);
-          },
-        },
-        {
-          text: secondDevice.name,
-          onPress: () => {
-            setDialogVisible(false);
-            selectAudioDevice(secondDevice);
-          },
-        },
-        {
-          text: 'Cancel',
-          onPress: () => setDialogVisible(false),
-        }
-      );
-    } else if (devices.length === 1) {
-      // Single device - just select it
-      await selectAudioDevice(devices[0]);
-    }
-  }, [audioDevices, selectedAudioDevice?.uuid, selectAudioDevice]);
+    // Toggle speaker/earpiece
+    setIsSpeakerOn(!isSpeakerOn);
+    // TODO: Implement actual audio routing via WebRTC
+    // This would require native module or expo-av Audio routing
+    showDialog('info', `Audio output: ${!isSpeakerOn ? 'Speaker' : 'Earpiece'}`, 'Audio output');
+  }, [isSpeakerOn]);
 
   const ctx = useMemo<CallContextValue>(
     () => ({
@@ -259,7 +178,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       toggleMute,
       isMuted,
       onAudioDevicePress,
-      selectedAudioDeviceName: selectedAudioDevice?.name,
+      selectedAudioDeviceName: isSpeakerOn ? 'Speaker' : 'Earpiece',
       isSpeakerOn,
       callStatus,
       incomingCall,
@@ -273,7 +192,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       toggleMute,
       isMuted,
       onAudioDevicePress,
-      selectedAudioDevice?.name,
       isSpeakerOn,
       callStatus,
       incomingCall,
@@ -285,8 +203,39 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const videoDisplayName = videoPeer?.name || 'User';
   const videoDisplayAvatar = videoPeer?.avatar;
 
-  const voiceVisible = callStatus.isCalling || callStatus.isRinging || callStatus.isConnected || !!incomingCall;
-  const videoVisible = !!incomingVideoCall || videoStatus !== 'idle';
+  // Do we have enough info to render names/avatars?
+  const hasCallerInfo = !!(caller || activePeer);
+  const hasVideoCallerInfo = !!videoPeer;
+
+  // Voice visibility:
+  // - Outgoing (no incomingCall): show for calling / connecting / connected
+  // - Incoming (incomingCall present): show only if we have caller info AND status is ringing/connecting/connected
+  // - Never show when ended/idle
+  const isVoiceOutgoingActive =
+    !incomingCall &&
+    (callStatus.isCalling || callStatus.isConnecting || callStatus.isConnected);
+
+  const isVoiceIncomingActive =
+    !!incomingCall &&
+    hasCallerInfo &&
+    (callStatus.isRinging || callStatus.isConnecting || callStatus.isConnected);
+
+  const voiceVisible = !callStatus.isEnded && (isVoiceOutgoingActive || isVoiceIncomingActive);
+
+  // Video visibility:
+  // - Outgoing (no incomingVideoCall): show for calling / connecting / connected
+  // - Incoming (incomingVideoCall present): show only if we have caller info AND status is ringing/connecting/connected
+  // - Never show when idle
+  const isVideoOutgoingActive =
+    !incomingVideoCall &&
+    (videoStatus === 'calling' || videoStatus === 'connecting' || videoStatus === 'connected');
+
+  const isVideoIncomingActive =
+    !!incomingVideoCall &&
+    hasVideoCallerInfo &&
+    (videoStatus === 'ringing' || videoStatus === 'connecting' || videoStatus === 'connected');
+
+  const videoVisible = videoStatus !== 'idle' && (isVideoOutgoingActive || isVideoIncomingActive);
 
   return (
     <CallContext.Provider value={ctx}>
@@ -309,6 +258,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         isIncoming={!!incomingCall}
         isConnected={callStatus.isConnected}
         isRinging={callStatus.isRinging}
+        isConnecting={callStatus.isConnecting}
         userName={displayName}
         userAvatar={displayAvatar}
         isMuted={isMuted}
@@ -326,6 +276,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         isIncoming={!!incomingVideoCall}
         isConnected={videoStatus === 'connected'}
         isRinging={videoStatus === 'ringing'}
+        isConnecting={videoStatus === 'connecting'}
         userName={videoDisplayName}
         userAvatar={videoDisplayAvatar}
         isMuted={videoIsMuted}
@@ -336,13 +287,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         onAnswer={answerVideoCall}
         onReject={rejectVideoCall}
         onEnd={endVideoCall}
-        twilioRef={twilioRef}
+        localStream={localStream}
+        remoteStream={remoteStream}
         videoTracks={videoTracks}
-        onRoomDidConnect={onRoomDidConnect}
-        onRoomDidDisconnect={onRoomDidDisconnect}
-        onRoomDidFailToConnect={onRoomDidFailToConnect}
-        onParticipantAddedVideoTrack={onParticipantAddedVideoTrack}
-        onParticipantRemovedVideoTrack={onParticipantRemovedVideoTrack}
       />
     </CallContext.Provider>
   );

@@ -59,7 +59,6 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      "./plugins/withTwilioVoiceAndroid",
       [
         "expo-audio",
         {

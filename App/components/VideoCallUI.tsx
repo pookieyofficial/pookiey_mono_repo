@@ -5,18 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import {
-  TwilioVideo,
-  TwilioVideoLocalView,
-  TwilioVideoParticipantView,
-} from 'react-native-twilio-video-webrtc';
-import type { VideoTrackIdentity } from '@/hooks/useTwilioVideo';
+import { RTCView, MediaStream } from 'react-native-webrtc';
 
 interface VideoCallUIProps {
   visible: boolean;
   isIncoming: boolean;
   isConnected: boolean;
   isRinging: boolean;
+  isConnecting?: boolean;
   userName?: string;
   userAvatar?: string;
   isMuted?: boolean;
@@ -27,13 +23,9 @@ interface VideoCallUIProps {
   onAnswer?: () => void;
   onReject?: () => void;
   onEnd?: () => void;
-  twilioRef: React.RefObject<any>;
-  videoTracks: Map<string, VideoTrackIdentity>;
-  onRoomDidConnect?: () => void;
-  onRoomDidDisconnect?: (args: { roomName?: string; error?: string }) => void;
-  onRoomDidFailToConnect?: (error: any) => void;
-  onParticipantAddedVideoTrack?: (args: { participant: { sid: string }; track: { trackSid: string } }) => void;
-  onParticipantRemovedVideoTrack?: (args: { participant?: { sid: string }; track: { trackSid: string } }) => void;
+  localStream?: MediaStream | null;
+  remoteStream?: MediaStream | null;
+  videoTracks?: Map<string, any>;
 }
 
 export const VideoCallUI: React.FC<VideoCallUIProps> = ({
@@ -41,6 +33,7 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
   isIncoming,
   isConnected,
   isRinging,
+  isConnecting = false,
   userName = 'User',
   userAvatar,
   isMuted = false,
@@ -51,21 +44,19 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
   onAnswer,
   onReject,
   onEnd,
-  twilioRef,
-  videoTracks,
-  onRoomDidConnect,
-  onRoomDidDisconnect,
-  onRoomDidFailToConnect,
-  onParticipantAddedVideoTrack,
-  onParticipantRemovedVideoTrack,
+  localStream,
+  remoteStream,
+  videoTracks = new Map(),
 }) => {
   const statusText = isConnected
     ? 'Connected'
-    : isRinging
-      ? isIncoming
-        ? 'Incoming video call...'
-        : 'Ringing...'
-      : 'Connecting...';
+    : isConnecting
+      ? 'Connecting call...'
+      : isRinging
+        ? isIncoming
+          ? 'Incoming video call...'
+          : 'Ringing...'
+        : 'Connecting...';
 
   const showVideoViews = isConnected || isRinging === false;
 
@@ -88,72 +79,77 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
         locations={[0, 0.22, 0.42, 0.62, 0.82, 1]}
         style={styles.container}
       >
-        <TwilioVideo
-          ref={twilioRef}
-          onRoomDidConnect={onRoomDidConnect}
-          onRoomDidDisconnect={onRoomDidDisconnect}
-          onRoomDidFailToConnect={onRoomDidFailToConnect}
-          onParticipantAddedVideoTrack={onParticipantAddedVideoTrack}
-          onParticipantRemovedVideoTrack={onParticipantRemovedVideoTrack}
-          style={styles.twilioVideo}
-        >
-          <View style={styles.content}>
-            <View style={styles.topBar}>
-              <ThemedText style={styles.userName} numberOfLines={1}>
-                {userName}
-              </ThemedText>
-              <ThemedText style={styles.statusText}>{statusText}</ThemedText>
-            </View>
+        <View style={styles.content}>
+          <View style={styles.topBar}>
+            <ThemedText style={styles.userName} numberOfLines={1}>
+              {userName}
+            </ThemedText>
+            <ThemedText style={styles.statusText}>{statusText}</ThemedText>
+          </View>
 
-            {/* Video area: remote (large) + local (pip) when connected */}
-            <View style={styles.videoArea}>
-              {showVideoViews ? (
-                <>
-                  <View style={styles.remoteVideoContainer}>
-                    {Array.from(videoTracks.entries()).map(([trackSid, identity]) => (
-                      <TwilioVideoParticipantView
-                        key={trackSid}
-                        style={styles.remoteVideo}
-                        trackIdentity={identity}
-                      />
-                    ))}
-                    {videoTracks.size === 0 && (
-                      <View style={styles.placeholderRemote}>
-                        {userAvatar ? (
-                          <Image source={{ uri: userAvatar }} style={styles.placeholderAvatar} contentFit="cover" />
-                        ) : (
-                          <ThemedText style={styles.placeholderText}>
-                            {userName?.trim()?.charAt(0)?.toUpperCase() || 'U'}
-                          </ThemedText>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.localVideoContainer}>
-                    <TwilioVideoLocalView style={styles.localVideo} enabled={isVideoEnabled} />
-                  </View>
-                </>
-              ) : (
-                <View style={styles.avatarCircle}>
-                  {userAvatar ? (
-                    <Image source={{ uri: userAvatar }} style={styles.avatarImage} contentFit="cover" />
+          {/* Video area: remote (large) + local (pip) when connected */}
+          <View style={styles.videoArea}>
+            {showVideoViews ? (
+              <>
+                <View style={styles.remoteVideoContainer}>
+                  {remoteStream ? (
+                    <RTCView
+                      streamURL={remoteStream.toURL()}
+                      style={styles.remoteVideo}
+                      objectFit="cover"
+                      mirror={false}
+                    />
                   ) : (
-                    <ThemedText style={styles.avatarText}>
-                      {userName?.trim()?.charAt(0)?.toUpperCase() || 'U'}
-                    </ThemedText>
+                    <View style={styles.placeholderRemote}>
+                      {userAvatar ? (
+                        <Image source={{ uri: userAvatar }} style={styles.placeholderAvatar} contentFit="cover" />
+                      ) : (
+                        <ThemedText style={styles.placeholderText}>
+                          {userName?.trim()?.charAt(0)?.toUpperCase() || 'U'}
+                        </ThemedText>
+                      )}
+                    </View>
                   )}
                 </View>
-              )}
-            </View>
+                {localStream && (
+                  <View style={styles.localVideoContainer}>
+                    <RTCView
+                      streamURL={localStream.toURL()}
+                      style={styles.localVideo}
+                      objectFit="cover"
+                      mirror={true}
+                      zOrder={1}
+                    />
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.avatarCircle}>
+                {userAvatar ? (
+                  <Image source={{ uri: userAvatar }} style={styles.avatarImage} contentFit="cover" />
+                ) : (
+                  <ThemedText style={styles.avatarText}>
+                    {userName?.trim()?.charAt(0)?.toUpperCase() || 'U'}
+                  </ThemedText>
+                )}
+              </View>
+            )}
+          </View>
 
             <View style={styles.bottomControls}>
-              {isIncoming && !isConnected ? (
+              {isIncoming && !isConnected && !isConnecting ? (
                 <View style={styles.centerRow}>
                   <TouchableOpacity style={[styles.fab, styles.fabReject]} onPress={onReject}>
                     <Ionicons name="videocam-off" size={26} color={Colors.primary.white} />
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.fab, styles.fabAnswer]} onPress={onAnswer}>
                     <Ionicons name="videocam" size={26} color={Colors.primary.white} />
+                  </TouchableOpacity>
+                </View>
+              ) : isConnecting ? (
+                <View style={styles.centerRow}>
+                  <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                    <Ionicons name="call" size={26} color={Colors.primary.white} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -184,7 +180,6 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
               )}
             </View>
           </View>
-        </TwilioVideo>
       </LinearGradient>
     </Modal>
   );
@@ -195,10 +190,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  twilioVideo: {
-    flex: 1,
-    width: '100%',
   },
   content: {
     flex: 1,

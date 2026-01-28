@@ -11,6 +11,7 @@ interface VoiceCallUIProps {
   isIncoming: boolean;
   isConnected: boolean;
   isRinging: boolean;
+  isConnecting?: boolean;
   userName?: string;
   userAvatar?: string;
   isMuted?: boolean;
@@ -27,6 +28,7 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
   isIncoming,
   isConnected,
   isRinging,
+  isConnecting = false,
   userName = 'User',
   userAvatar,
   isMuted = false,
@@ -39,11 +41,13 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
 }) => {
   const statusText = isConnected
     ? 'Connected'
-    : isRinging
-      ? isIncoming
-        ? 'Incoming call...'
-        : 'Ringing...'
-      : 'Calling...';
+    : isConnecting
+      ? 'Connecting call...'
+      : isRinging
+        ? isIncoming
+          ? 'Incoming call...'
+          : 'Ringing...'
+        : 'Calling...';
 
   return (
     <Modal
@@ -90,13 +94,20 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
 
           {/* Bottom: Controls */}
           <View style={styles.bottomControls}>
-            {isIncoming && !isConnected ? (
-              // Incoming: show reject/answer centered
+            {isIncoming && !isConnected && !isConnecting ? (
+              // Incoming: show reject/answer centered (only when not connecting)
               <View style={styles.centerRow}>
                 <TouchableOpacity style={[styles.fab, styles.fabReject]} onPress={onReject}>
                   <Ionicons name="call" size={26} color={Colors.primary.white} />
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.fab, styles.fabAnswer]} onPress={onAnswer}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
+                </TouchableOpacity>
+              </View>
+            ) : isConnecting ? (
+              // Connecting: show only end button
+              <View style={styles.centerRow}>
+                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
                   <Ionicons name="call" size={26} color={Colors.primary.white} />
                 </TouchableOpacity>
               </View>
