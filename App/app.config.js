@@ -114,6 +114,7 @@ export default {
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
+      "expo-video",
     ],
     experiments: {
       typedRoutes: true,

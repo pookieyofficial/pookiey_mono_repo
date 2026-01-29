@@ -23,7 +23,7 @@ import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
 import { useStoryStore, StoryItem } from '@/store/storyStore';
 import { useAuthStore } from '@/store/authStore';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { compressImageToJPEG } from '@/utils/imageCompression';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
@@ -46,7 +46,12 @@ export default function CreateStoryScreen() {
   const [capturedMedia, setCapturedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [uploading, setUploading] = useState(false);
-  const videoRef = useRef<Video>(null);
+  const videoPlayer = useVideoPlayer(capturedMedia || null, (player) => {
+    if (capturedMedia && mediaType === 'video') {
+      player.loop = true;
+      player.play();
+    }
+  });
 
   // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -75,12 +80,18 @@ export default function CreateStoryScreen() {
   }, [cameraPermission]);
 
 
-  // Play video when preview is shown
+  // Restart video when new preview is set
   useEffect(() => {
-    if (capturedMedia && mediaType === 'video' && videoRef.current) {
-      videoRef.current.playAsync().catch(console.error);
+    if (capturedMedia && mediaType === 'video') {
+      try {
+        videoPlayer.replace({ uri: capturedMedia });
+        videoPlayer.loop = true;
+        videoPlayer.play();
+      } catch {
+        // ignore
+      }
     }
-  }, [capturedMedia, mediaType]);
+  }, [capturedMedia, mediaType, videoPlayer]);
 
   // Toggle camera facing
   const toggleCameraFacing = () => {
@@ -443,23 +454,11 @@ export default function CreateStoryScreen() {
                   }}
                 />
               ) : (
-                <Video
-                  ref={videoRef}
-                  source={{ uri: capturedMedia }}
+                <VideoView
+                  player={videoPlayer}
                   style={styles.previewMedia}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={true}
-                  isLooping={true}
-                  useNativeControls={true}
-                  onError={(error) => {
-                    console.error('Video load error:', error);
-                    showDialog('error', 'Failed to load video preview', 'Error');
-                  }}
-                  onLoad={() => {
-                    if (videoRef.current) {
-                      videoRef.current.playAsync().catch(console.error);
-                    }
-                  }}
+                  contentFit="cover"
+                  nativeControls
                 />
               )}
             </View>

@@ -14,7 +14,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useTranslation } from 'react-i18next'
 import * as Location from 'expo-location'
 import * as Notifications from 'expo-notifications'
-import { Audio } from 'expo-av'
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio'
 import { useFocusEffect } from '@react-navigation/native'
 import * as Device from 'expo-device'
 import Ionicons from '@expo/vector-icons/build/Ionicons'
@@ -322,11 +322,11 @@ export default function index() {
       }
 
       // 3) Microphone permission (no API call)
-      const currentMicPerm = await Audio.getPermissionsAsync()
+      const currentMicPerm = await getRecordingPermissionsAsync()
       const micStatus =
         currentMicPerm.status === 'granted'
           ? currentMicPerm.status
-          : (await Audio.requestPermissionsAsync()).status
+          : (await requestRecordingPermissionsAsync()).status
 
       if (micStatus !== 'granted') {
         setPermissionsChecked(false)

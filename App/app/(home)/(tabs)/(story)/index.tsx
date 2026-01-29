@@ -15,7 +15,6 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +28,8 @@ import { useAuthStore } from '@/store/authStore';
 import { getUserByIdAPI } from '@/APIs/userAPIs';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import * as Haptics from 'expo-haptics';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { useEvent, useEventListener } from 'expo';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -78,7 +79,6 @@ export default function StoriesScreen() {
   const [loadingMoreDiscover, setLoadingMoreDiscover] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const storyTimer = useRef<NodeJS.Timeout | null>(null);
-  const videoRef = useRef<Video>(null);
 
   // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -282,15 +282,6 @@ export default function StoriesScreen() {
       clearTimeout(storyTimer.current);
       storyTimer.current = null;
     }
-    // Stop video if playing - await to ensure it completes
-    if (videoRef.current) {
-      try {
-        await videoRef.current.pauseAsync();
-        await videoRef.current.unloadAsync();
-      } catch (error) {
-        console.error('Error stopping video:', error);
-      }
-    }
     progressAnim.setValue(0);
     progressAnim.stopAnimation();
     setSelectedStoryIndex(null);
@@ -309,15 +300,6 @@ export default function StoriesScreen() {
     if (storyTimer.current) {
       clearTimeout(storyTimer.current);
       storyTimer.current = null;
-    }
-    // Stop video if playing - await to ensure it completes
-    if (videoRef.current) {
-      try {
-        await videoRef.current.pauseAsync();
-        await videoRef.current.unloadAsync();
-      } catch (error) {
-        console.error('Error stopping video:', error);
-      }
     }
     progressAnim.setValue(0);
     progressAnim.stopAnimation();
@@ -529,15 +511,6 @@ export default function StoriesScreen() {
   // Navigate to next story
   const nextStory = useCallback(async () => {
     progressAnim.stopAnimation();
-    // Stop current video if playing - await to ensure it completes
-    if (videoRef.current) {
-      try {
-        await videoRef.current.pauseAsync();
-        await videoRef.current.unloadAsync();
-      } catch (error) {
-        console.error('Error stopping video:', error);
-      }
-    }
     const allStories = getAllStories();
     if (allStories.length === 0) {
       handleCloseStory();
@@ -561,15 +534,6 @@ export default function StoriesScreen() {
   // Navigate to previous story
   const prevStory = useCallback(async () => {
     progressAnim.stopAnimation();
-    // Stop current video if playing - await to ensure it completes
-    if (videoRef.current) {
-      try {
-        await videoRef.current.pauseAsync();
-        await videoRef.current.unloadAsync();
-      } catch (error) {
-        console.error('Error stopping video:', error);
-      }
-    }
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex(currentStoryIndex - 1);
     } else if (currentUserIndex > 0) {
@@ -580,21 +544,7 @@ export default function StoriesScreen() {
     }
   }, [getAllStories, currentUserIndex, currentStoryIndex, progressAnim]);
 
-  // Handle video playback status
-  const handleVideoStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (status.isLoaded && !isPausedRef.current) {
-      // Update progress bar based on video position
-      if (status.durationMillis && status.durationMillis > 0) {
-        const progress = status.positionMillis / status.durationMillis;
-        progressAnim.setValue(progress);
-      }
-      
-      // Auto-advance when video finishes
-      if (status.didJustFinish) {
-        nextStory();
-      }
-    }
-  }, [progressAnim, nextStory]);
+  // For videos, progress is driven by the video player component using currentTime/duration.
 
   // Start story progress animation
   // Pause story progress
@@ -618,10 +568,7 @@ export default function StoriesScreen() {
       storyTimer.current = null;
     }
     
-    // Pause video if playing
-    if (current.story.type === 'video' && videoRef.current) {
-      videoRef.current.pauseAsync().catch(() => {});
-    }
+    // For videos, the player component handles pausing via React lifecycle.
   }, [getCurrentStory, progressAnim]);
   
   // Resume story progress
@@ -634,12 +581,6 @@ export default function StoriesScreen() {
     isPausedRef.current = false;
     const pausedValue = pausedProgressRef.current ?? 0;
     pausedProgressRef.current = null;
-    
-    // Resume video if it's a video
-    if (current.story.type === 'video' && videoRef.current) {
-      videoRef.current.playAsync().catch(() => {});
-      return; // Video handles its own progress
-    }
     
     // Resume animation from where it paused
     const remainingDuration = (current.story.duration * 1000 || STORY_DURATION) * (1 - pausedValue);
@@ -726,11 +667,6 @@ export default function StoriesScreen() {
       isPausedRef.current = false;
       pausedProgressRef.current = null;
     } else {
-      if (videoRef.current) {
-        videoRef.current.pauseAsync()
-          .then(() => videoRef.current?.unloadAsync())
-          .catch(() => {});
-      }
       progressAnim.stopAnimation();
       isPausedRef.current = false;
       pausedProgressRef.current = null;
@@ -766,9 +702,6 @@ export default function StoriesScreen() {
             clearTimeout(storyTimer.current);
             storyTimer.current = null;
           }
-          if (videoRef.current) {
-            videoRef.current.pauseAsync().catch(() => {});
-          }
           progressAnim.stopAnimation();
         }
       };
@@ -799,13 +732,7 @@ export default function StoriesScreen() {
     };
   }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim]);
   
-  useEffect(() => {
-    if (selectedStoryIndex === null && videoRef.current) {
-      videoRef.current.pauseAsync()
-        .then(() => videoRef.current?.unloadAsync())
-        .catch(() => {});
-    }
-  }, [selectedStoryIndex]);
+  // No extra cleanup needed for video player; it is managed by React lifecycle.
 
   const panResponder = useRef(
     PanResponder.create({
@@ -864,14 +791,6 @@ export default function StoriesScreen() {
         clearTimeout(storyTimer.current);
         storyTimer.current = null;
       }
-      if (videoRef.current) {
-        try {
-          await videoRef.current.pauseAsync();
-          await videoRef.current.unloadAsync();
-        } catch (error) {
-          console.error('Error stopping video:', error);
-        }
-      }
       progressAnim.stopAnimation();
       
       setWasViewingStory(selectedStoryIndex);
@@ -912,6 +831,37 @@ export default function StoriesScreen() {
       }
     };
 
+    const StoryVideo = () => {
+      const player = useVideoPlayer(story.url, (p) => {
+        p.loop = false;
+        p.play();
+        p.timeUpdateEventInterval = 0.25;
+      });
+
+      const timeUpdate = useEvent(player, 'timeUpdate');
+
+      useEffect(() => {
+        if (!timeUpdate || isPausedRef.current) return;
+        const durationSeconds = player.duration || story.duration || STORY_DURATION / 1000;
+        if (durationSeconds > 0) {
+          const progress = timeUpdate.currentTime / durationSeconds;
+          progressAnim.setValue(progress);
+        }
+      }, [timeUpdate]);
+
+      useEventListener(player, 'playToEnd', () => {
+        nextStory();
+      });
+
+      return (
+        <VideoView
+          player={player}
+          style={styles.storyImage}
+          contentFit="contain"
+        />
+      );
+    };
+
     return (
       <>
         <CustomDialog
@@ -928,30 +878,7 @@ export default function StoriesScreen() {
         
         {/* Story Media (Image or Video) */}
         {story.type === 'video' ? (
-          <Video
-            key={`video-${story.id}-${currentUserIndex}-${currentStoryIndex}`}
-            ref={videoRef}
-            source={{ uri: story.url }}
-            style={styles.storyImage}
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay={true}
-            isLooping={false}
-            volume={1.0}
-            isMuted={false}
-            onPlaybackStatusUpdate={handleVideoStatusUpdate}
-            onLoadStart={() => {
-              if (!story.isSeen && !user.isMe) {
-                handleStorySeen(story.id);
-              }
-            }}
-            onLoad={() => {
-              if (videoRef.current) {
-                videoRef.current.playAsync().catch((error) => {
-                  console.error('Error playing video on load:', error);
-                });
-              }
-            }}
-          />
+          <StoryVideo />
         ) : (
           <Image
             source={{ uri: story.url }}

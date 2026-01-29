@@ -161,11 +161,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
 
   const onAudioDevicePress = useCallback(async () => {
-    // Toggle speaker/earpiece
     setIsSpeakerOn(!isSpeakerOn);
-    // TODO: Implement actual audio routing via WebRTC
-    // This would require native module or expo-av Audio routing
-    showDialog('info', `Audio output: ${!isSpeakerOn ? 'Speaker' : 'Earpiece'}`, 'Audio output');
   }, [isSpeakerOn]);
 
   const ctx = useMemo<CallContextValue>(

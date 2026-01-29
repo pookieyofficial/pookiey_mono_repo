@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import React, { useEffect, useState } from 'react';
 import {
     StyleSheet,
@@ -25,7 +25,7 @@ export default function MicrophoneScreen() {
 
     const checkMicrophonePermission = async () => {
         try {
-            const { status } = await Audio.getPermissionsAsync();
+            const { status } = await getRecordingPermissionsAsync();
             setHasPermission(status === 'granted');
             return status === 'granted';
         } catch (error) {
@@ -41,7 +41,7 @@ export default function MicrophoneScreen() {
     const requestMicrophonePermission = async () => {
         setIsLoading(true);
         try {
-            const { status } = await Audio.requestPermissionsAsync();
+            const { status } = await requestRecordingPermissionsAsync();
 
             if (status === 'granted') {
                 setHasPermission(true);
