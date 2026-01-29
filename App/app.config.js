@@ -9,7 +9,7 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "pookiey",
     userInterfaceStyle: "light",
-    newArchEnabled: false,
+    newArchEnabled: true,
     platforms: ["ios", "android"],
     ios: {
       supportsTablet: true,

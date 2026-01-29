@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronLeft, Video, Phone, Lock, Play, Pause, Mic, Send, Square } from 'lucide-react-native';
 import { useSocket, Message } from '@/hooks/useSocket';
 import { messageAPI } from '@/APIs/messageAPIs';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,7 +23,14 @@ import CustomLoader from '@/components/CustomLoader';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import ParsedText from 'react-native-parsed-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio, InterruptionModeIOS } from 'expo-av';
+import {
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  RecordingPresets,
+  createAudioPlayer,
+  AudioModule,
+} from 'expo-audio';
+import type { AudioRecorder, AudioPlayer, AudioStatus } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { requestPresignedURl, uploadTos3 } from '@/hooks/uploadTos3';
 import { useCall } from '@/context/CallContext';
@@ -53,13 +60,13 @@ export default function ChatRoom() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<AudioRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDurationSeconds, setRecordingDurationSeconds] = useState(0);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const recordingDurationRef = useRef(0);
   const [uploadingAudio, setUploadingAudio] = useState(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
   const [playbackPosition, setPlaybackPosition] = useState(0);
@@ -97,6 +104,15 @@ export default function ChatRoom() {
     setDialogVisible(true);
   };
 
+  const showPremiumDialog = () => {
+    setDialogConfig({
+      type: 'warning',
+      title: 'Premium Required',
+      message: 'Voice and video calling requires a premium subscription. Upgrade now to unlock unlimited calls and other premium features!'
+    });
+    setDialogVisible(true);
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
@@ -107,7 +123,7 @@ export default function ChatRoom() {
             onPress={() => navigation.goBack()}
             style={{ padding: 8, marginRight: 4 }}
           >
-            <Ionicons name="chevron-back" size={28} color="#000" />
+            <ChevronLeft size={28} color="#000" strokeWidth={2} />
           </TouchableOpacity>
 
           {userAvatar && userAvatar.length > 0 && !imageError ? (
@@ -154,14 +170,14 @@ export default function ChatRoom() {
         </View>
       ),
       headerRight: () => {
-        const canCall = dbUser?.user_id && otherUserId && isConnected && isOtherUserOnline && isPremium;
+        const canCall = dbUser?.user_id && otherUserId && isConnected && isOtherUserOnline;
         return (
           <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', marginRight: 8 }}>
             <TouchableOpacity
               onPress={() => {
                 if (!dbUser?.user_id || !otherUserId) return;
                 if (!isPremium) {
-                  showDialog('warning', 'Premium Required', 'Video calling requires a premium subscription. Please upgrade to make calls.');
+                  showDialog('warning', 'Premium Required', 'Video calling requires a premium subscription. Please upgrade to make calls.',);
                   return;
                 }
                 if (!isConnected) {
@@ -176,13 +192,13 @@ export default function ChatRoom() {
               }}
               style={{ padding: 8 }}
             >
-              <Ionicons name="videocam" size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} />
+              <Video size={28} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
                 if (dbUser?.user_id && otherUserId) {
                   if (!isPremium) {
-                    showDialog('warning', 'Premium Required', 'Voice calling requires a premium subscription. Please upgrade to make calls.');
+                    showPremiumDialog();
                     return;
                   }
                   if (!isConnected) {
@@ -198,27 +214,8 @@ export default function ChatRoom() {
               }}
               style={{ padding: 8 }}
             >
-              <Ionicons name="call" size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} />
+              <Phone size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
             </TouchableOpacity>
-            {!isPremium && (
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 4,
-                  right: 4,
-                  backgroundColor: 'transparent',
-                  borderRadius: 8,
-                  width: 20,
-                  height: 20,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1.5,
-                  borderColor: '#fff',
-                }}
-              >
-                <Ionicons name="lock-closed" size={20} color={Colors.text.secondary} />
-              </View>
-            )}
           </View>
         );
       },
@@ -315,10 +312,10 @@ export default function ChatRoom() {
       if (message.matchId === matchId) {
         setMessages((prev) => {
           const messageExists = prev.some(
-            (msg) => msg._id === message._id || 
-            (msg._id === undefined && msg.text === message.text && 
-             msg.senderId === message.senderId && 
-             Math.abs(new Date(msg.createdAt).getTime() - new Date(message.createdAt).getTime()) < 1000)
+            (msg) => msg._id === message._id ||
+              (msg._id === undefined && msg.text === message.text &&
+                msg.senderId === message.senderId &&
+                Math.abs(new Date(msg.createdAt).getTime() - new Date(message.createdAt).getTime()) < 1000)
           );
           if (messageExists) {
             return prev;
@@ -383,8 +380,7 @@ export default function ChatRoom() {
       }
       const currentSound = soundRef.current;
       if (currentSound) {
-        currentSound.setOnPlaybackStatusUpdate(null);
-        void currentSound.unloadAsync();
+        currentSound.remove();
         soundRef.current = null;
       }
     };
@@ -496,8 +492,9 @@ export default function ChatRoom() {
       let uri: string | null = null;
 
       try {
-        await recording.stopAndUnloadAsync();
-        uri = recording.getURI();
+        await recording.stop();
+        const status = recording.getStatus();
+        uri = status.url ?? recording.uri;
       } catch (error) {
         console.error('Error stopping recording:', error);
       }
@@ -513,10 +510,10 @@ export default function ChatRoom() {
       recordingDurationRef.current = 0;
 
       try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+          shouldPlayInBackground: false,
         });
       } catch (error) {
         console.error('Error resetting audio mode:', error);
@@ -540,33 +537,32 @@ export default function ChatRoom() {
 
   const startRecordingVoiceNote = useCallback(async () => {
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
 
-      if (permission.status !== 'granted') {
+      if (!permission.granted) {
         showDialog('warning', 'Microphone access needed', 'Please enable microphone access in your device settings to send voice notes.');
         return;
       }
 
       if (soundRef.current) {
-        soundRef.current.setOnPlaybackStatusUpdate(null);
-        await soundRef.current.unloadAsync();
+        soundRef.current.remove();
         soundRef.current = null;
         setPlayingMessageId(null);
         setIsSoundPlaying(false);
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
+        interruptionMode: 'doNotMix',
+        interruptionModeAndroid: 'duckOthers',
+        shouldRouteThroughEarpiece: false,
       });
 
-      const recordingObject = new Audio.Recording();
-      await recordingObject.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await recordingObject.startAsync();
+      const recordingObject = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+      await recordingObject.prepareToRecordAsync();
+      recordingObject.record();
 
       setRecording(recordingObject);
       setIsRecording(true);
@@ -577,9 +573,9 @@ export default function ChatRoom() {
         clearInterval(recordingIntervalRef.current);
       }
 
-      recordingIntervalRef.current = setInterval(async () => {
+      recordingIntervalRef.current = setInterval(() => {
         try {
-          const status = await recordingObject.getStatusAsync();
+          const status = recordingObject.getStatus();
           if (status.isRecording && typeof status.durationMillis === 'number') {
             const seconds = Math.floor(status.durationMillis / 1000);
             recordingDurationRef.current = seconds;
@@ -593,10 +589,10 @@ export default function ChatRoom() {
       console.error('Error starting recording:', error);
       setRecording(null);
       setIsRecording(false);
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
       }).catch(() => { });
       const errorMessage =
         error instanceof Error
@@ -631,13 +627,13 @@ export default function ChatRoom() {
 
       try {
         if (playingMessageId === message._id && soundRef.current) {
-          const status = await soundRef.current.getStatusAsync();
-          if (status.isLoaded) {
-            if (status.isPlaying) {
-              await soundRef.current.pauseAsync();
+          const player = soundRef.current;
+          if (player.isLoaded) {
+            if (player.playing) {
+              player.pause();
               setIsSoundPlaying(false);
             } else {
-              await soundRef.current.playAsync();
+              player.play();
               setIsSoundPlaying(true);
             }
           }
@@ -645,55 +641,54 @@ export default function ChatRoom() {
         }
 
         if (soundRef.current) {
-          soundRef.current.setOnPlaybackStatusUpdate(null);
-          await soundRef.current.unloadAsync();
+          soundRef.current.remove();
           soundRef.current = null;
         }
 
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+          shouldPlayInBackground: false,
         });
 
-        const { sound } = await Audio.Sound.createAsync(
+        const player = createAudioPlayer(
           { uri: message.mediaUrl },
-          { shouldPlay: true }
+          { updateInterval: 250 }
         );
 
-        await sound.setProgressUpdateIntervalAsync(250);
-
-        soundRef.current = sound;
+        soundRef.current = player;
         setPlayingMessageId(message._id);
         setPlaybackPosition(0);
         const initialDuration = (message.audioDuration ?? 0) * 1000;
         setPlaybackDuration(initialDuration);
         setIsSoundPlaying(true);
 
-        sound.setOnPlaybackStatusUpdate((status) => {
+        player.play();
+
+        const subscription = player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
           if (!status.isLoaded) {
             return;
           }
 
-          setIsSoundPlaying(status.isPlaying ?? false);
+          setIsSoundPlaying(status.playing ?? false);
 
           const durationMillis =
-            typeof status.durationMillis === 'number'
-              ? status.durationMillis
+            typeof status.duration === 'number' && status.duration > 0
+              ? status.duration * 1000
               : (message.audioDuration ?? 0) * 1000;
-          const positionMillis = status.positionMillis ?? 0;
+          const positionMillis = (status.currentTime ?? 0) * 1000;
 
           setPlaybackPosition(positionMillis);
           setPlaybackDuration(durationMillis);
 
           if (status.didJustFinish) {
-            sound.setOnPlaybackStatusUpdate(null);
+            subscription.remove();
             setPlayingMessageId(null);
             setPlaybackPosition(0);
             setIsSoundPlaying(false);
             setPlaybackDuration((message.audioDuration ?? 0) * 1000);
             soundRef.current = null;
-            void sound.unloadAsync();
+            player.remove();
           }
         });
       } catch (error) {
@@ -758,11 +753,11 @@ export default function ChatRoom() {
                 { backgroundColor: isMine ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)' },
               ]}
             >
-              <Ionicons
-                name={isPlayingMessage && isSoundPlaying ? 'pause' : 'play'}
-                size={18}
-                color={isMine ? '#fff' : Colors.primaryBackgroundColor}
-              />
+              {isPlayingMessage && isSoundPlaying ? (
+                <Pause size={18} color={isMine ? '#fff' : Colors.primaryBackgroundColor} strokeWidth={2} fill={isMine ? '#fff' : Colors.primaryBackgroundColor} />
+              ) : (
+                <Play size={18} color={isMine ? '#fff' : Colors.primaryBackgroundColor} strokeWidth={2} fill={isMine ? '#fff' : Colors.primaryBackgroundColor} />
+              )}
             </TouchableOpacity>
 
             {/* Thin progress line + moving dot */}
@@ -872,7 +867,10 @@ export default function ChatRoom() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <CustomLoader messages={['loading messages...']} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
+          <ThemedText type='default'>Loading messages...</ThemedText>
+        </View>
       </View>
     );
   }
@@ -885,10 +883,28 @@ export default function ChatRoom() {
         title={dialogConfig.title}
         message={dialogConfig.message}
         onDismiss={() => setDialogVisible(false)}
-        primaryButton={{
-          text: 'OK',
-          onPress: () => setDialogVisible(false),
-        }}
+        primaryButton={
+          dialogConfig.title === 'Premium Required'
+            ? {
+              text: 'Buy Premium',
+              onPress: () => {
+                setDialogVisible(false);
+                router.push('/(home)/pricePlansHome');
+              },
+            }
+            : {
+              text: 'OK',
+              onPress: () => setDialogVisible(false),
+            }
+        }
+        secondaryButton={
+          dialogConfig.title === 'Premium Required'
+            ? {
+              text: 'Not Now',
+              onPress: () => setDialogVisible(false),
+            }
+            : undefined
+        }
       />
       <KeyboardAvoidingView
         style={styles.container}
@@ -923,7 +939,7 @@ export default function ChatRoom() {
 
         {isRecording && (
           <View style={styles.recordingIndicator}>
-            <Ionicons name="mic" size={18} color="#FF3B30" style={{ marginRight: 8 }} />
+            <Mic size={18} color="#FF3B30" strokeWidth={2} style={{ marginRight: 8 }} />
             <ThemedText style={styles.recordingText}>Recording</ThemedText>
             <ThemedText style={styles.recordingTimer}>
               {formatDurationLabel(recordingDurationSeconds)}
@@ -970,10 +986,10 @@ export default function ChatRoom() {
               {uploadingAudio ? (
                 <ActivityIndicator size="small" color="#FF3B30" />
               ) : (
-                <Ionicons
-                  name="send"
+                <Send
                   size={24}
                   color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
+                  strokeWidth={2}
                 />
               )}
             </TouchableOpacity>
@@ -986,11 +1002,11 @@ export default function ChatRoom() {
               onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
               disabled={uploadingAudio}
             >
-              <Ionicons
-                name={isRecording ? 'stop' : 'mic'}
-                size={22}
-                color={isRecording ? '#fff' : '#FF3B30'}
-              />
+              {isRecording ? (
+                <Square size={22} color="#fff" strokeWidth={2} fill="#fff" />
+              ) : (
+                <Mic size={22} color="#FF3B30" strokeWidth={2} />
+              )}
             </TouchableOpacity>
           </View>
         </View>

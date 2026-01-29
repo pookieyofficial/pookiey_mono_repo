@@ -8,7 +8,7 @@ import {
 } from 'react-native-webrtc';
 import { useSocket } from './useSocket';
 import { Camera } from 'expo-camera';
-import { Audio } from 'expo-av';
+import { requestRecordingPermissionsAsync } from 'expo-audio';
 
 export type CallStatus = 'idle' | 'calling' | 'ringing' | 'connecting' | 'connected';
 
@@ -60,8 +60,8 @@ export function useWebRTC() {
 
   // Ensure permissions
   const ensurePermissions = useCallback(async (needsVideo: boolean) => {
-    const micPerm = await Audio.requestPermissionsAsync();
-    if (micPerm.status !== 'granted') {
+    const micPerm = await requestRecordingPermissionsAsync();
+    if (!micPerm.granted) {
       throw new Error('Microphone permission is required for calls.');
     }
     

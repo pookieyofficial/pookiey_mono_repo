@@ -104,7 +104,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             }
             if (!response?.success) {
                 if (response?.showPriceModal) {
-                    router.push("/(home)/(tabs)/(setting)/pricePlans");
+                    router.push("/(home)/pricePlansHome");
                     return;
                 }
             }

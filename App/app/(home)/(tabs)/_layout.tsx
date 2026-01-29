@@ -1,8 +1,6 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useSocket } from '@/hooks/useSocket';
 import { useMessagingStore } from '@/store/messagingStore';
@@ -10,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { messageAPI } from '@/APIs/messageAPIs';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Home, MessageCircle, Heart, Camera, Settings } from 'lucide-react-native';
 
 // Wrapper component for chat icon with badge
 function ChatIconWithBadge({ color, focused }: { color: string; focused: boolean }) {
@@ -17,11 +16,10 @@ function ChatIconWithBadge({ color, focused }: { color: string; focused: boolean
 
   return (
     <View style={{ position: 'relative' }}>
-      <IconSymbol 
-        size={28} 
-        name={focused ? "message.fill" : "message"} 
-        color={color} 
-        weight={focused ? 'bold' : 'regular'} 
+      <MessageCircle 
+        size={26} 
+        color={focused ? Colors.primaryBackgroundColor : '#D1D1D6'} 
+        strokeWidth={focused ? 2.5 : 2}
       />
       {totalUnreadCount > 0 && (
         <View style={styles.badgeContainer}>
@@ -104,8 +102,13 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('tabs.home'),
-          tabBarIcon: ({ color, focused }) =>
-            <IconSymbol size={28} name={focused ? "house.fill" : "house"} color={color} weight={focused ? 'bold' : 'regular'} />,
+          tabBarIcon: ({ focused }) => (
+            <Home 
+              size={26} 
+              color={focused ? Colors.primaryBackgroundColor : '#D1D1D6'} 
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -121,8 +124,12 @@ export default function TabLayout() {
         name="(likes)"
         options={{
           title: t('tabs.likes'),
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name={focused ? "heart.fill" : "heart"} color={color} weight={focused ? 'bold' : 'regular'} />
+          tabBarIcon: ({ focused }) => (
+            <Heart 
+              size={26} 
+              color={focused ? Colors.primaryBackgroundColor : '#D1D1D6'} 
+              strokeWidth={focused ? 2.5 : 2}
+            />
           ),
         }}
       />
@@ -130,8 +137,12 @@ export default function TabLayout() {
         name="(story)"
         options={{
           title: t('tabs.stories'),
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name={focused ? "camera.fill" : "camera"} color={color} weight={focused ? 'bold' : 'regular'} />
+          tabBarIcon: ({ focused }) => (
+            <Camera 
+              size={26} 
+              color={focused ? Colors.primaryBackgroundColor : '#D1D1D6'} 
+              strokeWidth={focused ? 2.5 : 2}
+            />
           ),
         }}
       />
@@ -139,8 +150,13 @@ export default function TabLayout() {
         name="(setting)"
         options={{
           title: t('tabs.setting'),
-          tabBarIcon: ({ color, focused }) =>
-            <IconSymbol size={28} name={focused ? "gearshape.fill" : "gearshape"} color={color} weight={focused ? 'bold' : 'regular'} />,
+          tabBarIcon: ({ focused }) => (
+            <Settings 
+              size={26} 
+              color={focused ? Colors.primaryBackgroundColor : '#D1D1D6'} 
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
         }}
       />
 
