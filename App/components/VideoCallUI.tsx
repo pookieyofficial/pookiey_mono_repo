@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { RTCView, MediaStream } from 'react-native-webrtc';
+import { CallSwipeControl } from './CallSwipeControl';
 
 interface VideoCallUIProps {
   visible: boolean;
@@ -136,50 +137,48 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
             )}
           </View>
 
-            <View style={styles.bottomControls}>
-              {isIncoming && !isConnected && !isConnecting ? (
-                <View style={styles.centerRow}>
-                  <TouchableOpacity style={[styles.fab, styles.fabReject]} onPress={onReject}>
-                    <Ionicons name="videocam-off" size={26} color={Colors.primary.white} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.fab, styles.fabAnswer]} onPress={onAnswer}>
-                    <Ionicons name="videocam" size={26} color={Colors.primary.white} />
-                  </TouchableOpacity>
-                </View>
-              ) : isConnecting ? (
-                <View style={styles.centerRow}>
-                  <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
-                    <Ionicons name="call" size={26} color={Colors.primary.white} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.centerRow}>
-                  {isConnected && (
-                    <>
-                      <TouchableOpacity
-                        style={[styles.controlButton, isMuted ? styles.muteOn : styles.muteOff]}
-                        onPress={onToggleMute}
-                      >
-                        <Ionicons name="mic-off" size={22} color={isMuted ? '#EF4444' : Colors.primary.white} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.controlButton, isVideoEnabled ? styles.videoOn : styles.videoOff]}
-                        onPress={onToggleVideo}
-                      >
-                        <Ionicons name="videocam" size={22} color={isVideoEnabled ? Colors.primary.white : '#EF4444'} />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.controlButton} onPress={onFlipCamera}>
-                        <Ionicons name="camera-reverse" size={22} color={Colors.primary.white} />
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
-                    <Ionicons name="call" size={26} color={Colors.primary.white} />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+          <View style={styles.bottomControls}>
+            {isIncoming && !isConnected && !isConnecting ? (
+              <CallSwipeControl
+                onAnswer={onAnswer || (() => {})}
+                onReject={onReject || (() => {})}
+                iconName="videocam"
+                showVideoIcons={true}
+              />
+            ) : isConnecting ? (
+              <View style={styles.centerRow}>
+                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.centerRow}>
+                {isConnected && (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.controlButton, isMuted ? styles.muteOn : styles.muteOff]}
+                      onPress={onToggleMute}
+                    >
+                      <Ionicons name="mic-off" size={22} color={isMuted ? '#EF4444' : Colors.primary.white} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.controlButton, isVideoEnabled ? styles.videoOn : styles.videoOff]}
+                      onPress={onToggleVideo}
+                    >
+                      <Ionicons name="videocam" size={22} color={isVideoEnabled ? Colors.primary.white : '#EF4444'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.controlButton} onPress={onFlipCamera}>
+                      <Ionicons name="camera-reverse" size={22} color={Colors.primary.white} />
+                    </TouchableOpacity>
+                  </>
+                )}
+                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                  <Ionicons name="call" size={26} color={Colors.primary.white} />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
+        </View>
       </LinearGradient>
     </Modal>
   );

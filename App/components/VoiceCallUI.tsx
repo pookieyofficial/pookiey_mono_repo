@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
+import { CallSwipeControl } from './CallSwipeControl';
 
 interface VoiceCallUIProps {
   visible: boolean;
@@ -95,15 +96,13 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
           {/* Bottom: Controls */}
           <View style={styles.bottomControls}>
             {isIncoming && !isConnected && !isConnecting ? (
-              // Incoming: show reject/answer centered (only when not connecting)
-              <View style={styles.centerRow}>
-                <TouchableOpacity style={[styles.fab, styles.fabReject]} onPress={onReject}>
-                  <Ionicons name="call" size={26} color={Colors.primary.white} />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.fab, styles.fabAnswer]} onPress={onAnswer}>
-                  <Ionicons name="call" size={26} color={Colors.primary.white} />
-                </TouchableOpacity>
-              </View>
+              // Incoming: show swipeable control
+              <CallSwipeControl
+                onAnswer={onAnswer || (() => {})}
+                onReject={onReject || (() => {})}
+                iconName="call"
+                showVideoIcons={false}
+              />
             ) : isConnecting ? (
               // Connecting: show only end button
               <View style={styles.centerRow}>
