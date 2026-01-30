@@ -49,11 +49,6 @@ export const getActiveAnnouncement = async (req: Request, res: Response) => {
     const announcement = activeAnnouncements[0] || null;
 
     if (!announcement) {
-      const allAnnouncements = await Announcement.find({}).lean();
-      if (allAnnouncements.length > 0) {
-        return allAnnouncements[0];
-      }
-
       return res.json({
         success: true,
         data: null,
@@ -61,7 +56,7 @@ export const getActiveAnnouncement = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: announcement,
     });

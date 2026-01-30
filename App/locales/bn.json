@@ -144,7 +144,8 @@
   },
   "home": {
     "loadingProfiles": "প্রোফাইল লোড হচ্ছে...",
-    "goToMatchingScreen": "ম্যাচিং স্ক্রিনে যান"
+    "goToMatchingScreen": "ম্যাচিং স্ক্রিনে যান",
+    "discover": "আবিষ্কার করুন"
   },
   "chats": {
     "messages": "বার্তা",
@@ -153,6 +154,17 @@
     "typing": "টাইপ করছেন...",
     "typeAMessage": "একটি বার্তা টাইপ করুন...",
     "send": "পাঠান"
+  },
+  "likes": {
+    "engagements": "ইন্টারঅ্যাকশন",
+    "whoLikedYou": "কে আপনাকে পছন্দ করেছে",
+    "youMatched": "আপনার ম্যাচ",
+    "noLikesYet": "এখনো কোনো লাইক নেই",
+    "noMatchesYet": "এখনো কোনো ম্যাচ নেই",
+    "startSwiping": "আরও লাইক পেতে সোয়াইপ করা শুরু করুন!",
+    "keepSwiping": "আপনার ম্যাচ খুঁজতে সোয়াইপ করতে থাকুন!",
+    "superLike": "⭐ সুপার লাইক",
+    "loading": "লোড হচ্ছে..."
   },
   "settings": {
     "settings": "সেটিংস",
@@ -167,7 +179,10 @@
     "areYouSureSignOut": "আপনি কি নিশ্চিত যে আপনি সাইন আউট করতে চান?",
     "cancel": "বাতিল",
     "language": "ভাষা",
-    "updateLocation": "অবস্থান আপডেট করুন"
+    "updateLocation": "অবস্থান আপডেট করুন",
+    "subscriptionActive": "আপনার {{plan}} সাবস্ক্রিপশন সক্রিয়",
+    "validTill": "{{date}} পর্যন্ত বৈধ",
+    "subscribeToPookiey": "Pookiey সাবস্ক্রাইব করুন!"
   },
   "deleteAccount": {
     "title": "অ্যাকাউন্ট মুছুন",
@@ -391,6 +406,12 @@
     "readLess": "কম পড়ুন",
     "gotIt": "বুঝেছি",
     "loadingProfile": "প্রোফাইল লোড হচ্ছে..."
+  },
+  "stories": {
+    "noStoriesYet": "এখনো কোনো গল্প নেই",
+    "shareAMoment": "আপনার ম্যাচদের সাথে একটি মুহূর্ত শেয়ার করুন বা আপনার নিজের গল্প তৈরি করুন!",
+    "postYourStory": "আপনার গল্প পোস্ট করুন",
+    "loadMore": "আরও লোড করুন"
   }
 }
 

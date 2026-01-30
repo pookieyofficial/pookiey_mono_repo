@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "加载个人资料中...",
-    "goToMatchingScreen": "前往匹配屏幕"
+    "goToMatchingScreen": "前往匹配屏幕",
+    "discover": "发现"
   },
   "chats": {
     "messages": "消息",
@@ -178,6 +179,17 @@
     "typing": "正在输入...",
     "typeAMessage": "输入消息...",
     "send": "发送"
+  },
+  "likes": {
+    "engagements": "互动",
+    "whoLikedYou": "谁喜欢你",
+    "youMatched": "你的配对",
+    "noLikesYet": "还没有喜欢",
+    "noMatchesYet": "还没有配对",
+    "startSwiping": "开始滑动以获得更多喜欢！",
+    "keepSwiping": "继续滑动以找到你的配对！",
+    "superLike": "⭐ 超级喜欢",
+    "loading": "加载中..."
   },
   "settings": {
     "settings": "设置",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "您确定要退出登录吗？",
     "cancel": "取消",
     "language": "语言",
-    "updateLocation": "更新位置"
+    "updateLocation": "更新位置",
+    "subscriptionActive": "您的 {{plan}} 订阅已激活",
+    "validTill": "有效期至 {{date}}",
+    "subscribeToPookiey": "订阅 Pookiey！"
   },
   "deleteAccount": {
     "title": "删除账号",
@@ -416,6 +431,12 @@
     "readLess": "收起",
     "gotIt": "知道了",
     "loadingProfile": "加载个人资料中..."
+  },
+  "stories": {
+    "noStoriesYet": "还没有动态",
+    "shareAMoment": "与你的配对分享一个瞬间或创建你自己的动态！",
+    "postYourStory": "发布你的动态",
+    "loadMore": "加载更多"
   }
 }
 

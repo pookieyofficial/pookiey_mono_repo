@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "جاري تحميل الملفات الشخصية...",
-    "goToMatchingScreen": "الانتقال إلى شاشة المطابقة"
+    "goToMatchingScreen": "الانتقال إلى شاشة المطابقة",
+    "discover": "اكتشف"
   },
   "chats": {
     "messages": "الرسائل",
@@ -178,6 +179,17 @@
     "typing": "يكتب...",
     "typeAMessage": "اكتب رسالة...",
     "send": "إرسال"
+  },
+  "likes": {
+    "engagements": "التفاعلات",
+    "whoLikedYou": "من أعجب بك",
+    "youMatched": "تطابقاتك",
+    "noLikesYet": "لا توجد إعجابات بعد",
+    "noMatchesYet": "لا توجد تطابقات بعد",
+    "startSwiping": "ابدأ التمرير للحصول على المزيد من الإعجابات!",
+    "keepSwiping": "استمر في التمرير للعثور على تطابقك!",
+    "superLike": "⭐ إعجاب خاص",
+    "loading": "جاري التحميل..."
   },
   "settings": {
     "settings": "الإعدادات",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
     "cancel": "إلغاء",
     "language": "اللغة",
-    "updateLocation": "تحديث الموقع"
+    "updateLocation": "تحديث الموقع",
+    "subscriptionActive": "اشتراكك {{plan}} نشط",
+    "validTill": "صالح حتى {{date}}",
+    "subscribeToPookiey": "اشترك في Pookiey!"
   },
   "deleteAccount": {
     "title": "حذف الحساب",
@@ -416,6 +431,12 @@
     "readLess": "اقرأ أقل",
     "gotIt": "فهمت",
     "loadingProfile": "جاري تحميل الملف الشخصي..."
+  },
+  "stories": {
+    "noStoriesYet": "لا توجد قصص بعد",
+    "shareAMoment": "شارك لحظة مع تطابقاتك أو أنشئ قصتك الخاصة!",
+    "postYourStory": "انشر قصتك",
+    "loadMore": "تحميل المزيد"
   }
 }
 

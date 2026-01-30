@@ -259,7 +259,7 @@ export default function LikesScreen() {
           </ThemedText>
           {activeTabIndex === 0 && item.interactionType === 'superlike' && (
             <View style={styles.superlikeBadge}>
-              <ThemedText style={styles.superlikeText}>⭐ Super Like</ThemedText>
+              <ThemedText style={styles.superlikeText}>{t('likes.superLike')}</ThemedText>
             </View>
           )}
         </View>
@@ -366,7 +366,7 @@ export default function LikesScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} />
-          <ThemedText style={styles.loadingText}>Loading...</ThemedText>
+          <ThemedText style={styles.loadingText}>{t('likes.loading')}</ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -497,7 +497,6 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 15,
-    fontWeight: '600',
     color: Colors.text.secondary,
   },
   tabTextActive: {
@@ -515,7 +514,6 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: '700',
     color: Colors.text.secondary,
   },
   indicator: {
@@ -576,7 +574,6 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 17,
-    fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
@@ -601,7 +598,6 @@ const styles = StyleSheet.create({
   },
   superlikeText: {
     fontSize: 11,
-    fontWeight: '700',
     color: Colors.primaryBackgroundColor,
   },
   footerLoader: {

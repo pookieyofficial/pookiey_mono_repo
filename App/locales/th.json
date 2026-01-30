@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "กำลังโหลดโปรไฟล์...",
-    "goToMatchingScreen": "ไปยังหน้าจอการจับคู่"
+    "goToMatchingScreen": "ไปยังหน้าจอการจับคู่",
+    "discover": "ค้นพบ"
   },
   "chats": {
     "messages": "ข้อความ",
@@ -178,6 +179,17 @@
     "typing": "กำลังพิมพ์...",
     "typeAMessage": "พิมพ์ข้อความ...",
     "send": "ส่ง"
+  },
+  "likes": {
+    "engagements": "การมีส่วนร่วม",
+    "whoLikedYou": "ใครชอบคุณ",
+    "youMatched": "คู่ของคุณ",
+    "noLikesYet": "ยังไม่มีไลก์",
+    "noMatchesYet": "ยังไม่มีคู่",
+    "startSwiping": "เริ่มเลื่อนเพื่อรับไลก์เพิ่มเติม!",
+    "keepSwiping": "เลื่อนต่อไปเพื่อค้นหาคู่ของคุณ!",
+    "superLike": "⭐ ซูเปอร์ไลก์",
+    "loading": "กำลังโหลด..."
   },
   "settings": {
     "settings": "การตั้งค่า",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?",
     "cancel": "ยกเลิก",
     "language": "ภาษา",
-    "updateLocation": "อัปเดตตำแหน่ง"
+    "updateLocation": "อัปเดตตำแหน่ง",
+    "subscriptionActive": "การสมัครสมาชิก {{plan}} ของคุณใช้งานอยู่",
+    "validTill": "ใช้ได้จนถึง {{date}}",
+    "subscribeToPookiey": "สมัครสมาชิก Pookiey!"
   },
   "deleteAccount": {
     "title": "ลบบัญชี",
@@ -416,6 +431,12 @@
     "readLess": "อ่านน้อยลง",
     "gotIt": "เข้าใจแล้ว",
     "loadingProfile": "กำลังโหลดโปรไฟล์..."
+  },
+  "stories": {
+    "noStoriesYet": "ยังไม่มีสториย์",
+    "shareAMoment": "แชร์ช่วงเวลากับแมทช์ของคุณหรือสร้างสตอรี่ของคุณเอง!",
+    "postYourStory": "โพสต์สตอรี่ของคุณ",
+    "loadMore": "โหลดเพิ่มเติม"
   }
 }
 

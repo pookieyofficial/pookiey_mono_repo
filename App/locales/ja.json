@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "プロフィールを読み込み中...",
-    "goToMatchingScreen": "マッチング画面へ"
+    "goToMatchingScreen": "マッチング画面へ",
+    "discover": "発見"
   },
   "chats": {
     "messages": "メッセージ",
@@ -178,6 +179,17 @@
     "typing": "入力中...",
     "typeAMessage": "メッセージを入力...",
     "send": "送信"
+  },
+  "likes": {
+    "engagements": "エンゲージメント",
+    "whoLikedYou": "あなたにいいねした人",
+    "youMatched": "マッチした人",
+    "noLikesYet": "まだいいねがありません",
+    "noMatchesYet": "まだマッチがありません",
+    "startSwiping": "スワイプしてもっといいねをもらおう！",
+    "keepSwiping": "スワイプを続けてマッチを見つけよう！",
+    "superLike": "⭐ スーパーいいね",
+    "loading": "読み込み中..."
   },
   "settings": {
     "settings": "設定",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "サインアウトしてもよろしいですか？",
     "cancel": "キャンセル",
     "language": "言語",
-    "updateLocation": "位置情報を更新"
+    "updateLocation": "位置情報を更新",
+    "subscriptionActive": "{{plan}} サブスクリプションが有効です",
+    "validTill": "{{date}} まで有効",
+    "subscribeToPookiey": "Pookiey に登録する！"
   },
   "deleteAccount": {
     "title": "アカウントを削除",
@@ -416,6 +431,12 @@
     "readLess": "折りたたむ",
     "gotIt": "了解しました",
     "loadingProfile": "プロフィールを読み込み中..."
+  },
+  "stories": {
+    "noStoriesYet": "まだストーリーがありません",
+    "shareAMoment": "マッチした人と瞬間を共有するか、自分のストーリーを作成しましょう！",
+    "postYourStory": "あなたのストーリーを投稿",
+    "loadMore": "もっと読み込む"
   }
 }
 

@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Memuat profil...",
-    "goToMatchingScreen": "pergi ke layar pencocokan"
+    "goToMatchingScreen": "pergi ke layar pencocokan",
+    "discover": "Temukan"
   },
   "chats": {
     "messages": "Pesan",
@@ -178,6 +179,17 @@
     "typing": "mengetik...",
     "typeAMessage": "Ketik pesan...",
     "send": "Kirim"
+  },
+  "likes": {
+    "engagements": "Interaksi",
+    "whoLikedYou": "Yang Menyukai Anda",
+    "youMatched": "Pasangan Anda",
+    "noLikesYet": "Belum Ada Suka",
+    "noMatchesYet": "Belum Ada Pasangan",
+    "startSwiping": "Mulai menggesek untuk mendapatkan lebih banyak suka!",
+    "keepSwiping": "Terus menggesek untuk menemukan pasanganmu!",
+    "superLike": "⭐ Super Suka",
+    "loading": "Memuat..."
   },
   "settings": {
     "settings": "Pengaturan",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Apakah Anda yakin ingin keluar?",
     "cancel": "Batal",
     "language": "Bahasa",
-    "updateLocation": "Perbarui Lokasi"
+    "updateLocation": "Perbarui Lokasi",
+    "subscriptionActive": "Langganan {{plan}} Anda aktif",
+    "validTill": "Berlaku hingga {{date}}",
+    "subscribeToPookiey": "Berlangganan Pookiey!"
   },
   "deleteAccount": {
     "title": "Hapus Akun",
@@ -416,6 +431,12 @@
     "readLess": "Baca lebih sedikit",
     "gotIt": "Mengerti",
     "loadingProfile": "Memuat profil..."
+  },
+  "stories": {
+    "noStoriesYet": "Belum ada cerita",
+    "shareAMoment": "Bagikan momen dengan pasanganmu atau buat cerita kamu sendiri!",
+    "postYourStory": "Posting Ceritamu",
+    "loadMore": "Muat Lebih Banyak"
   }
 }
 

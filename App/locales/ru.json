@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Загрузка профилей...",
-    "goToMatchingScreen": "перейти к экрану совпадений"
+    "goToMatchingScreen": "перейти к экрану совпадений",
+    "discover": "Открыть"
   },
   "chats": {
     "messages": "Сообщения",
@@ -178,6 +179,17 @@
     "typing": "печатает...",
     "typeAMessage": "Введите сообщение...",
     "send": "Отправить"
+  },
+  "likes": {
+    "engagements": "Взаимодействия",
+    "whoLikedYou": "Кто Вам Понравился",
+    "youMatched": "Ваши Совпадения",
+    "noLikesYet": "Пока Нет Лайков",
+    "noMatchesYet": "Пока Нет Совпадений",
+    "startSwiping": "Начните листать, чтобы получить больше лайков!",
+    "keepSwiping": "Продолжайте листать, чтобы найти своё совпадение!",
+    "superLike": "⭐ Супер Лайк",
+    "loading": "Загрузка..."
   },
   "settings": {
     "settings": "Настройки",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Вы уверены, что хотите выйти?",
     "cancel": "Отмена",
     "language": "Язык",
-    "updateLocation": "Обновить местоположение"
+    "updateLocation": "Обновить местоположение",
+    "subscriptionActive": "Ваша подписка {{plan}} активна",
+    "validTill": "Действительна до {{date}}",
+    "subscribeToPookiey": "Подпишитесь на Pookiey!"
   },
   "deleteAccount": {
     "title": "Удалить аккаунт",
@@ -416,6 +431,12 @@
     "readLess": "Свернуть",
     "gotIt": "Понятно",
     "loadingProfile": "Загрузка профиля..."
+  },
+  "stories": {
+    "noStoriesYet": "Пока нет историй",
+    "shareAMoment": "Поделитесь моментом с вашими совпадениями или создайте свою историю!",
+    "postYourStory": "Опубликовать Вашу Историю",
+    "loadMore": "Загрузить Ещё"
   }
 }
 

@@ -144,7 +144,8 @@
   },
   "home": {
     "loadingProfiles": "प्रोफाइलहरू लोड हुँदैछन्...",
-    "goToMatchingScreen": "म्याचिङ स्क्रिनमा जानुहोस्"
+    "goToMatchingScreen": "म्याचिङ स्क्रिनमा जानुहोस्",
+    "discover": "खोज्नुहोस्"
   },
   "chats": {
     "messages": "सन्देशहरू",
@@ -153,6 +154,17 @@
     "typing": "टाइप गर्दैछ...",
     "typeAMessage": "सन्देश टाइप गर्नुहोस्...",
     "send": "पठाउनुहोस्"
+  },
+  "likes": {
+    "engagements": "संलग्नताहरू",
+    "whoLikedYou": "तपाईंलाई कसले मन पराए",
+    "youMatched": "तपाईंका म्याचहरू",
+    "noLikesYet": "अझै कुनै लाइक छैनन्",
+    "noMatchesYet": "अझै कुनै म्याच छैनन्",
+    "startSwiping": "थप लाइकहरू प्राप्त गर्न स्वाइप गर्न सुरु गर्नुहोस्!",
+    "keepSwiping": "आफ्नो म्याच खोज्न स्वाइप गरिरहनुहोस्!",
+    "superLike": "⭐ सुपर लाइक",
+    "loading": "लोड हुँदैछ..."
   },
   "settings": {
     "settings": "सेटिङहरू",
@@ -167,7 +179,10 @@
     "areYouSureSignOut": "के तपाईं निश्चित रूपमा साइन आउट गर्न चाहनुहुन्छ?",
     "cancel": "रद्द गर्नुहोस्",
     "language": "भाषा",
-    "updateLocation": "स्थान अपडेट गर्नुहोस्"
+    "updateLocation": "स्थान अपडेट गर्नुहोस्",
+    "subscriptionActive": "तपाईंको {{plan}} सदस्यता सक्रिय छ",
+    "validTill": "{{date}} सम्म मान्य",
+    "subscribeToPookiey": "Pookiey सदस्यता लिनुहोस्!"
   },
   "deleteAccount": {
     "title": "खाता मेटाउनुहोस्",
@@ -391,6 +406,12 @@
     "readLess": "कम पढ्नुहोस्",
     "gotIt": "बुझे",
     "loadingProfile": "प्रोफाइल लोड हुँदैछ..."
+  },
+  "stories": {
+    "noStoriesYet": "अझै कुनै कथाहरू छैनन्",
+    "shareAMoment": "आफ्नो म्याचसँग एक क्षण साझा गर्नुहोस् वा आफ्नै कथा सिर्जना गर्नुहोस्!",
+    "postYourStory": "आफ्नो कथा पोस्ट गर्नुहोस्",
+    "loadMore": "थप लोड गर्नुहोस्"
   }
 }
 

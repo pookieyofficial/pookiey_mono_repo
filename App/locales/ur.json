@@ -144,7 +144,8 @@
   },
   "home": {
     "loadingProfiles": "پروفائلز لوڈ ہو رہی ہیں...",
-    "goToMatchingScreen": "میچنگ اسکرین پر جائیں"
+    "goToMatchingScreen": "میچنگ اسکرین پر جائیں",
+    "discover": "دریافت کریں"
   },
   "chats": {
     "messages": "پیغامات",
@@ -153,6 +154,17 @@
     "typing": "ٹائپ کر رہے ہیں...",
     "typeAMessage": "ایک پیغام ٹائپ کریں...",
     "send": "بھیجیں"
+  },
+  "likes": {
+    "engagements": "تعاملات",
+    "whoLikedYou": "آپ کو کس نے پسند کیا",
+    "youMatched": "آپ کی میچز",
+    "noLikesYet": "ابھی تک کوئی لائک نہیں",
+    "noMatchesYet": "ابھی تک کوئی میچ نہیں",
+    "startSwiping": "مزید لائکس حاصل کرنے کے لیے سوائپ کرنا شروع کریں!",
+    "keepSwiping": "اپنا میچ تلاش کرنے کے لیے سوائپ کرتے رہیں!",
+    "superLike": "⭐ سپر لائک",
+    "loading": "لوڈ ہو رہا ہے..."
   },
   "settings": {
     "settings": "سیٹنگز",
@@ -167,7 +179,10 @@
     "areYouSureSignOut": "کیا آپ واقعی سائن آؤٹ کرنا چاہتے ہیں؟",
     "cancel": "منسوخ کریں",
     "language": "زبان",
-    "updateLocation": "مقام اپ ڈیٹ کریں"
+    "updateLocation": "مقام اپ ڈیٹ کریں",
+    "subscriptionActive": "آپ کی {{plan}} سبسکرپشن فعال ہے",
+    "validTill": "{{date}} تک درست",
+    "subscribeToPookiey": "Pookiey کی سبسکرائب کریں!"
   },
   "deleteAccount": {
     "title": "اکاؤنٹ حذف کریں",
@@ -391,6 +406,12 @@
     "readLess": "کم پڑھیں",
     "gotIt": "سمجھ گیا",
     "loadingProfile": "پروفائل لوڈ ہو رہی ہے..."
+  },
+  "stories": {
+    "noStoriesYet": "ابھی تک کوئی کہانیاں نہیں",
+    "shareAMoment": "اپنے میچز کے ساتھ ایک لمحہ شیئر کریں یا اپنی کہانی بنائیں!",
+    "postYourStory": "اپنی کہانی پوسٹ کریں",
+    "loadMore": "مزید لوڈ کریں"
   }
 }
 

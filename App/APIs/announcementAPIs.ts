@@ -25,6 +25,7 @@ export const getActiveAnnouncementAPI = async (token: string): Promise<Announcem
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      timeout: 10000, // 10 second timeout
     });
     
     if (response.data.success && response.data.data) {
@@ -32,9 +33,9 @@ export const getActiveAnnouncementAPI = async (token: string): Promise<Announcem
     }
     return null;
   } catch (error: any) {
-    if (error.response?.status === 404 || error.response?.status === 401) {
-      return null;
-    }
-    throw error;
+    // Catch ALL errors and return null gracefully
+    // This prevents any announcement API issues from crashing the app
+    console.log('Announcement API error (handled gracefully):', error?.response?.status || error?.code || error?.message || 'unknown');
+    return null;
   }
 };

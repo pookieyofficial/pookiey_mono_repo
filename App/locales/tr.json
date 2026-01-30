@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Profil yükleniyor...",
-    "goToMatchingScreen": "eşleşme ekranına git"
+    "goToMatchingScreen": "eşleşme ekranına git",
+    "discover": "Keşfet"
   },
   "chats": {
     "messages": "Mesajlar",
@@ -178,6 +179,17 @@
     "typing": "yazıyor...",
     "typeAMessage": "Mesaj yazın...",
     "send": "Gönder"
+  },
+  "likes": {
+    "engagements": "Etkileşimler",
+    "whoLikedYou": "Seni Beğenenler",
+    "youMatched": "Eşleşmeleriniz",
+    "noLikesYet": "Henüz Beğeni Yok",
+    "noMatchesYet": "Henüz Eşleşme Yok",
+    "startSwiping": "Daha fazla beğeni almak için kaydırmaya başla!",
+    "keepSwiping": "Eşleşmeni bulmak için kaydırmaya devam et!",
+    "superLike": "⭐ Süper Beğeni",
+    "loading": "Yükleniyor..."
   },
   "settings": {
     "settings": "Ayarlar",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Çıkış yapmak istediğinizden emin misiniz?",
     "cancel": "İptal",
     "language": "Dil",
-    "updateLocation": "Konumu güncelle"
+    "updateLocation": "Konumu güncelle",
+    "subscriptionActive": "{{plan}} aboneliğiniz aktif",
+    "validTill": "{{date}} tarihine kadar geçerli",
+    "subscribeToPookiey": "Pookiey'e Abone Olun!"
   },
   "deleteAccount": {
     "title": "Hesabı Sil",
@@ -416,6 +431,12 @@
     "readLess": "Daha az oku",
     "gotIt": "Anladım",
     "loadingProfile": "Profil yükleniyor..."
+  },
+  "stories": {
+    "noStoriesYet": "Henüz hikaye yok",
+    "shareAMoment": "Eşleşmelerinizle bir anı paylaşın veya kendi hikayenizi oluşturun!",
+    "postYourStory": "Hikayeni Paylaş",
+    "loadMore": "Daha Fazla Yükle"
   }
 }
 

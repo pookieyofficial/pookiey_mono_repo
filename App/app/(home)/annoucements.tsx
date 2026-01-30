@@ -18,33 +18,54 @@ export default function AnnouncementsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAnnouncement = async () => {
+      console.log(1)
       if (!token) {
-        setError('Not authenticated');
-        setLoading(false);
+        if (isMounted) {
+          setError('Not authenticated');
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        setLoading(true);
+        console.log(2)
+        if (isMounted) {
+          setLoading(true);
+        }
         const activeAnnouncement = await getActiveAnnouncementAPI(token);
-        
+
+        console.log(3)
+        if (!isMounted) {
+          return;
+        }
+
+        console.log(4)
         if (activeAnnouncement) {
           setAnnouncement(activeAnnouncement);
         } else {
-          // No active announcement, close the screen
           router.back();
         }
       } catch (err: any) {
         console.error('Error fetching announcement:', err);
-        setError(err.message || 'Failed to load announcement');
+        if (isMounted) {
+          setError(err.message || 'Failed to load announcement');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAnnouncement();
-  }, [token]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, router]);
 
   const handleClose = () => {
     router.back();
@@ -149,7 +170,7 @@ export default function AnnouncementsScreen() {
           <Ionicons name="close" size={28} color={Colors.text.primary} />
         </TouchableOpacity>
       </View>
-      
+
       <WebView
         source={{ html: htmlContent }}
         style={styles.webview}

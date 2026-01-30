@@ -30,6 +30,7 @@ import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import * as Haptics from 'expo-haptics';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEvent, useEventListener } from 'expo';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -47,8 +48,9 @@ const STORY_DURATION = 5000; // 5 seconds per story
 export default function StoriesScreen() {
   const router = useRouter();
   const { token } = useAuth();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets(); // Move hook to top - must be called unconditionally
-  
+
   // Get stories from store (loaded from home page)
   const { stories, categorizedStories, isLoading, setCategorizedStories, setLoading, updateStoryViewStatus } = useStoryStore();
   const { dbUser } = useAuthStore();
@@ -69,7 +71,7 @@ export default function StoriesScreen() {
   const isPausedRef = useRef(false);
   const currentProgressRef = useRef<number>(0);
   const progressListenerRef = useRef<string | null>(null);
-  
+
   // Pagination state
   const [friendsPage, setFriendsPage] = useState(1);
   const [discoverPage, setDiscoverPage] = useState(1);
@@ -103,7 +105,7 @@ export default function StoriesScreen() {
       const friendsPageNum = page?.friends || friendsPage;
       const discoverPageNum = page?.discover || discoverPage;
       const data = await storyAPI.getStories(token, friendsPageNum, 10, discoverPageNum, 10);
-      
+
       // Handle new categorized structure
       if (data && typeof data === 'object' && !Array.isArray(data) && 'myStory' in data) {
         // New structure with categorized stories
@@ -112,7 +114,7 @@ export default function StoriesScreen() {
           friends: Array.isArray(data.friends) ? data.friends : [],
           discover: Array.isArray(data.discover) ? data.discover : []
         };
-        
+
         // Append if loading more
         if (append) {
           const currentStories = categorizedStories;
@@ -127,13 +129,13 @@ export default function StoriesScreen() {
           setFriendsPage(1);
           setDiscoverPage(1);
         }
-        
+
         // Update pagination info
         if (data.pagination) {
           setHasMoreFriends(data.pagination.friends?.hasMore || false);
           setHasMoreDiscover(data.pagination.discover?.hasMore || false);
         }
-        
+
         // Update likes state
         const likesMap: Record<string, { isLiked: boolean; likesCount: number }> = {};
         [...(categorizedStories.friends || []), ...(categorizedStories.discover || [])].forEach(user => {
@@ -147,7 +149,7 @@ export default function StoriesScreen() {
           });
         });
         setStoryLikes(prev => ({ ...prev, ...likesMap }));
-        
+
         // Ensure "Your Story" exists even if empty
         if (!categorizedStories.myStory && dbUser?.user_id) {
           categorizedStories.myStory = {
@@ -158,17 +160,17 @@ export default function StoriesScreen() {
             isMe: true
           }
         }
-        
+
         setCategorizedStories(categorizedStories);
       } else if (Array.isArray(data)) {
         // Fallback to old structure (flat array)
         const storiesList: StoryItem[] = data;
         const myStoryIndex = storiesList.findIndex(item => item.isMe)
-        
+
         const currentUserId = dbUser?.user_id
         const currentUserName = dbUser?.displayName || `${dbUser?.profile?.firstName || ''} ${dbUser?.profile?.lastName || ''}`.trim() || 'You'
         const currentUserAvatar = dbUser?.photoURL || dbUser?.profile?.photos?.[0]?.url || ''
-        
+
         if (myStoryIndex === -1 && currentUserId) {
           const myStory: StoryItem = {
             id: currentUserId,
@@ -179,7 +181,7 @@ export default function StoriesScreen() {
           }
           storiesList.unshift(myStory)
         }
-        
+
         // Convert to categorized structure for consistency
         const myStory = storiesList.find(item => item.isMe) || (currentUserId ? {
           id: currentUserId,
@@ -188,9 +190,9 @@ export default function StoriesScreen() {
           stories: [],
           isMe: true
         } : null)
-        
+
         const friends = storiesList.filter(item => !item.isMe)
-        
+
         setCategorizedStories({
           myStory: myStory as StoryItem | null,
           friends: friends,
@@ -267,7 +269,7 @@ export default function StoriesScreen() {
 
   const handleStoryPress = (item: StoryItem, category: 'myStory' | 'friends' | 'discover', indexInCategory: number) => {
     if (!categorizedStories) return;
-    
+
     // Set the category and index within that category
     setSelectedCategory(category);
     setSelectedStoryIndex(indexInCategory);
@@ -338,19 +340,19 @@ export default function StoriesScreen() {
             }
 
             await storyAPI.deleteStory(storyId, token);
-            
+
             // Refresh stories first
             await loadStories();
-            
+
             // Get updated stories after refresh
             const updatedStories = getAllStories();
             if (updatedStories.length === 0 || currentUserIndex >= updatedStories.length) {
               handleCloseStory();
               return;
             }
-            
+
             const updatedUser = updatedStories[currentUserIndex];
-            
+
             // If this was the last story for this user, move to next user or close
             if (updatedUser.stories.length === 0) {
               if (currentUserIndex < updatedStories.length - 1) {
@@ -387,11 +389,11 @@ export default function StoriesScreen() {
   // Handle story like
   const handleStoryLike = useCallback(async (storyId: string) => {
     if (!token || !storyId) return;
-    
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const result = await storyAPI.likeStory(storyId, token);
-      
+
       // Update local likes state
       setStoryLikes(prev => ({
         ...prev,
@@ -409,12 +411,12 @@ export default function StoriesScreen() {
   // Handle getting story viewers - open modal immediately, fetch in background
   const handleGetViewers = useCallback(async (storyId: string) => {
     if (!token || !storyId) return;
-    
+
     // Open modal immediately
     setShowViewers(true);
     setLoadingViewers(true);
     setStoryViewers([]); // Clear previous viewers
-    
+
     // Fetch data in background
     try {
       const result = await storyAPI.getStoryViewers(storyId, token);
@@ -451,7 +453,7 @@ export default function StoriesScreen() {
 
   const handleStorySeen = useCallback(async (storyId: string) => {
     if (!token || !storyId) return;
-    
+
     // Prevent duplicate view tracking
     if (viewedStoryIds.has(storyId)) {
       return;
@@ -459,13 +461,13 @@ export default function StoriesScreen() {
 
     try {
       await storyAPI.viewStory(storyId, token);
-      
+
       // Mark as viewed in local state to prevent duplicates
       setViewedStoryIds(prev => new Set(prev).add(storyId));
-      
+
       // Update story view status in store
       updateStoryViewStatus(storyId);
-      
+
       // Refresh stories to update view status after a short delay
       setTimeout(() => {
         loadStories();
@@ -482,10 +484,10 @@ export default function StoriesScreen() {
       if (selectedStoryIndex === null) return [];
       return stories.slice(selectedStoryIndex);
     }
-    
+
     // Only return stories from the selected category
     let categoryStories: StoryItem[] = [];
-    
+
     if (selectedCategory === 'myStory' && categorizedStories.myStory) {
       categoryStories = [categorizedStories.myStory];
     } else if (selectedCategory === 'friends') {
@@ -493,7 +495,7 @@ export default function StoriesScreen() {
     } else if (selectedCategory === 'discover') {
       categoryStories = categorizedStories.discover;
     }
-    
+
     if (selectedStoryIndex === null) return categoryStories;
     // Show stories from selected index onwards (including selected)
     return categoryStories.slice(selectedStoryIndex);
@@ -550,38 +552,38 @@ export default function StoriesScreen() {
   // Pause story progress
   const pauseStoryProgress = useCallback(() => {
     if (isPausedRef.current) return;
-    
+
     const current = getCurrentStory();
     if (!current) return;
-    
+
     isPausedRef.current = true;
-    
+
     // Save current progress value from the ref (updated by listener)
     pausedProgressRef.current = currentProgressRef.current;
-    
+
     // Stop animation
     progressAnim.stopAnimation();
-    
+
     // Stop timer if running
     if (storyTimer.current) {
       clearTimeout(storyTimer.current);
       storyTimer.current = null;
     }
-    
+
     // For videos, the player component handles pausing via React lifecycle.
   }, [getCurrentStory, progressAnim]);
-  
+
   // Resume story progress
   const resumeStoryProgress = useCallback(() => {
     if (!isPausedRef.current) return;
-    
+
     const current = getCurrentStory();
     if (!current) return;
-    
+
     isPausedRef.current = false;
     const pausedValue = pausedProgressRef.current ?? 0;
     pausedProgressRef.current = null;
-    
+
     // Resume animation from where it paused
     const remainingDuration = (current.story.duration * 1000 || STORY_DURATION) * (1 - pausedValue);
     if (remainingDuration > 0) {
@@ -591,13 +593,13 @@ export default function StoriesScreen() {
         duration: remainingDuration,
         useNativeDriver: false,
       });
-      
+
       animation.start(({ finished }) => {
         if (finished) {
           nextStory();
         }
       });
-      
+
       return () => animation.stop();
     } else {
       // If no time remaining, go to next story
@@ -641,7 +643,7 @@ export default function StoriesScreen() {
       duration: current.story.duration * 1000 || STORY_DURATION,
       useNativeDriver: false,
     });
-    
+
     animation.start(({ finished }) => {
       if (finished && !isPausedRef.current) {
         nextStory();
@@ -672,11 +674,11 @@ export default function StoriesScreen() {
       pausedProgressRef.current = null;
     }
   }, [selectedStoryIndex, progressAnim]);
-  
+
   // Pause/resume story when viewers modal opens/closes
   useEffect(() => {
     if (selectedStoryIndex === null) return;
-    
+
     if (showViewers) {
       pauseStoryProgress();
     } else {
@@ -695,7 +697,7 @@ export default function StoriesScreen() {
           setWasViewingStory(null);
         }, 100);
       }
-      
+
       return () => {
         if (selectedStoryIndex !== null) {
           if (storyTimer.current) {
@@ -710,19 +712,19 @@ export default function StoriesScreen() {
 
   useEffect(() => {
     if (selectedStoryIndex === null) return;
-    
+
     const current = getCurrentStory();
     if (!current) return;
-    
+
     progressAnim.setValue(0);
-    
+
     if (current.story.type !== 'video') {
       const cleanup = startStoryProgress();
       return () => {
         cleanup?.();
       };
     }
-    
+
     return () => {
       if (storyTimer.current) {
         clearTimeout(storyTimer.current);
@@ -731,7 +733,7 @@ export default function StoriesScreen() {
       progressAnim.stopAnimation();
     };
   }, [selectedStoryIndex, currentUserIndex, currentStoryIndex, startStoryProgress, progressAnim]);
-  
+
   // No extra cleanup needed for video player; it is managed by React lifecycle.
 
   const panResponder = useRef(
@@ -792,9 +794,9 @@ export default function StoriesScreen() {
         storyTimer.current = null;
       }
       progressAnim.stopAnimation();
-      
+
       setWasViewingStory(selectedStoryIndex);
-      
+
       if (user.isMe) {
         router.push({
           pathname: '/(home)/userProfile' as any,
@@ -805,14 +807,14 @@ export default function StoriesScreen() {
         });
         return;
       }
-      
+
       // Fetch full user details from API
       try {
         if (!token) {
           showDialog('error', 'Please log in to view profiles', 'Error');
           return;
         }
-        
+
         const response = await getUserByIdAPI(user.id, token);
         if (response.success && response.data) {
           router.push({
@@ -875,213 +877,213 @@ export default function StoriesScreen() {
           cancelButton={dialogCancelButton}
         />
         <View style={styles.storyViewerContainer} {...panResponder.panHandlers}>
-        
-        {/* Story Media (Image or Video) */}
-        {story.type === 'video' ? (
-          <StoryVideo />
-        ) : (
-          <Image
-            source={{ uri: story.url }}
-            style={styles.storyImage}
-            resizeMode="contain"
-          />
-        )}
 
-        {/* Progress Bars - at the very top, just below status bar */}
-        <View style={[styles.progressContainer, { top: insets.top }]}>
-          {user.stories.map((_, index) => (
-            <View key={index} style={styles.progressBarBackground}>
-              {index === currentStoryIndex && (
-                <Animated.View
-                  style={[
-                    styles.progressBarFill,
-                    { width: progressWidth }
-                  ]}
-                />
-              )}
-            </View>
-          ))}
-        </View>
+          {/* Story Media (Image or Video) */}
+          {story.type === 'video' ? (
+            <StoryVideo />
+          ) : (
+            <Image
+              source={{ uri: story.url }}
+              style={styles.storyImage}
+              resizeMode="contain"
+            />
+          )}
 
-        {/* Header with Back Button, Profile and Close/Menu Button */}
-        <View style={[styles.storyHeader, { top: insets.top + 3 }]}>
-          <View style={styles.storyHeaderRow}>
-
-            
-            {/* Profile Section */}
-            <TouchableOpacity 
-              style={styles.storyHeaderLeft}
-              onPress={handleProfilePress}
-              activeOpacity={0.7}
-            >
-              <Image source={{ uri: user.avatar }} style={styles.storyHeaderAvatar} />
-              <ThemedText style={styles.storyHeaderName}>{user.username}</ThemedText>
-            </TouchableOpacity>
-            
-            {/* Close/Menu Button */}
-            {user.isMe ? (
-              <View style={styles.storyHeaderRight}>
-                <TouchableOpacity 
-                  onPress={() => handleGetViewers(story.id)} 
-                  style={styles.storyViewersButton}
-                >
-                  <Ionicons name="eye-outline" size={24} color={Colors.primary.white} />
-                  <ThemedText style={styles.storyViewersCount}>
-                    {story.viewsCount || 0}
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => setShowMenu(true)} 
-                  style={styles.storyMenuButton}
-                >
-                  <Ionicons name="ellipsis-vertical" size={24} color={Colors.primary.white} />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity onPress={handleCloseStory} style={styles.storyCloseButton}>
-                <Ionicons name="close" size={28} color={Colors.primary.white} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Menu Modal for Own Stories */}
-        <Modal
-          visible={showMenu}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowMenu(false)}
-        >
-          <Pressable 
-            style={styles.menuOverlay}
-            onPress={() => setShowMenu(false)}
-          >
-            <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={handleDeleteStory}
-                disabled={deletingStoryId === story.id}
-              >
-                {deletingStoryId === story.id ? (
-                  <ActivityIndicator size="small" color={Colors.primary.red} />
-                ) : (
-                  <Ionicons name="trash-outline" size={20} color={Colors.primary.red} />
+          {/* Progress Bars - at the very top, just below status bar */}
+          <View style={[styles.progressContainer, { top: insets.top }]}>
+            {user.stories.map((_, index) => (
+              <View key={index} style={styles.progressBarBackground}>
+                {index === currentStoryIndex && (
+                  <Animated.View
+                    style={[
+                      styles.progressBarFill,
+                      { width: progressWidth }
+                    ]}
+                  />
                 )}
-                <ThemedText style={[styles.menuItemText, { color: Colors.primary.red }]}>
-                  Delete Story
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => setShowMenu(false)}
-              >
-                <ThemedText style={styles.menuItemText}>Cancel</ThemedText>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        {/* Like Button - Bottom Right */}
-        {!user.isMe && (
-          <View style={styles.storyActionsContainer}>
-            <TouchableOpacity
-              style={styles.storyLikeButton}
-              onPress={() => handleStoryLike(story.id)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={storyLikes[story.id]?.isLiked ? "heart" : "heart-outline"}
-                size={28}
-                color={storyLikes[story.id]?.isLiked ? Colors.primary.red : Colors.primary.white}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Tap Areas for Navigation */}
-        <View style={styles.tapContainer}>
-          <TouchableOpacity
-            style={[styles.tapArea, styles.tapAreaLeft]}
-            onPress={prevStory}
-            activeOpacity={1}
-          />
-          <TouchableOpacity
-            style={[styles.tapArea, styles.tapAreaRight]}
-            onPress={nextStory}
-            activeOpacity={1}
-          />
-        </View>
-
-        {/* Viewers Modal */}
-        <Modal
-          visible={showViewers}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowViewers(false)}
-        >
-          <View style={styles.viewersModalContainer}>
-            <View style={[
-              styles.viewersModalContent,
-              // Calculate height based on number of viewers, with min and max constraints
-              {
-                height: Math.min(
-                  Math.max(
-                    // Header height (~70px) + viewer item height (~74px each) + padding (40px)
-                    70 + (storyViewers.length * 74) + 40,
-                    150 // Minimum height
-                  ),
-                  SCREEN_HEIGHT * 0.7 // Maximum height
-                )
-              }
-            ]}>
-              <View style={styles.viewersModalHeader}>
-                <ThemedText type="title" style={styles.viewersModalTitle}>
-                  Viewers ({storyViewers.length})
-                </ThemedText>
-                <TouchableOpacity
-                  onPress={() => setShowViewers(false)}
-                  style={styles.viewersModalClose}
-                >
-                  <Ionicons name="close" size={28} color={Colors.titleColor} />
-                </TouchableOpacity>
               </View>
-              {loadingViewers ? (
-                <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} style={styles.viewersLoader} />
-              ) : storyViewers.length === 0 ? (
-                <View style={styles.viewersEmpty}>
-                  <ThemedText style={styles.viewersEmptyText}>No viewers yet</ThemedText>
+            ))}
+          </View>
+
+          {/* Header with Back Button, Profile and Close/Menu Button */}
+          <View style={[styles.storyHeader, { top: insets.top + 3 }]}>
+            <View style={styles.storyHeaderRow}>
+
+
+              {/* Profile Section */}
+              <TouchableOpacity
+                style={styles.storyHeaderLeft}
+                onPress={handleProfilePress}
+                activeOpacity={0.7}
+              >
+                <Image source={{ uri: user.avatar }} style={styles.storyHeaderAvatar} />
+                <ThemedText style={styles.storyHeaderName}>{user.username}</ThemedText>
+              </TouchableOpacity>
+
+              {/* Close/Menu Button */}
+              {user.isMe ? (
+                <View style={styles.storyHeaderRight}>
+                  <TouchableOpacity
+                    onPress={() => handleGetViewers(story.id)}
+                    style={styles.storyViewersButton}
+                  >
+                    <Ionicons name="eye-outline" size={24} color={Colors.primary.white} />
+                    <ThemedText style={styles.storyViewersCount}>
+                      {story.viewsCount || 0}
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowMenu(true)}
+                    style={styles.storyMenuButton}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={24} color={Colors.primary.white} />
+                  </TouchableOpacity>
                 </View>
               ) : (
-                <FlatList
-                  data={storyViewers}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.viewerItem}
-                      onPress={() => {
-                        setShowViewers(false);
-                        handleProfilePress();
-                      }}
-                    >
-                      <View style={styles.viewerAvatarContainer}>
-                        <Image source={{ uri: item.avatar }} style={styles.viewerAvatar} />
-                        {item.hasLiked && (
-                          <View style={styles.viewerLikeBadge}>
-                            <Ionicons name="heart" size={16} color={Colors.primary.red} />
-                          </View>
-                        )}
-                      </View>
-                      <ThemedText style={styles.viewerName}>{item.username}</ThemedText>
-                    </TouchableOpacity>
-                  )}
-                  // Only scroll if content exceeds calculated height
-                  scrollEnabled={storyViewers.length > 8}
-                />
+                <TouchableOpacity onPress={handleCloseStory} style={styles.storyCloseButton}>
+                  <Ionicons name="close" size={28} color={Colors.primary.white} />
+                </TouchableOpacity>
               )}
             </View>
           </View>
-        </Modal>
-      </View>
+
+          {/* Menu Modal for Own Stories */}
+          <Modal
+            visible={showMenu}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowMenu(false)}
+          >
+            <Pressable
+              style={styles.menuOverlay}
+              onPress={() => setShowMenu(false)}
+            >
+              <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={handleDeleteStory}
+                  disabled={deletingStoryId === story.id}
+                >
+                  {deletingStoryId === story.id ? (
+                    <ActivityIndicator size="small" color={Colors.primary.red} />
+                  ) : (
+                    <Ionicons name="trash-outline" size={20} color={Colors.primary.red} />
+                  )}
+                  <ThemedText style={[styles.menuItemText, { color: Colors.primary.red }]}>
+                    Delete Story
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => setShowMenu(false)}
+                >
+                  <ThemedText style={styles.menuItemText}>Cancel</ThemedText>
+                </TouchableOpacity>
+              </Pressable>
+            </Pressable>
+          </Modal>
+
+          {/* Like Button - Bottom Right */}
+          {!user.isMe && (
+            <View style={styles.storyActionsContainer}>
+              <TouchableOpacity
+                style={styles.storyLikeButton}
+                onPress={() => handleStoryLike(story.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={storyLikes[story.id]?.isLiked ? "heart" : "heart-outline"}
+                  size={28}
+                  color={storyLikes[story.id]?.isLiked ? Colors.primary.red : Colors.primary.white}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Tap Areas for Navigation */}
+          <View style={styles.tapContainer}>
+            <TouchableOpacity
+              style={[styles.tapArea, styles.tapAreaLeft]}
+              onPress={prevStory}
+              activeOpacity={1}
+            />
+            <TouchableOpacity
+              style={[styles.tapArea, styles.tapAreaRight]}
+              onPress={nextStory}
+              activeOpacity={1}
+            />
+          </View>
+
+          {/* Viewers Modal */}
+          <Modal
+            visible={showViewers}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowViewers(false)}
+          >
+            <View style={styles.viewersModalContainer}>
+              <View style={[
+                styles.viewersModalContent,
+                // Calculate height based on number of viewers, with min and max constraints
+                {
+                  height: Math.min(
+                    Math.max(
+                      // Header height (~70px) + viewer item height (~74px each) + padding (40px)
+                      70 + (storyViewers.length * 74) + 40,
+                      150 // Minimum height
+                    ),
+                    SCREEN_HEIGHT * 0.7 // Maximum height
+                  )
+                }
+              ]}>
+                <View style={styles.viewersModalHeader}>
+                  <ThemedText type="title" style={styles.viewersModalTitle}>
+                    Viewers ({storyViewers.length})
+                  </ThemedText>
+                  <TouchableOpacity
+                    onPress={() => setShowViewers(false)}
+                    style={styles.viewersModalClose}
+                  >
+                    <Ionicons name="close" size={28} color={Colors.titleColor} />
+                  </TouchableOpacity>
+                </View>
+                {loadingViewers ? (
+                  <ActivityIndicator size="large" color={Colors.primaryBackgroundColor} style={styles.viewersLoader} />
+                ) : storyViewers.length === 0 ? (
+                  <View style={styles.viewersEmpty}>
+                    <ThemedText style={styles.viewersEmptyText}>No viewers yet</ThemedText>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={storyViewers}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.viewerItem}
+                        onPress={() => {
+                          setShowViewers(false);
+                          handleProfilePress();
+                        }}
+                      >
+                        <View style={styles.viewerAvatarContainer}>
+                          <Image source={{ uri: item.avatar }} style={styles.viewerAvatar} />
+                          {item.hasLiked && (
+                            <View style={styles.viewerLikeBadge}>
+                              <Ionicons name="heart" size={16} color={Colors.primary.red} />
+                            </View>
+                          )}
+                        </View>
+                        <ThemedText style={styles.viewerName}>{item.username}</ThemedText>
+                      </TouchableOpacity>
+                    )}
+                    // Only scroll if content exceeds calculated height
+                    scrollEnabled={storyViewers.length > 8}
+                  />
+                )}
+              </View>
+            </View>
+          </Modal>
+        </View>
       </>
     );
   }
@@ -1091,12 +1093,12 @@ export default function StoriesScreen() {
     const hasUnviewed = item.stories.some(story => !story.isSeen);
     const firstStory = item.stories[0];
     const storyCount = item.stories.length;
-    
+
     // If first story is a video, use user's avatar as thumbnail
-    const thumbnailUrl = firstStory?.type === 'video' 
+    const thumbnailUrl = firstStory?.type === 'video'
       ? (item.avatar || 'https://via.placeholder.com/200')
       : (firstStory?.url || item.avatar || 'https://via.placeholder.com/200');
-    
+
     return (
       <TouchableOpacity
         style={styles.discoverCard}
@@ -1168,194 +1170,195 @@ export default function StoriesScreen() {
         cancelButton={dialogCancelButton}
       />
       <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Enhanced Header with gradient */}
-      <View style={styles.headerSection}>
-        <ThemedText type='title' style={styles.headerTitle}>{('Stories')}</ThemedText>
-      </View>
-
-      {!hasAnyStories && !isLoading ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
-          <ThemedText type="subtitle" style={styles.emptyText}>No stories yet</ThemedText>
-          <ThemedText style={styles.emptySubtext}>
-            {token ? 'Share a moment with your matches or create your own story!' : 'Please log in to view stories'}
-          </ThemedText>
-          {token && (
-            <TouchableOpacity style={styles.emptyButton} onPress={handleAddStory}>
-              <ThemedText style={styles.emptyButtonText}>Add Your First Story</ThemedText>
-            </TouchableOpacity>
-          )}
+        {/* Enhanced Header with gradient */}
+        <View style={styles.headerSection}>
+          <ThemedText type='title' style={styles.headerTitle}>{t('tabs.stories')}</ThemedText>
         </View>
-      ) : categorizedStories ? (
-        <FlatList
-          data={[]}
-          renderItem={() => null}
-          keyExtractor={() => 'main-list'}
-          ListHeaderComponent={
-            <>
-              {/* Stories - Your Story + Friends in one horizontal scroll */}
-              <FlatList
-                horizontal
-                data={[
-                  ...(categorizedStories.myStory ? [categorizedStories.myStory] : []),
-                  ...categorizedStories.friends
-                ]}
-                extraData={categorizedStories} // Force re-render when stories change
-                renderItem={({ item, index }) => {
-                  const isMyStory = item.isMe;
-                  const hasStories = item.stories.length > 0;
-                  // Check if any story from this user hasn't been viewed
-                  const hasUnviewed = hasStories && item.stories.some(story => !story.isSeen);
-                  
-                  const getFirstName = () => {
-                    if (isMyStory) return 'Your Story';
-                    const nameParts = item.username.trim().split(/\s+/);
-                    return nameParts[0] || item.username;
-                  };
-                  
-                  return (
-                    <View style={styles.storyItem}>
-                      <TouchableOpacity
-                        style={styles.storyCircleContainer}
-                        onPress={() => {
-                          if (isMyStory) {
-                            if (hasStories) {
-                              handleStoryPress(item, 'myStory', 0);
-                            } else {
-                              handleAddStory();
-                            }
-                          } else {
-                            if (hasStories) {
-                              const friendIndex = categorizedStories.myStory ? index - 1 : index;
-                              handleStoryPress(item, 'friends', friendIndex);
-                            }
-                          }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        {isMyStory ? (
-                          // Your Story - always show with gradient
-                          <LinearGradient
-                            colors={hasStories 
-                              ? [Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD']
-                              : [Colors.text.tertiary, Colors.text.light]
-                            }
-                            style={styles.gradientBorder}
-                          >
-                            <View style={styles.storyCircleInner}>
-                              <Image
-                                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                                style={styles.storyAvatar}
-                              />
-                            </View>
-                          </LinearGradient>
-                        ) : hasUnviewed ? (
-                          // Friend with unviewed stories
-                          <LinearGradient
-                            colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD', Colors.primaryBackgroundColor]}
-                            style={styles.gradientBorder}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                          >
-                            <View style={styles.storyCircleInner}>
-                              <Image
-                                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                                style={styles.storyAvatar}
-                              />
-                            </View>
-                          </LinearGradient>
-                        ) : (
-                          // Friend with viewed stories
-                          <View style={styles.storyCircleViewed}>
-                            <Image
-                              source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
-                              style={styles.storyAvatar}
-                            />
-                          </View>
-                        )}
-                        
-                        {/* Add button for Your Story */}
-                        {isMyStory && (
-                          <TouchableOpacity
-                            style={styles.addIconContainer}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleAddStory();
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <View style={styles.addIcon}>
-                              <Ionicons name="add" size={Math.max(16, STORY_CIRCLE_SIZE * 0.20)} color={Colors.primary.white} />
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                      </TouchableOpacity>
-                      <ThemedText style={styles.storyName} numberOfLines={1}>
-                        {getFirstName()}
-                      </ThemedText>
-                    </View>
-                  );
-                }}
-                keyExtractor={(item, index) => {
-                  // Include viewed status in key to force re-render when status changes
-                  const viewedCount = item.stories.filter(s => s.isSeen).length;
-                  return `story-${item.id}-${index}-viewed-${viewedCount}`;
-                }}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalListContainer}
-              />
 
-              {/* Discover Section - Vertical scrollable */}
-              {categorizedStories.discover.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <View style={styles.discoverHeader}>
-                    <ThemedText >Discover </ThemedText>
-                  </View>
-                  <FlatList
-                    data={categorizedStories.discover}
-                    renderItem={renderDiscoverCard}
-                    keyExtractor={(item, index) => `discover-${item.id}-${index}`}
-                    numColumns={2}
-                    contentContainerStyle={styles.discoverListContainer}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={true}
-                    ListFooterComponent={
-                      hasMoreDiscover ? (
+        {!hasAnyStories && !isLoading ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
+            <ThemedText type="subtitle" style={styles.emptyText}>{t('stories.noStoriesYet')}</ThemedText>
+            <ThemedText style={styles.emptySubtext}>
+              {t('stories.shareAMoment')}
+            </ThemedText>
+            {token && (
+              <TouchableOpacity activeOpacity={0.7} style={styles.emptyButton} onPress={handleAddStory}>
+                <Ionicons name="add" size={20} color={Colors.primaryBackgroundColor} />
+                <ThemedText style={styles.emptyButtonText}>{t('stories.postYourStory')}</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : categorizedStories ? (
+          <FlatList
+            data={[]}
+            renderItem={() => null}
+            keyExtractor={() => 'main-list'}
+            ListHeaderComponent={
+              <>
+                {/* Stories - Your Story + Friends in one horizontal scroll */}
+                <FlatList
+                  horizontal
+                  data={[
+                    ...(categorizedStories.myStory ? [categorizedStories.myStory] : []),
+                    ...categorizedStories.friends
+                  ]}
+                  extraData={categorizedStories} // Force re-render when stories change
+                  renderItem={({ item, index }) => {
+                    const isMyStory = item.isMe;
+                    const hasStories = item.stories.length > 0;
+                    // Check if any story from this user hasn't been viewed
+                    const hasUnviewed = hasStories && item.stories.some(story => !story.isSeen);
+
+                    const getFirstName = () => {
+                      if (isMyStory) return 'Your Story';
+                      const nameParts = item.username.trim().split(/\s+/);
+                      return nameParts[0] || item.username;
+                    };
+
+                    return (
+                      <View style={styles.storyItem}>
                         <TouchableOpacity
-                          style={styles.loadMoreButton}
-                          onPress={loadMoreDiscover}
-                          disabled={loadingMoreDiscover}
+                          style={styles.storyCircleContainer}
+                          onPress={() => {
+                            if (isMyStory) {
+                              if (hasStories) {
+                                handleStoryPress(item, 'myStory', 0);
+                              } else {
+                                handleAddStory();
+                              }
+                            } else {
+                              if (hasStories) {
+                                const friendIndex = categorizedStories.myStory ? index - 1 : index;
+                                handleStoryPress(item, 'friends', friendIndex);
+                              }
+                            }
+                          }}
+                          activeOpacity={0.7}
                         >
-                          {loadingMoreDiscover ? (
-                            <ActivityIndicator size="small" color={Colors.primaryBackgroundColor} />
+                          {isMyStory ? (
+                            // Your Story - always show with gradient
+                            <LinearGradient
+                              colors={hasStories
+                                ? [Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD']
+                                : [Colors.text.tertiary, Colors.text.light]
+                              }
+                              style={styles.gradientBorder}
+                            >
+                              <View style={styles.storyCircleInner}>
+                                <Image
+                                  source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                  style={styles.storyAvatar}
+                                />
+                              </View>
+                            </LinearGradient>
+                          ) : hasUnviewed ? (
+                            // Friend with unviewed stories
+                            <LinearGradient
+                              colors={[Colors.primaryBackgroundColor, Colors.primaryBackgroundColor + 'DD', Colors.primaryBackgroundColor]}
+                              style={styles.gradientBorder}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                            >
+                              <View style={styles.storyCircleInner}>
+                                <Image
+                                  source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                  style={styles.storyAvatar}
+                                />
+                              </View>
+                            </LinearGradient>
                           ) : (
-                            <ThemedText style={styles.loadMoreText}>Load More</ThemedText>
+                            // Friend with viewed stories
+                            <View style={styles.storyCircleViewed}>
+                              <Image
+                                source={{ uri: item.avatar || 'https://via.placeholder.com/60' }}
+                                style={styles.storyAvatar}
+                              />
+                            </View>
+                          )}
+
+                          {/* Add button for Your Story */}
+                          {isMyStory && (
+                            <TouchableOpacity
+                              style={styles.addIconContainer}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                handleAddStory();
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <View style={styles.addIcon}>
+                                <Ionicons name="add" size={Math.max(16, STORY_CIRCLE_SIZE * 0.20)} color={Colors.primary.white} />
+                              </View>
+                            </TouchableOpacity>
                           )}
                         </TouchableOpacity>
-                      ) : null
-                    }
-                  />
-                </View>
-              )}
-            </>
-          }
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
-          }
-        />
-      ) : (
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.emptyContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
-          }
-        >
-          <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
-          <ThemedText type="subtitle" style={styles.emptyText}>No stories yet</ThemedText>
-        </ScrollView>
-      )}
-    </SafeAreaView>
+                        <ThemedText style={styles.storyName} numberOfLines={1}>
+                          {getFirstName()}
+                        </ThemedText>
+                      </View>
+                    );
+                  }}
+                  keyExtractor={(item, index) => {
+                    // Include viewed status in key to force re-render when status changes
+                    const viewedCount = item.stories.filter(s => s.isSeen).length;
+                    return `story-${item.id}-${index}-viewed-${viewedCount}`;
+                  }}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalListContainer}
+                />
+
+                {/* Discover Section - Vertical scrollable */}
+                {categorizedStories.discover.length > 0 && (
+                  <View style={styles.sectionContainer}>
+                    <View style={styles.discoverHeader}>
+                      <ThemedText >Discover </ThemedText>
+                    </View>
+                    <FlatList
+                      data={categorizedStories.discover}
+                      renderItem={renderDiscoverCard}
+                      keyExtractor={(item, index) => `discover-${item.id}-${index}`}
+                      numColumns={2}
+                      contentContainerStyle={styles.discoverListContainer}
+                      showsVerticalScrollIndicator={false}
+                      scrollEnabled={true}
+                      ListFooterComponent={
+                        hasMoreDiscover ? (
+                          <TouchableOpacity
+                            style={styles.loadMoreButton}
+                            onPress={loadMoreDiscover}
+                            disabled={loadingMoreDiscover}
+                          >
+                            {loadingMoreDiscover ? (
+                              <ActivityIndicator size="small" color={Colors.primaryBackgroundColor} />
+                            ) : (
+                              <ThemedText style={styles.loadMoreText}>{t('stories.loadMore')}</ThemedText>
+                            )}
+                          </TouchableOpacity>
+                        ) : null
+                      }
+                    />
+                  </View>
+                )}
+              </>
+            }
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
+            }
+          />
+        ) : (
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.emptyContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryBackgroundColor} />
+            }
+          >
+            <Ionicons name="camera-outline" size={80} color={Colors.text.tertiary} />
+            <ThemedText type="subtitle" style={styles.emptyText}>{t('stories.noStoriesYet')}</ThemedText>
+          </ScrollView>
+        )}
+      </SafeAreaView>
     </>
   );
 }
@@ -1506,13 +1509,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyButton: {
-    backgroundColor: Colors.primaryBackgroundColor,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    color: Colors.primaryBackgroundColor,
+    borderWidth: 1,
+    borderColor: Colors.primaryBackgroundColor,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
   },
   emptyButtonText: {
-    color: Colors.primary.white,
+    color: Colors.primaryBackgroundColor,
     fontSize: 16,
     fontWeight: '600',
   },

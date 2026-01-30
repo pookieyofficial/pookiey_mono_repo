@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Profielen laden...",
-    "goToMatchingScreen": "gaar naar matchscherm"
+    "goToMatchingScreen": "gaar naar matchscherm",
+    "discover": "Ontdekken"
   },
   "chats": {
     "messages": "Berichten",
@@ -178,6 +179,17 @@
     "typing": "typt...",
     "typeAMessage": "Typ een bericht...",
     "send": "Verzenden"
+  },
+  "likes": {
+    "engagements": "Interacties",
+    "whoLikedYou": "Wie Vond Jou Leuk",
+    "youMatched": "Jouw Matches",
+    "noLikesYet": "Nog Geen Likes",
+    "noMatchesYet": "Nog Geen Matches",
+    "startSwiping": "Begin met swipen om meer likes te krijgen!",
+    "keepSwiping": "Blijf swipen om je match te vinden!",
+    "superLike": "⭐ Super Like",
+    "loading": "Laden..."
   },
   "settings": {
     "settings": "Instellingen",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Weet u zeker dat u zich wilt afmelden?",
     "cancel": "Annuleren",
     "language": "Taal",
-    "updateLocation": "Locatie bijwerken"
+    "updateLocation": "Locatie bijwerken",
+    "subscriptionActive": "Uw {{plan}} abonnement is actief",
+    "validTill": "Geldig tot {{date}}",
+    "subscribeToPookiey": "Abonneer u op Pookiey!"
   },
   "deleteAccount": {
     "title": "Account verwijderen",
@@ -416,6 +431,12 @@
     "readLess": "Minder lezen",
     "gotIt": "Begrepen",
     "loadingProfile": "Profiel laden..."
+  },
+  "stories": {
+    "noStoriesYet": "Nog geen verhalen",
+    "shareAMoment": "Deel een moment met je matches of creëer je eigen verhaal!",
+    "postYourStory": "Plaats Je Verhaal",
+    "loadMore": "Meer Laden"
   }
 }
 

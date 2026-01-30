@@ -217,18 +217,21 @@ const Settings = () => {
             {dbUser?.subscription?.status === "active" ? (
               <View style={styles.subscriptionInfo}>
                 <ThemedText type='defaultSemiBold' style={styles.subscriptionTitle}>
-                  Your {dbUser?.subscription?.plan?.toUpperCase()} subscription is active
+                  {t('settings.subscriptionActive', { 
+                    plan: dbUser?.subscription?.plan?.toUpperCase() 
+                  })}
                 </ThemedText>
                 <ThemedText type='default' style={styles.subscriptionSubtext}>
-                  Valid till {dbUser?.subscription?.endDate
-                    ? formatDate(dbUser?.subscription?.endDate)
-                    : "N/A"
-                  }
+                  {t('settings.validTill', { 
+                    date: dbUser?.subscription?.endDate
+                      ? formatDate(dbUser?.subscription?.endDate)
+                      : "N/A"
+                  })}
                 </ThemedText>
               </View>
             ) : (
               <ThemedText style={styles.settingText}>
-                Subscribe to Pookiey!
+                {t('settings.subscribeToPookiey')}
               </ThemedText>
             )}
 

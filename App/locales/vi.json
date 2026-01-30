@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Đang tải hồ sơ...",
-    "goToMatchingScreen": "đi đến màn hình kết hợp"
+    "goToMatchingScreen": "đi đến màn hình kết hợp",
+    "discover": "Khám Phá"
   },
   "chats": {
     "messages": "Tin nhắn",
@@ -178,6 +179,17 @@
     "typing": "đang nhập...",
     "typeAMessage": "Nhập tin nhắn...",
     "send": "Gửi"
+  },
+  "likes": {
+    "engagements": "Tương Tác",
+    "whoLikedYou": "Ai Đã Thích Bạn",
+    "youMatched": "Kết Nối Của Bạn",
+    "noLikesYet": "Chưa Có Lượt Thích",
+    "noMatchesYet": "Chưa Có Kết Nối",
+    "startSwiping": "Bắt đầu vuốt để nhận thêm lượt thích!",
+    "keepSwiping": "Tiếp tục vuốt để tìm kết nối của bạn!",
+    "superLike": "⭐ Siêu Thích",
+    "loading": "Đang tải..."
   },
   "settings": {
     "settings": "Cài đặt",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Bạn có chắc chắn muốn đăng xuất?",
     "cancel": "Hủy",
     "language": "Ngôn ngữ",
-    "updateLocation": "Cập nhật Vị trí"
+    "updateLocation": "Cập nhật Vị trí",
+    "subscriptionActive": "Gói đăng ký {{plan}} của bạn đang hoạt động",
+    "validTill": "Có hiệu lực đến {{date}}",
+    "subscribeToPookiey": "Đăng ký Pookiey!"
   },
   "deleteAccount": {
     "title": "Xóa Tài khoản",
@@ -416,6 +431,12 @@
     "readLess": "Đọc ít hơn",
     "gotIt": "Đã hiểu",
     "loadingProfile": "Đang tải hồ sơ..."
+  },
+  "stories": {
+    "noStoriesYet": "Chưa có câu chuyện nào",
+    "shareAMoment": "Chia sẻ khoảnh khắc với các kết nối của bạn hoặc tạo câu chuyện của riêng bạn!",
+    "postYourStory": "Đăng Câu Chuyện Của Bạn",
+    "loadMore": "Tải Thêm"
   }
 }
 

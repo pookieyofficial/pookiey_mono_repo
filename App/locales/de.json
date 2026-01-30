@@ -169,7 +169,8 @@
   },
   "home": {
     "loadingProfiles": "Profile werden geladen...",
-    "goToMatchingScreen": "zum Matching-Bildschirm gehen"
+    "goToMatchingScreen": "zum Matching-Bildschirm gehen",
+    "discover": "Entdecken"
   },
   "chats": {
     "messages": "Nachrichten",
@@ -178,6 +179,17 @@
     "typing": "tippt...",
     "typeAMessage": "Nachricht eingeben...",
     "send": "Senden"
+  },
+  "likes": {
+    "engagements": "Interaktionen",
+    "whoLikedYou": "Wer Hat Dich Geliked",
+    "youMatched": "Deine Matches",
+    "noLikesYet": "Noch Keine Likes",
+    "noMatchesYet": "Noch Keine Matches",
+    "startSwiping": "Fang an zu swipen, um mehr Likes zu bekommen!",
+    "keepSwiping": "Swipe weiter, um dein Match zu finden!",
+    "superLike": "⭐ Super Like",
+    "loading": "Laden..."
   },
   "settings": {
     "settings": "Einstellungen",
@@ -192,7 +204,10 @@
     "areYouSureSignOut": "Möchten Sie sich wirklich abmelden?",
     "cancel": "Abbrechen",
     "language": "Sprache",
-    "updateLocation": "Standort aktualisieren"
+    "updateLocation": "Standort aktualisieren",
+    "subscriptionActive": "Ihr {{plan}} Abonnement ist aktiv",
+    "validTill": "Gültig bis {{date}}",
+    "subscribeToPookiey": "Abonniere Pookiey!"
   },
   "deleteAccount": {
     "title": "Konto löschen",
@@ -416,6 +431,12 @@
     "readLess": "Weniger lesen",
     "gotIt": "Verstanden",
     "loadingProfile": "Profil wird geladen..."
+  },
+  "stories": {
+    "noStoriesYet": "Noch keine Stories",
+    "shareAMoment": "Teile einen Moment mit deinen Matches oder erstelle deine eigene Story!",
+    "postYourStory": "Deine Story Posten",
+    "loadMore": "Mehr Laden"
   }
 }
 

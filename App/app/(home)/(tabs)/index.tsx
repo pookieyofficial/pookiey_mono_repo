@@ -564,13 +564,10 @@ export default function index() {
     }
   }, [token])
 
-  // Track if profiles have been loaded initially to avoid unnecessary refreshes
   const profilesLoadedRef = useRef(false)
 
   useFocusEffect(
     useCallback(() => {
-      // Only refresh if we don't have profiles yet (first load)
-      // Don't refresh every time we come back to the tab
       if (idToken && profiles.length === 0 && !isRefreshingRef.current && !profilesLoadedRef.current) {
         initializeProfilesRef.current()
         profilesLoadedRef.current = true
@@ -586,9 +583,18 @@ export default function index() {
     }, [ensurePermissions, permissionsChecked])
   )
 
+  // Track when this tab first gained focus (helps avoid New Arch pause/resume loop when opening modals too soon)
+  const tabFocusedAtRef = useRef<number | null>(null)
+
   // Check for active announcements when screen is focused
   useFocusEffect(
     useCallback(() => {
+      let isMounted = true
+      const focusTime = Date.now()
+      if (tabFocusedAtRef.current === null) {
+        tabFocusedAtRef.current = focusTime
+      }
+
       const checkAnnouncement = async () => {
         const now = Date.now()
 
@@ -598,6 +604,13 @@ export default function index() {
 
         // Don't check for announcements for 30 seconds after showing one
         if (now - lastAnnouncementShownTimeRef.current < 30000) {
+          return
+        }
+
+        // New Arch workaround: avoid opening fullScreenModal too soon after focus.
+        // Bridgeless can enter an infinite onUserLeaveHint/onHostPause/onHostResume loop when a modal opens during unstable lifecycle.
+        const minFocusedMs = 3000
+        if (tabFocusedAtRef.current && now - tabFocusedAtRef.current < minFocusedMs) {
           return
         }
 
@@ -611,11 +624,21 @@ export default function index() {
           return
         }
 
+        // Safety check: Don't run announcement check on very first load
+        // to avoid potential initialization race conditions
+        if (!profilesLoadedRef.current) {
+          return
+        }
+
         try {
           const activeAnnouncement = await getActiveAnnouncementAPI(token)
 
-          if (activeAnnouncement) {
+          // Only proceed if component is still mounted
+          if (!isMounted) {
+            return
+          }
 
+          if (activeAnnouncement) {
             if (lastShownAnnouncementIdRef.current === activeAnnouncement._id) {
               return
             }
@@ -624,22 +647,34 @@ export default function index() {
             lastAnnouncementShownTimeRef.current = now
 
             setTimeout(() => {
-              router.push('/(home)/annoucements' as any)
+              // Check again before navigation
+              if (isMounted && router) {
+                try {
+                  router.push('/(home)/annoucements' as any)
+                } catch (navError) {
+                  console.error('Navigation error:', navError)
+                }
+              }
             }, 500)
           } else {
-
             lastShownAnnouncementIdRef.current = null
           }
         } catch (error: any) {
-          console.error('Error checking for announcements:', error)
+          // Silently catch errors - they're already handled in the API layer
+          console.log('Announcement check error (handled gracefully):', error?.message || error)
         }
       }
 
+      // Delay first check (3s to let activity lifecycle settle; was 1.5s — helps avoid New Arch pause/resume loop)
+      const delayMs = 3000
       const timer = setTimeout(() => {
         checkAnnouncement()
-      }, 1500)
+      }, delayMs)
 
-      return () => clearTimeout(timer)
+      return () => {
+        isMounted = false
+        clearTimeout(timer)
+      }
     }, [token, dbUser, router])
   )
 
@@ -720,7 +755,7 @@ export default function index() {
           alignItems: 'center'
         }}>
 
-          <ThemedText type='title' style={{ color: Colors.primaryBackgroundColor }}>Discover</ThemedText>
+          <ThemedText type='title' style={{ color: Colors.primaryBackgroundColor }}>{t('home.discover')}</ThemedText>
 
           <TouchableOpacity onPress={handleRefreshProfiles}>
             <Ionicons name="refresh-outline" size={24} color={Colors.primary.red} />

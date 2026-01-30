@@ -195,7 +195,8 @@
   },
   "home": {
     "loadingProfiles": "Loading profiles...",
-    "goToMatchingScreen": "go to matching screen"
+    "goToMatchingScreen": "go to matching screen",
+    "discover": "Discover"
   },
   "chats": {
     "messages": "Messages",
@@ -218,7 +219,10 @@
     "areYouSureSignOut": "Are you sure you want to sign out?",
     "cancel": "Cancel",
     "language": "Language",
-    "updateLocation": "Update Location"
+    "updateLocation": "Update Location",
+    "subscriptionActive": "Your {{plan}} subscription is active",
+    "validTill": "Valid till {{date}}",
+    "subscribeToPookiey": "Subscribe to Pookiey!"
   },
   "likes": {
     "engagements": "Engagements",
@@ -227,7 +231,9 @@
     "noLikesYet": "No Likes Yet",
     "noMatchesYet": "No Matches Yet",
     "startSwiping": "Start swiping to get more likes!",
-    "keepSwiping": "Keep swiping to find your match!"
+    "keepSwiping": "Keep swiping to find your match!",
+    "superLike": "⭐ Super Like",
+    "loading": "Loading..."
   },
   "deleteAccount": {
     "title": "Delete Account",
@@ -465,6 +471,12 @@
     "readLess": "Read less",
     "gotIt": "Got it",
     "loadingProfile": "Loading profile..."
+  },
+  "stories": {
+    "noStoriesYet": "No stories yet",
+    "shareAMoment": "Share a moment with your matches or create your own story!",
+    "postYourStory": "Post Your Story",
+    "loadMore": "Load More"
   }
 }
 
