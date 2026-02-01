@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Pookiey",
     slug: "pookieycom",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "pookiey",

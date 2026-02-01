@@ -86,7 +86,7 @@ export default function LocationScreen() {
                         dateOfBirth: store.birthday ? new Date(store.birthday) : undefined,
                         gender: store.gender === 'Man' ? 'male' : 'female',
                         preferences: {
-                            showMe: store.gender === 'Man' ? 'female' : 'male',
+                            showMe: [store.gender === 'Man' ? 'female' : 'male'],
                         },
                         bio: store.bio,
                         location: {
