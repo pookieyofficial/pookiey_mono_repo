@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Playfair_Display, Great_Vibes, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import Layout from "@/components/Layout";
 
 const hellix = localFont({
   src: [
@@ -30,6 +32,27 @@ const hellix = localFont({
   display: "swap",
 });
 
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-great-vibes",
+  display: "swap",
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Pookiey",
   description:
@@ -42,9 +65,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${hellix.variable} antialiased`}>
-        <Providers>{children}</Providers>
+    <html lang="en" className={hellix.variable}>
+      <body className={`${hellix.variable} ${playfairDisplay.variable} ${greatVibes.variable} ${cormorantGaramond.variable} antialiased`}>
+        <Providers>
+          <Layout>{children}</Layout>
+        </Providers>
       </body>
     </html>
   );
