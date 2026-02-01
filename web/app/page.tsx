@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import AuthRedirect from "../components/landing/AuthRedirect";
-import FAQAccordion from "../components/landing/FAQAccordion";
+import type { Metadata } from "next"
+import Link from "next/link"
+import AuthRedirect from "../components/landing/AuthRedirect"
+import FAQAccordion from "../components/landing/FAQAccordion"
+import LandingTestimonials from "../components/landing/LandingTestimonials"
+import HeroCarouselResponsive from "../components/landing/HeroCarouselResponsive"
 
 export const metadata: Metadata = {
   title: "Best Dating App in India | Pookiey - Real Connections",
@@ -45,6 +47,110 @@ export const metadata: Metadata = {
     },
   },
 };
+
+const heroSlidesMobile = [
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-21%20at%208.15.19%20PM.jpeg",
+    alt: "Pookiey couple sharing a joyful moment",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-21%20at%208.15.20%20PM.jpeg",
+    alt: "Romantic candid moment captured on WhatsApp",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-21%20at%209.30.48%20PM.jpeg",
+    alt: "Evening memories filled with smiles and warmth",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-23%20at%209.17.17%20AM.jpeg",
+    alt: "Morning vibes with happy expressions",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-25%20at%202.41.59%20PM%20(1).jpeg",
+    alt: "Fun afternoon moments captured naturally",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-25%20at%202.41.59%20PM.jpeg",
+    alt: "Casual lifestyle moment with cheerful mood",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-25%20at%202.48.16%20PM.jpeg",
+    alt: "Candid happiness shared between loved ones",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/WhatsApp%20Image%202026-01-26%20at%207.38.59%20AM.jpeg",
+    alt: "Early morning smiles and positive energy",
+  },
+  
+];
+
+const heroSlidesDesktop = [
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/1.png",
+    alt: "Pookiey app interface showcasing modern dating experience",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/2.png",
+    alt: "Discover meaningful connections with Pookiey platform",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/3.png",
+    alt: "User-friendly Pookiey design highlighting social interactions",
+  },
+  {
+    src: "https://pookiey.s3.amazonaws.com/websiteImages/4.png",
+    alt: "Engaging Pookiey features built for real connections",
+  },
+];
+
+const features = [
+  {
+    id: 1,
+    label: "SECURITY",
+    title: "Safety For Women",
+    description: "We keep the security of our women at core. Hence, we do not allow users to take screenshots or download pictures from the app.",
+    image: "/can't_take_screenshot.png",
+    imageAlt: "Security feature",
+    textPosition: "left" as const, // text left, image right
+  },
+  {
+    id: 2,
+    label: "PERFECT MATCHMAKING",
+    title: "Compatibility Quiz",
+    description: "Get a clear picture regarding your compatibility! Take a fun compatibility quiz & answer questions to understand the other person better!",
+    image: "/compatibility.png",
+    imageAlt: "Compatibility quiz feature",
+    textPosition: "right" as const, // image left, text right
+  },
+  {
+    id: 3,
+    label: "REAL CONNECTIONS",
+    title: "Meaningful Conversations",
+    description: "Build deeper connections through thoughtful conversations. Our platform encourages authentic interactions that lead to lasting relationships.",
+    image: "/message.png",
+    imageAlt: "Meaningful conversations feature",
+    textPosition: "left" as const, // text left, image right
+  },
+  {
+    id: 4,
+    label: "VERIFIED PROFILES",
+    title: "Trust & Authenticity",
+    description: "Every profile goes through verification to ensure authenticity. Connect with real people who are genuinely looking for meaningful relationships.",
+    image: "/trust_and_authenticity.png",
+    imageAlt: "Verified profiles feature",
+    textPosition: "right" as const, // image left, text right
+  },
+  {
+    id: 5,
+    label: "SMART MATCHING",
+    title: "Find Your Perfect Match",
+    description: "Our advanced algorithm learns your preferences and suggests matches that align with your values, interests, and relationship goals.",
+    image: "/find_your_perfect_match.png",
+    imageAlt: "Smart matching feature",
+    textPosition: "left" as const, // text left, image right
+  },
+];
+
 
 export default function LandingPage() {
   const structuredData = {
@@ -141,7 +247,7 @@ export default function LandingPage() {
     ],
   };
 
-    return (
+  return (
     <>
       <AuthRedirect />
       <script
@@ -150,642 +256,288 @@ export default function LandingPage() {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationStructuredData),
+        }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
       />
+
       <div className="relative min-h-screen overflow-hidden">
-        {/* Background gradients */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#E94057]/25 blur-3xl md:h-[380px] md:w-[380px]" />
-          <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-[#4B164C]/25 blur-3xl md:h-[320px] md:w-[320px]" />
-          <div className="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#FF7EB3]/20 blur-3xl md:h-[420px] md:w-[420px]" />
-        </div>
+        {/* Top Carousel (full width, no container) */}
+        <HeroCarouselResponsive slidesMobile={heroSlidesMobile} slidesDesktop={heroSlidesDesktop} />
 
-        {/* Navigation */}
-        <nav className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-6 md:px-8 lg:px-12">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-            <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-              Pookiey
-            </span>
-            </div>
-            <Link
-              href="/auth"
-              className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-5 py-2 text-sm font-semibold text-[#2A1F2D] transition hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
-            >
-              Sign In
-            </Link>
+        {/* Hero Text Banner */}
+        <section className="relative py-16 sm:py-20 md:py-32 lg:py-40 overflow-hidden min-h-[350px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] flex items-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-50/80 via-pink-100/90 to-purple-100/80"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(233,64,87,0.1),transparent_70%)]"></div>
+          
+          {/* Decorative Heart SVGs - Enhanced */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Top Left Hearts */}
+            <svg className="absolute top-4 left-2 sm:left-4 md:left-12 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-[#E94057]/20 rotate-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-12 left-8 sm:left-12 md:left-24 w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-[#FF7EB3]/15 -rotate-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-20 left-4 sm:left-6 md:left-16 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-[#E94057]/12 rotate-30" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Top Right Hearts */}
+            <svg className="absolute top-8 right-4 sm:right-8 md:right-16 w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-18 lg:h-18 text-[#FF7EB3]/25 rotate-45" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-20 right-2 sm:right-4 md:right-12 w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-[#E94057]/15 -rotate-30" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-16 right-12 sm:right-16 md:right-24 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[#FF7EB3]/18 rotate-60" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Bottom Left Hearts */}
+            <svg className="absolute bottom-8 left-4 sm:left-8 md:left-20 w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 text-[#4b164c]/15 rotate-[-15deg]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-16 left-2 sm:left-4 md:left-12 w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-[#FF7EB3]/20 rotate-25" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-24 left-6 sm:left-10 md:left-16 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-[#E94057]/12 -rotate-20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Bottom Right Hearts */}
+            <svg className="absolute bottom-12 right-4 sm:right-12 md:right-24 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-[#E94057]/20 -rotate-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-20 right-2 sm:right-4 md:right-16 w-5 h-5 sm:w-6 sm:h-6 md:w-10 md:h-10 text-[#4b164c]/20 rotate-45" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-28 right-8 sm:right-12 md:right-20 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[#FF7EB3]/15 -rotate-25" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Center Side Hearts (left) */}
+            <svg className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 md:left-8 w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 text-[#E94057]/10 rotate-[-20deg]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-1/2 -translate-y-1/2 left-4 sm:left-6 md:left-16 w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-[#FF7EB3]/12 rotate-10" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Center Side Hearts (right) */}
+            <svg className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 md:right-8 w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 text-[#FF7EB3]/10 rotate-20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-6 md:right-16 w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-[#E94057]/12 -rotate-10" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            
+            {/* Additional floating hearts */}
+            <svg className="absolute top-1/4 left-1/4 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 text-[#E94057]/15 rotate-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-3/4 right-1/3 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-[#FF7EB3]/15 -rotate-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-1/4 left-1/3 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-[#4b164c]/15 rotate-30" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute top-1/3 right-1/4 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[#E94057]/12 -rotate-45" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <svg className="absolute bottom-1/3 left-1/5 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[#FF7EB3]/12 rotate-20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
           </div>
-        </nav>
-
-        {/* Hero Section */}
-        <header className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 pt-12 md:px-8 md:pt-20 lg:px-12">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-semibold leading-[1.1] text-[#2A1F2D] md:text-5xl lg:text-6xl">
-              Best Dating App in India for{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C]">
-                Real & Meaningful Connections
-              </span>
-            </h1>
-            <p className="mt-6 text-base text-[#6F6077] md:text-lg lg:text-xl">
-              Finding the best dating app in India is not just about swiping profiles. It is about trust, safety, and real people who are serious about connecting. Pookiey is built to help users find genuine matches simply and securely. Whether you are looking for casual dating or a serious relationship, Pookiey supports both with clarity and honesty.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <Link
-                href="/auth"
-                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#E94057]/20 transition hover:scale-[1.02] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
+          
+          <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6 md:px-8 z-10">
+            <div className="text-center">
+              <h1 
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold leading-[1.2] sm:leading-[1.1] tracking-tight px-2"
               >
-                Get Started
-              </Link>
+                <span className="block">Where </span>
+                <span className="text-[#E94057] font-extrabold block sm:inline">Hearts Meet</span>
+                <span className="hidden sm:inline"> & </span>
+                <span className="block sm:inline mt-1 sm:mt-0">Love </span>
+                <span className="text-[#FF7EB3] font-extrabold block sm:inline">Begins</span>
+                <br className="hidden lg:block" />
+                <span className="block mt-2 sm:mt-1 lg:mt-0 lg:inline">Find Your </span>
+                <span className="text-[#4b164c] font-extrabold block sm:inline">Perfect Match</span>
+              </h1>
+              <p className="mt-4 sm:mt-6 md:mt-8 lg:mt-10 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-[#2A1F2D]/80 font-medium max-w-2xl mx-auto px-2">
+                India's Most Trusted Dating App for Real Connections
+              </p>
             </div>
           </div>
-        </header>
+        </section>
+
+        {/* Our Features Title Section */}
+        <section className="relative py-8 md:py-12 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-50/80 via-pink-100/90 to-purple-100/80"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(233,64,87,0.1),transparent_70%)]"></div>
+          <div className="relative">
+            <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+              <div className="text-center">
+                <h2 
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold"
+                >
+                  <span className="bg-gradient-to-br from-[#2A1F2D] via-[#4b164c] to-[#E94057] bg-clip-text text-transparent">
+                    Our Features
+                  </span>
+                </h2>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Features Section */}
-        <section id="features" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-                Why Pookiey
-              </span>
-              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                Why Choose Pookiey Among Popular Dating Apps in India
-              </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                With so many dating apps available today, choosing the right one can be confusing. Every platform promises matches, but not every platform offers trust, safety, and real people. Pookiey is created to solve these common problems and provide a reliable experience for users who are serious about online dating.
-              </p>
+        <section className="relative py-16 md:py-24 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-50/80 via-pink-100/90 to-purple-100/80"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(233,64,87,0.1),transparent_70%)]"></div>
+          <div className="relative">
+          <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+            <div className="grid gap-20 md:gap-32">
+              {features.map((feature, index) => (
+                <div
+                  key={feature.id}
+                  className={`grid items-center gap-12 md:grid-cols-2 ${
+                    feature.textPosition === "right" ? "md:grid-flow-dense" : ""
+                  }`}
+                >
+                  {/* Text Content */}
+                  <div
+                    className={`flex flex-col justify-center text-center md:text-left ${
+                      feature.textPosition === "right" ? "md:col-start-2" : ""
+                    }`}
+                  >
+                    {/* Label with decorative underline - Hidden on mobile */}
+                    <div className="hidden md:inline-block relative mb-8 group">
+                      <span className="text-xs md:text-sm font-semibold tracking-[0.1em] uppercase text-[#E94057] relative z-10 inline-block px-2 py-1 bg-gradient-to-r from-[#E94057]/10 to-transparent rounded-sm">
+                        {feature.label}
+                      </span>
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#E94057]/40 to-[#FF7EB3]/60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                    </div>
+                    
+                    {/* Title with gradient */}
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-6 md:mb-10 leading-[1.15] relative mx-auto md:mx-0">
+                      <span 
+                        className="font-bold bg-gradient-to-br from-[#2A1F2D] via-[#4b164c] to-[#E94057] bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(233,64,87,0.2)] inline-block"
+                      >
+                        {feature.title}
+                      </span>
+                      {/* Decorative heart accent */}
+                      <span 
+                        className="absolute -top-3 -right-6 md:-right-8 text-3xl md:text-4xl opacity-25 transform rotate-12"
+                      >
+                        ♥
+                      </span>
+                    </h2>
+                    
+                    {/* Description */}
+                    <div className="relative mx-auto md:mx-0">
+                      <p 
+                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#2A1F2D] leading-[1.9] max-w-xl font-normal tracking-tight relative z-10"
+                        style={{ color: '#1a1620' }}
+                      >
+                        {feature.description}
+                      </p>
+                      {/* Decorative quote mark */}
+                      <span 
+                        className="absolute -left-4 -top-2 text-5xl sm:text-6xl md:text-7xl text-[#E94057]/10 font-bold leading-none"
+                      >
+                        "
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Single Image */}
+                  <div
+                    className={`relative flex items-end justify-center ${
+                      feature.textPosition === "right"
+                        ? "md:col-start-1 md:row-start-1 md:justify-start"
+                        : "md:justify-end"
+                    }`}
+                  >
+                    <div className="relative inline-block max-w-md">
+                      <div className="relative inline-block">
+                        {/* Pink circular gradient for index 3 */}
+                        {index === 3 && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                            <div className="w-full h-full rounded-full bg-[radial-gradient(circle_at_center,rgba(233,64,87,0.15),rgba(255,126,179,0.08),transparent_70%)]"></div>
+                          </div>
+                        )}
+                        <img
+                          src={feature.image}
+                          alt={feature.imageAlt}
+                          className="relative z-10 w-full h-auto block"
+                        />
+                        {/* Shadow at bottom of image */}
+                        <div className="absolute bottom-30 left-1/2 -translate-x-2/3 w-3/6 h-4 bg-black/40 blur-lg rounded-full z-0 translate-y-1/2"></div>
+                      </div>
+                    </div>
+                  </div>                </div>
+              ))}
             </div>
-
-            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Built for Trust */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-3xl shadow-lg shadow-[#E94057]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    🔒
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
-                    Built for Trust
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    Trust is one of the biggest concerns while using any dating site. Pookiey is designed with strong safety and privacy principles so users feel confident from the first step. Secure login system, user privacy protection, clear and honest communication, and transparent subscription handling.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
-                  </div>
-                </div>
-              </article>
-
-              {/* Simple & Clear */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-3xl shadow-lg shadow-[#4B164C]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    ✨
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
-                    Simple & Clear
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    Many top dating apps in India feel complicated, especially for first-time users. Pookiey keeps the experience simple so anyone can use it without technical knowledge. Easy account access, simple profile setup, clear match flow, and smooth navigation.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
-                  </div>
-                </div>
-              </article>
-
-              {/* Quality Matches */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-3xl shadow-lg shadow-[#FF7EB3]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    💎
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
-                    Quality Matches
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    The goal of dating is not just meeting people, but meeting the right people. Pookiey focuses on meaningful connections instead of random swipes. Better conversations, higher match quality, less time wasted, and more genuine connections.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
-                  </div>
-                </div>
-              </article>
-
-              {/* Flexible Dating */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-3xl shadow-lg shadow-[#E94057]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    💑
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
-                    Flexible Dating
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    Some people use dating apps casually, while others look for long-term relationships. Pookiey supports both without judgment or pressure. Works well for casual dating with respect, serious relationship seekers, honest and open communication, and users who value clarity.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
-                  </div>
-                </div>
-              </article>
-
-              {/* Transparent Pricing */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-3xl shadow-lg shadow-[#4B164C]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    💰
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
-                    Transparent Pricing
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    Many users leave dating apps in India because of confusing payments or unclear plans. Pookiey keeps everything open and easy to understand. Clear subscription information, no hidden charges, easy account control, and simple upgrade or renewal process.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
-                  </div>
-                </div>
-              </article>
-
-              {/* All Indian Cities */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                <div className="relative">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-3xl shadow-lg shadow-[#FF7EB3]/30 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    🗺️
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
-                    All Indian Cities
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#6F6077] md:text-base">
-                    Whether someone is using dating apps in Bangalore, dating apps in Hyderabad, dating app Chennai, or dating apps in Kolkata, the experience remains consistent. Safety standards, usability, and communication quality stay the same everywhere.
-                  </p>
-                  {/* Decorative element */}
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
-                  </div>
-                </div>
-              </article>
-            </div>
+          </div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-                How It Works
-              </span>
-              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                Simple, Safe & Easy to Use
-              </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                Many people hesitate to use dating apps in India because they think the process is complicated. Pookiey is designed to be simple, clear, and easy for everyone. From the first login to starting conversations, every step is smooth and user-friendly.
-              </p>
-            </div>
-
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <article className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] text-2xl font-bold text-white shadow-lg">
-                  1
+        {/* How it works (titles only) */}
+        <section className="relative py-10 md:py-14 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-50/80 via-pink-100/90 to-purple-100/80"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(233,64,87,0.1),transparent_70%)]"></div>
+          <div className="relative">
+          <div className="mx-auto w-full max-w-6xl px-4 md:px-8">
+            <h2 className="text-xl font-semibold text-[#2A1F2D] md:text-2xl">
+              How it works
+            </h2>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                "Create Profile",
+                "Discover Matches",
+                "Start Chatting",
+                "Build Connection",
+              ].map((s, idx) => (
+                <div
+                  key={s}
+                  className="glass-card rounded-2xl px-4 py-4"
+                >
+                  <div className="text-xs font-semibold text-[#E94057]">
+                    Step {idx + 1}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-[#2A1F2D]">
+                    {s}
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Create Account
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Users can sign up quickly using a secure login method. The process is safe and protects user privacy from the beginning. Fast account creation, secure access, and no unnecessary information.
-                </p>
-              </article>
-
-              <article className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#4B164C] text-2xl font-bold text-white shadow-lg">
-                  2
-                </div>
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Set Up Profile
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Creating a profile on Pookiey is simple and does not take much time. Users can share basic details that help find better matches. Profile setup includes basic personal details, interests and preferences, and clear profile visibility controls.
-                </p>
-              </article>
-
-              <article className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#4B164C] to-[#E94057] text-2xl font-bold text-white shadow-lg">
-                  3
-              </div>
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Discover Matches
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Once the profile is ready, users can start exploring matches. Pookiey focuses on meaningful connections instead of random suggestions. Matches based on preferences, better relevance, and less unnecessary scrolling.
-                </p>
-              </article>
-
-              <article className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] text-2xl font-bold text-white shadow-lg">
-                  4
-              </div>
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Start Conversations
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Communication is an important part of any Indian dating site. Pookiey offers a safe and controlled environment for users to talk comfortably. Secure messaging, user control over conversations, and respectful interaction environment.
-                </p>
-              </article>
+              ))}
             </div>
+          </div>
           </div>
         </section>
 
-        {/* About Us Section */}
-        <section id="about" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-6xl">
-            <div className="text-center">
-              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-                About Us
-              </span>
-              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                About Pookiey
-              </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                Discover what makes Pookiey the trusted choice for meaningful connections in India
-              </p>
-            </div>
+        {/* Testimonials section (added above FAQ) */}
+        <LandingTestimonials />
 
-            <div className="mt-12 space-y-6">
-              {/* Grid Layout for All Cards */}
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Introduction Card */}
-                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        💕
-                      </div>
-                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
-                        About Pookiey
-                      </h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
-                      Pookiey is a modern online dating platform created for people who want real, safe, and meaningful connections. We understand that online dating is not just about matching profiles. It is about trust, comfort, and feeling confident while meeting new people. That is why Pookiey is built with a strong focus on safety, simplicity, and honesty.
-                    </p>
-                    {/* Decorative element */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
-                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
-                    </div>
-                  </div>
-                </article>
-
-                {/* Goal Card */}
-                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        🎯
-                      </div>
-                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
-                        Our Goal
-                      </h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
-                      In today's time, many dating apps in India feel confusing or unreliable. Our goal is to offer a clean and dependable experience where users can focus on conversations and connections instead of worrying about privacy or fake interactions. Pookiey is designed for both casual dating and serious relationships, giving users the freedom to choose their own path.
-                    </p>
-                    {/* Decorative element */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
-                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
-                    </div>
-                  </div>
-                </article>
-
-                {/* Values Card */}
-                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#FF7EB3]/40 hover:shadow-2xl hover:shadow-[#FF7EB3]/20 md:p-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF7EB3]/0 to-[#E94057]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7EB3] to-[#E94057] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        ✨
-                      </div>
-                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#FF7EB3]">
-                        Our Values
-                      </h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
-                      We believe that every user deserves respect and control. From profile creation to communication, Pookiey allows users to manage their experience in a way that feels comfortable. We avoid unnecessary features and focus on what truly matters—helping people connect genuinely.
-                    </p>
-                    {/* Decorative element */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#FF7EB3] to-[#E94057] opacity-30" />
-                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#E94057]" />
-                    </div>
-                  </div>
-                </article>
-
-                {/* Built for Indian Users */}
-                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#E94057]/40 hover:shadow-2xl hover:shadow-[#E94057]/20 md:p-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/0 to-[#FF7EB3]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#E94057] to-[#FF7EB3] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        🏙️
-                      </div>
-                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057]">
-                        Built for Indian Users
-                      </h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
-                      Pookiey is built for Indian users from all cities and backgrounds. Whether someone is exploring dating apps in Bangalore, dating apps in Hyderabad, dating apps in Chennai, dating apps in Delhi, or smaller cities, the experience remains simple and consistent. Our platform supports local connections while maintaining the same safety and quality standards everywhere.
-                    </p>
-                    {/* Decorative element */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3] opacity-30" />
-                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
-                    </div>
-                  </div>
-                </article>
-
-                {/* Transparency & Trust */}
-                <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 via-[#FCF3FA]/80 to-white/90 p-6 shadow-lg backdrop-blur-lg transition-all duration-500 hover:-translate-y-2 hover:border-[#4B164C]/40 hover:shadow-2xl hover:shadow-[#4B164C]/20 md:p-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#4B164C]/0 to-[#7B1E7A]/0 opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4B164C] to-[#7B1E7A] text-2xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                        🔐
-                      </div>
-                      <h3 className="text-xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#4B164C]">
-                        Transparency & Trust
-                      </h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-[#6F6077] md:text-base">
-                      Transparency is an important part of who we are. We keep our processes clear, our communication honest, and our platform easy to understand. Users always know how things work, what they are signing up for, and how to manage their accounts. This approach helps us build long-term trust with our community.
-                    </p>
-                    {/* Decorative element */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#4B164C] to-[#7B1E7A] opacity-30" />
-                      <div className="h-2 w-2 rounded-full bg-gradient-to-br from-[#4B164C] to-[#7B1E7A]" />
-                    </div>
-                  </div>
-                </article>
-              </div>
-
-              {/* Mission Card - Full Width */}
-              <article className="group relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-[#E94057]/10 via-[#FF7EB3]/10 to-[#4B164C]/10 p-6 shadow-xl backdrop-blur-lg transition-all duration-500 hover:-translate-y-1 hover:border-[#E94057]/60 hover:shadow-2xl hover:shadow-[#E94057]/30 md:p-10">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#E94057]/5 via-[#FF7EB3]/5 to-[#4B164C]/5 opacity-50" />
-                <div className="relative">
-                  <div className="mb-6 flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E94057] via-[#FF7EB3] to-[#4B164C] text-4xl shadow-xl shadow-[#E94057]/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                      🚀
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-semibold text-[#2A1F2D] transition-colors group-hover:text-[#E94057] md:text-3xl">
-                        Our Mission
-                      </h3>
-                      <div className="mt-1 h-1 w-16 rounded-full bg-gradient-to-r from-[#E94057] to-[#FF7EB3]" />
-                    </div>
-                  </div>
-                  <p className="text-base leading-relaxed text-[#6F6077] md:text-lg">
-                    At Pookiey, we are focused on creating a respectful and reliable India dating site where people can take their time, be themselves, and build connections naturally. We are committed to improving the online dating experience by listening to users and putting their comfort first. Our mission is simple: to provide a trusted dating platform where real people can meet, talk, and build connections with confidence.
-                  </p>
-                  {/* Decorative elements */}
-                  <div className="mt-6 flex items-center gap-3">
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] opacity-40" />
-                    <div className="flex gap-2">
-                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#E94057] to-[#FF7EB3]" />
-                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#FF7EB3] to-[#4B164C]" />
-                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#4B164C] to-[#E94057]" />
-                    </div>
-                    <div className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] opacity-40" />
-                  </div>
-                </div>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* Cities Section */}
-        <section id="cities" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
-                Available Cities
-              </span>
-              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                Best Dating App Across Major Indian Cities
-              </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                Online dating in India is growing fast, and people from different cities have different dating needs. Pookiey is built to support users across metro cities, IT hubs, education centers, and culturally rich regions. No matter where you live, the platform helps you connect with nearby people safely and simply.
-              </p>
-            </div>
-
-            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Bangalore
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Suitable for professionals and students. Supports casual dating and serious relationships. Easy to use after long workdays.
-                </p>
-              </article>
-
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Hyderabad
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Simple and quick profile setup. Focus on genuine user interactions. Clear communication features.
-                </p>
-              </article>
-
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Chennai
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Strong privacy controls. Safe and respectful messaging. Support for long-term dating goals.
-                </p>
-              </article>
-
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Delhi
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Supports different dating intentions. Helps users connect with nearby people. Keeps personal data protected.
-                </p>
-              </article>
-
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Mumbai
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Supports flexible dating styles. Helps users meet nearby people. Offers a smooth and simple interface.
-                </p>
-              </article>
-
-              <article className="glass-card rounded-3xl p-6">
-                <h3 className="text-lg font-semibold text-[#2A1F2D]">
-                  Best Dating App in Pune
-                </h3>
-                <p className="mt-2 text-sm text-[#6F6077]">
-                  Easy profile creation. Location-based matches. Smooth and secure chatting.
-                </p>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section id="faq" className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-4xl">
-            <div className="text-center">
-              <span className="pill inline-flex bg-white/60 text-[#E94057] shadow-sm shadow-[#E94057]/10">
+        {/* FAQ Section (untouched component) */}
+        <section id="faq" className="relative py-12 md:py-16 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-50/80 via-pink-100/90 to-purple-100/80"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(233,64,87,0.1),transparent_70%)]"></div>
+          <div className="relative">
+          <div className="mx-auto w-full max-w-6xl px-4 md:px-8">
+            <div className="mb-6 md:mb-8">
+              <h2 className="text-xl font-semibold text-[#2A1F2D] md:text-2xl">
                 FAQs
-              </span>
-              <h2 className="mt-4 text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                Frequently Asked Questions
               </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                Got questions? We've got answers. Everything you need to know about Pookiey.
-              </p>
             </div>
-
-            <div className="mt-12">
-              <FAQAccordion />
-            </div>
+            <FAQAccordion />
+          </div>
           </div>
         </section>
-
-        {/* CTA Section */}
-        <section className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 md:px-8 lg:px-12">
-          <div className="mx-auto max-w-4xl">
-            <div className="glass-card rounded-3xl p-8 text-center md:p-12">
-              <h2 className="text-3xl font-semibold text-[#2A1F2D] md:text-4xl">
-                Start Your Dating Journey with Confidence
-              </h2>
-              <p className="mt-4 text-base text-[#6F6077] md:text-lg">
-                If you are tired of unreliable dating apps in India and want a platform that values trust, clarity, and genuine connections, Pookiey is the right place to start. It is built for real people, real conversations, and real relationships.
-              </p>
-              <div className="mt-8">
-                <Link
-                  href="/auth"
-                  className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#E94057] via-[#FF7EB3] to-[#4B164C] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#E94057]/20 transition hover:scale-[1.02] hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E94057]"
-                >
-                  Get Started Now
-                </Link>
-        </div>
-      </div>
-    </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="relative z-10 border-t border-white/40 bg-white/40 backdrop-blur">
-          <div className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8 lg:px-12">
-            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-              <div className="flex items-center gap-2">
-                <span className="pill inline-flex bg-[#E94057]/10 text-[#E94057]">
-                  Pookiey
-                </span>
-              </div>
-              <nav className="flex flex-wrap items-center gap-6 text-sm text-[#6F6077]">
-                <Link
-                  href="/privacy-policy"
-                  className="transition hover:text-[#E94057]"
-                >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/support"
-                  className="transition hover:text-[#E94057]"
-                >
-                  Support
-                </Link>
-                <Link
-                  href="#about"
-                  className="transition hover:text-[#E94057]"
-                >
-                  About Us
-                </Link>
-                <Link
-                  href="#faq"
-                  className="transition hover:text-[#E94057]"
-                >
-                  FAQ
-                </Link>
-              </nav>
-            </div>
-            <div className="mt-6 flex flex-col items-center gap-4 md:flex-row md:justify-between">
-              <div className="flex items-center gap-4">
-                <a
-                  href="https://www.facebook.com/profile.php?id=61586065021476"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow us on Facebook"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/60 text-[#6F6077] transition hover:bg-white/80 hover:text-[#E94057]"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </a>
-                <a
-                  href="https://www.instagram.com/pookiey111/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow us on Instagram"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/60 text-[#6F6077] transition hover:bg-white/80 hover:text-[#E94057]"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </a>
-              </div>
-              <p className="text-center text-xs text-[#B49CC4] md:text-sm">
-                © {new Date().getFullYear()} Pookiey. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
       </div>
     </>
-  );
+  )
 }
