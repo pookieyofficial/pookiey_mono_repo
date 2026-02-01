@@ -157,11 +157,18 @@ export const updateUser = async (req: Request, res: Response) => {
         }
 
         const updates = parseForMonggoSetUpdates(req.body);
+        const incomingGender = updates["profile.gender"];
+        const hasShowMe = Object.prototype.hasOwnProperty.call(updates, "preferences.showMe");
+
+        if (!hasShowMe && (incomingGender === "male" || incomingGender === "female")) {
+            updates["preferences.showMe"] = [incomingGender === "male" ? "female" : "male"];
+        }
 
         const updatedUser = await User.findOneAndUpdate(
             { user_id: (user as any)?.user_id },
             { $set: updates as any },
-            { new: true, runValidators: true });
+            { new: true, runValidators: true }
+        );
 
         if (!updatedUser) {
             res.status(400).json({ message: "User not found" });
