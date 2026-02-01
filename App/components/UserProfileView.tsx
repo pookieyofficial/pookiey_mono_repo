@@ -81,7 +81,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
   const { dbUser: currentUser } = useAuthStore()
   const { inbox, setInbox } = useMessagingStore()
   const { token } = useAuth()
-  const { likeUser } = useUserInteraction()
+  const { likeUser, dislikeUser, superlikeUser } = useUserInteraction()
 
   const displayUser = user || DEFAULT_MOCK_USER
 
@@ -142,66 +142,49 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
     }
   }
 
-  const handleChatPress = async () => {
-    if (!displayUser?.user_id) {
+  const handleInteraction = async (action: 'like' | 'dislike' | 'superlike') => {
+    try {
+      const userId = displayUser?.user_id
+      if (!userId) return
+
+      let response: any
+      if (action === 'like') response = await likeUser(userId)
+      else if (action === 'dislike') response = await dislikeUser(userId)
+      else response = await superlikeUser(userId)
+
+      if (response?.success) {
+        if (response.isMatch && response.match) {
+          router.replace({
+            pathname: '/matchingScreen',
+            params: {
+              match: JSON.stringify(response.match),
+              user1: JSON.stringify(response.user1 as any),
+              user2: JSON.stringify(response.user2 as any),
+              userName: response.user2?.profile?.firstName || response.user2?.displayName,
+              userAvatar: response.user2?.photoURL || response.user2?.profile?.photos?.[0]?.url,
+            },
+          })
+        }
+        return
+      }
+
+      if (response?.showPriceModal) {
+        router.push('/(home)/pricePlansHome')
+        return
+      }
+
+      setAlertMessage({
+        title: "OOpss!",
+        message: response?.message || t('userProfileView.userInfoNotAvailable'),
+      })
+      setShowAlert(true)
+    } catch (err) {
       setAlertMessage({
         title: t('userProfileView.error'),
-        message: t('userProfileView.userInfoNotAvailable')
+        message: t('userProfileView.userInfoNotAvailable'),
       })
       setShowAlert(true)
-      return
     }
-
-    if (!currentUser?.user_id) {
-      setAlertMessage({
-        title: t('userProfileView.error'),
-        message: t('userProfileView.mustBeLoggedIn')
-      })
-      setShowAlert(true)
-      return
-    }
-
-    if (!token) {
-      setAlertMessage({
-        title: t('userProfileView.error'),
-        message: t('userProfileView.authTokenNotAvailable')
-      })
-      setShowAlert(true)
-      return
-    }
-
-    // Try to find or create a match
-    const matchId = await findOrCreateMatch(displayUser.user_id)
-
-    if (!matchId) {
-      const userName = displayUser.profile?.firstName || displayUser.displayName || displayUser.user_id || 'this user'
-      setAlertMessage({
-        title: t('userProfileView.chatUnavailable'),
-        message: t('userProfileView.mustBeMatched', { userName })
-      })
-      setShowAlert(true)
-      return
-    }
-
-    // Prepare chat room params
-    const userName = displayUser.profile?.firstName || displayUser.displayName || 'User'
-    const userAvatar = displayUser.profile?.photos?.[0]?.url || displayUser.photoURL || ''
-
-    // First navigate to chat tab
-    router.push('/(home)/(tabs)/(chats)/' as any)
-
-    // Then navigate to chat room after a brief delay to show the chat tab first
-    setTimeout(() => {
-      router.push({
-        pathname: '/(home)/(tabs)/(chats)/chatRoom' as any,
-        params: {
-          matchId,
-          userName,
-          userAvatar,
-          userId: displayUser.user_id,
-        },
-      })
-    }, 150)
   }
 
   const getAge = () => {
@@ -230,6 +213,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
 
   // Check if user is premium/subscribed
   const isPremium = displayUser?.subscription?.status === 'active';
+  const isCurrentUserSubscribed = currentUser?.subscription?.status === 'active';
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (
@@ -394,6 +378,31 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
                     </View>
                   )}
                 </View>
+                {isCurrentUserSubscribed && (
+                  <View style={styles.interactionButtons}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.dislikeButton]}
+                      onPress={() => handleInteraction('dislike')}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="close" size={18} color={styles.dislikeIcon.color as string} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.likeButton]}
+                      onPress={() => handleInteraction('like')}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="heart" size={18} color={styles.likeIcon.color as string} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.superlikeButton]}
+                      onPress={() => handleInteraction('superlike')}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="star" size={18} color={styles.superlikeIcon.color as string} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -664,6 +673,38 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  interactionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 12,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dislikeButton: {
+    backgroundColor: Colors.primary.white,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 165, 0, 0.45)',
+  },
+  likeButton: { backgroundColor: Colors.primaryBackgroundColor },
+  superlikeButton: {
+    backgroundColor: Colors.primary.white,
+    borderWidth: 1,
+    borderColor: 'rgba(233, 64, 87, 0.35)',
+  },
+  dislikeIcon: { color: 'orange' },
+  likeIcon: { color: Colors.primary.white },
+  superlikeIcon: { color: Colors.primaryBackgroundColor },
   occupationContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',

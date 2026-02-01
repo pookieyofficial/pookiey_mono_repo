@@ -118,17 +118,6 @@ const Settings = () => {
                 </ThemedText>
               )}
 
-              {/* {dbUser?.subscription?.status === "active" && (
-                <View style={styles.profileStatusContainer}>
-
-                  <AntDesign name="crown" size={20} color={Colors.primary.white} />
-
-                  <ThemedText style={[styles.profileStatus, { color: Colors.primary.white }]}>
-                    {dbUser?.subscription?.plan?.toUpperCase()}
-                  </ThemedText>
-                </View>
-              )} */}
-
               {dbUser?.profile?.bio ? (
                 <ThemedText style={styles.profileStatus}>
                   {dbUser.profile.bio}
