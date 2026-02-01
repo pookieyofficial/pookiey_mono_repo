@@ -6,6 +6,7 @@ export type VideoCallStatus = 'idle' | 'calling' | 'ringing' | 'connecting' | 'c
 export function useWebRTCVideo() {
   const {
     status,
+    error,
     isMuted,
     isVideoEnabled,
     localStream,
@@ -18,6 +19,7 @@ export function useWebRTCVideo() {
     toggleMute,
     toggleVideo,
     flipCamera,
+    clearError,
   } = useWebRTC();
 
   // Filter to only video calls
@@ -27,11 +29,15 @@ export function useWebRTCVideo() {
 
   const makeVideoCall = useCallback(
     async (matchId: string, receiverId: string, _receiverIdentity: string) => {
-      await initiateCall({
-        matchId,
-        receiverId,
-        callType: 'video',
-      });
+      try {
+        await initiateCall({
+          matchId,
+          receiverId,
+          callType: 'video',
+        });
+      } catch (e) {
+        // Errors are handled via hook error state for UI
+      }
     },
     [initiateCall]
   );
@@ -63,6 +69,7 @@ export function useWebRTCVideo() {
 
   return {
     status,
+    error,
     isMuted,
     isVideoEnabled,
     localStream,
@@ -76,5 +83,6 @@ export function useWebRTCVideo() {
     toggleMute,
     toggleVideo,
     flipCamera,
+    clearError,
   };
 }

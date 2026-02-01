@@ -1,10 +1,13 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { VoiceCallUI } from '@/components/VoiceCallUI';
 import { VideoCallUI } from '@/components/VideoCallUI';
 import { useWebRTCVoice } from '@/hooks/useWebRTCVoice';
 import { useWebRTCVideo } from '@/hooks/useWebRTCVideo';
 import { useMessagingStore } from '@/store/messagingStore';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
+import { Asset } from 'expo-asset';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import type { AudioPlayer, AudioStatus } from 'expo-audio';
 
 type CallContextValue = {
   makeCall: (matchId: string, receiverId: string, receiverIdentity: string) => Promise<void>;
@@ -41,9 +44,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     endCall,
     isMuted,
     toggleMute,
+    clearError: clearVoiceError,
   } = useWebRTCVoice();
   const {
     status: videoStatus,
+    error: videoError,
     isMuted: videoIsMuted,
     isVideoEnabled,
     videoTracks,
@@ -57,10 +62,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     flipCamera,
     localStream,
     remoteStream,
+    clearError: clearVideoError,
   } = useWebRTCVideo();
   const [outgoingMatchId, setOutgoingMatchId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [activeVideoMatchId, setActiveVideoMatchId] = useState<string | null>(null);
+  const ringPlayerRef = useRef<AudioPlayer | null>(null);
+  const ringSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const ringAsset = useMemo(
+    () => Asset.fromModule(require('@/assets/sounds/call-ring.mp3')),
+    []
+  );
 
   // Dialog states
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -72,7 +84,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [dialogCancelButton, setDialogCancelButton] = useState<{ text: string; onPress: () => void } | undefined>(undefined);
 
   // Show dialog helper function
-  const showDialog = (
+  const showDialog = useCallback((
     type: DialogType,
     message: string,
     title?: string,
@@ -87,7 +99,21 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setDialogSecondaryButton(secondaryButton);
     setDialogCancelButton(cancelButton);
     setDialogVisible(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (callStatus.error) {
+      showDialog('info', callStatus.error, 'Call ended');
+      clearVoiceError();
+    }
+  }, [callStatus.error, clearVoiceError, showDialog]);
+
+  useEffect(() => {
+    if (videoError) {
+      showDialog('info', videoError, 'Call ended');
+      clearVideoError();
+    }
+  }, [videoError, clearVideoError, showDialog]);
 
   const caller = useMemo(() => {
     if (!incomingCall?.matchId) return null;
@@ -128,6 +154,80 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setActiveMatchId(null);
     }
   }, [callStatus.isEnded]);
+
+  const stopRingtone = useCallback(() => {
+    if (ringSubscriptionRef.current) {
+      ringSubscriptionRef.current.remove();
+      ringSubscriptionRef.current = null;
+    }
+    if (ringPlayerRef.current) {
+      ringPlayerRef.current.pause();
+      ringPlayerRef.current.remove();
+      ringPlayerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const shouldRing =
+      (!!incomingCall && callStatus.isRinging && !callStatus.isConnected) ||
+      (!!incomingVideoCall && videoStatus === 'ringing');
+
+    if (!shouldRing) {
+      stopRingtone();
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      if (ringPlayerRef.current) {
+        if (!ringPlayerRef.current.playing) {
+          ringPlayerRef.current.play();
+        }
+        return;
+      }
+
+      try {
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: false,
+          shouldPlayInBackground: false,
+        });
+
+        await ringAsset.downloadAsync();
+        const uri = ringAsset.localUri ?? ringAsset.uri;
+        const player = createAudioPlayer({ uri }, { updateInterval: 500 });
+
+        if (cancelled) {
+          player.remove();
+          return;
+        }
+
+        player.loop = true;
+        ringPlayerRef.current = player;
+        const subscription = player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+          if (!status.isLoaded) return;
+          if (status.didJustFinish) {
+            player.seekTo(0);
+            player.play();
+          }
+        });
+        ringSubscriptionRef.current = subscription;
+        player.play();
+      } catch (error) {
+        console.error('Error playing ringtone:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [incomingCall, incomingVideoCall, callStatus.isRinging, callStatus.isConnected, videoStatus, ringAsset, stopRingtone]);
+
+  useEffect(() => {
+    return () => {
+      stopRingtone();
+    };
+  }, [stopRingtone]);
 
   const makeCallWithTarget = useMemo(() => {
     return async (matchId: string, receiverId: string, receiverIdentity: string) => {

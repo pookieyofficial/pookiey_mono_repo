@@ -13,6 +13,7 @@ type VoiceCallStatus = {
 export function useWebRTCVoice() {
   const {
     status,
+    error,
     isMuted,
     localStream,
     remoteStream,
@@ -22,6 +23,7 @@ export function useWebRTCVoice() {
     rejectCall,
     endCall,
     toggleMute,
+    clearError,
   } = useWebRTC();
 
   // Filter to only voice calls
@@ -31,11 +33,15 @@ export function useWebRTCVoice() {
 
   const makeCall = useCallback(
     async (matchId: string, receiverId: string, _receiverIdentity: string) => {
-      await initiateCall({
-        matchId,
-        receiverId,
-        callType: 'voice',
-      });
+      try {
+        await initiateCall({
+          matchId,
+          receiverId,
+          callType: 'voice',
+        });
+      } catch (e) {
+        // Errors are handled via hook error state for UI
+      }
     },
     [initiateCall]
   );
@@ -47,9 +53,9 @@ export function useWebRTCVoice() {
       isConnecting: status === 'connecting',
       isConnected: status === 'connected',
       isEnded: status === 'idle',
-      error: undefined,
+      error: error || undefined,
     }),
-    [status]
+    [status, error]
   );
 
   return {
@@ -62,6 +68,7 @@ export function useWebRTCVoice() {
     rejectCall,
     endCall,
     toggleMute,
+    clearError,
     localStream,
     remoteStream,
   };

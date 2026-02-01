@@ -8,7 +8,7 @@ interface CallSwipeControlProps {
   onAnswer: () => void;
   onReject: () => void;
   iconName?: keyof typeof Ionicons.glyphMap;
-  showVideoIcons?: boolean; // If true, shows video icons instead of call icons
+  showVideoIcons?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -150,7 +150,7 @@ export const CallSwipeControl: React.FC<CallSwipeControlProps> = ({
         <View style={[styles.hintCircle, styles.hintAnswer]}>
           <Ionicons name={getAnswerIconName()} size={24} color={Colors.primary.white} />
         </View>
-        <Animated.Text style={styles.hintText}>Swipe up to answer</Animated.Text>
+        <Animated.Text style={styles.hintText}>Answer</Animated.Text>
       </Animated.View>
 
       {/* Draggable control */}
@@ -167,13 +167,13 @@ export const CallSwipeControl: React.FC<CallSwipeControlProps> = ({
         ]}
       >
         <View style={styles.iconContainer}>
-          <Ionicons name={iconName} size={32} color={Colors.primary.white} />
+          <Ionicons name={iconName} size={32} color={Colors.primaryBackgroundColor} />
         </View>
       </Animated.View>
 
       {/* Reject hint (bottom) */}
       <Animated.View style={[styles.hintContainer, styles.hintBottom, { opacity: hintOpacity }]}>
-        <Animated.Text style={styles.hintText}>Swipe down to decline</Animated.Text>
+        <Animated.Text style={styles.hintText}>Decline</Animated.Text>
         <View style={[styles.hintCircle, styles.hintReject]}>
           <Ionicons 
             name={getRejectIconName()} 
@@ -197,21 +197,19 @@ const styles = StyleSheet.create({
     width: CONTROL_SIZE,
     height: CONTROL_SIZE,
     borderRadius: CONTROL_SIZE / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: Colors.primary.white,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 8 }, 
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 12,
     borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ rotate: '135deg' }],
   },
   hintContainer: {
     position: 'absolute',

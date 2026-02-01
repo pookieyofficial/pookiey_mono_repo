@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   ScrollView,
   TouchableOpacity,
   Image,
-  StyleSheet
+  StyleSheet,
+  Animated,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -16,10 +17,32 @@ import { truncateText } from '@/utils/truncateTexts'
 import { useTranslation } from 'react-i18next'
 import LanguageSelector from '@/components/LanguageSelector'
 import { useOnboardingStore } from '@/store/onboardingStore'
+import { LinearGradient } from 'expo-linear-gradient'
 const Settings = () => {
   const { t } = useTranslation();
   const { dbUser } = useAuthStore()
   const { setLanguage } = useOnboardingStore()
+  const isSubscriptionActive = dbUser?.subscription?.status === 'active'
+  const shimmerAnim = useRef(new Animated.Value(0)).current
+  const [shimmerWidth, setShimmerWidth] = useState(0)
+
+  useEffect(() => {
+    if (!isSubscriptionActive || shimmerWidth === 0) {
+      shimmerAnim.stopAnimation()
+      return
+    }
+
+    shimmerAnim.setValue(0)
+    const loop = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1800,
+        useNativeDriver: true,
+      })
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [isSubscriptionActive, shimmerWidth, shimmerAnim])
 
   const handleButtonPress = (buttonName: string) => {
 
@@ -95,7 +118,7 @@ const Settings = () => {
                 </ThemedText>
               )}
 
-              {dbUser?.subscription?.status === "active" && (
+              {/* {dbUser?.subscription?.status === "active" && (
                 <View style={styles.profileStatusContainer}>
 
                   <AntDesign name="crown" size={20} color={Colors.primary.white} />
@@ -104,7 +127,7 @@ const Settings = () => {
                     {dbUser?.subscription?.plan?.toUpperCase()}
                   </ThemedText>
                 </View>
-              )}
+              )} */}
 
               {dbUser?.profile?.bio ? (
                 <ThemedText style={styles.profileStatus}>
@@ -204,44 +227,78 @@ const Settings = () => {
 
           <View style={styles.decorativeBorder} />
 
-          <TouchableOpacity
-            style={[styles.settingItem, styles.ExtraAccountItem]}
-            onPress={() => handleButtonPress('Price Plans')}
-            activeOpacity={0.7}
-            disabled={dbUser?.subscription?.status === "active"}
+          <View
+            style={[styles.settingItemWrapper, styles.ExtraAccountItem]}
+            onLayout={(event) => setShimmerWidth(event.nativeEvent.layout.width)}
           >
-            <View style={styles.settingIconContainer}>
-              <AntDesign name="crown" size={24} color={Colors.primary.red} />
-            </View>
-
-            {dbUser?.subscription?.status === "active" ? (
-              <View style={styles.subscriptionInfo}>
-                <ThemedText type='defaultSemiBold' style={styles.subscriptionTitle}>
-                  {t('settings.subscriptionActive', { 
-                    plan: dbUser?.subscription?.plan?.toUpperCase() 
-                  })}
-                </ThemedText>
-                <ThemedText type='default' style={styles.subscriptionSubtext}>
-                  {t('settings.validTill', { 
-                    date: dbUser?.subscription?.endDate
-                      ? formatDate(dbUser?.subscription?.endDate)
-                      : "N/A"
-                  })}
-                </ThemedText>
+            {isSubscriptionActive && shimmerWidth > 0 && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.shimmerOverlay,
+                  {
+                    transform: [
+                      {
+                        translateX: shimmerAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-shimmerWidth, shimmerWidth],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[
+                    'rgba(255, 59, 48, 0.0)',
+                    'rgba(255, 59, 48, 0.18)',
+                    'rgba(255, 59, 48, 0.0)',
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.shimmerGradient}
+                />
+              </Animated.View>
+            )}
+            <TouchableOpacity
+              style={[styles.settingItem, isSubscriptionActive && styles.subscriptionItem]}
+              onPress={() => handleButtonPress('Price Plans')}
+              activeOpacity={0.7}
+              disabled={isSubscriptionActive}
+            >
+              <View style={styles.settingIconContainer}>
+                <AntDesign name="crown" size={24} color={Colors.primary.red} />
               </View>
-            ) : (
-              <ThemedText style={styles.settingText}>
-                {t('settings.subscribeToPookiey')}
-              </ThemedText>
-            )}
 
-            {dbUser?.subscription?.status === "active" ? (
-              <Ionicons name="checkmark-circle" size={18} color={Colors.primary.red} />
-            ) : (
-              <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+              {isSubscriptionActive ? (
+                <View style={styles.subscriptionInfo}>
+                  <ThemedText type='defaultSemiBold' style={styles.subscriptionTitle}>
+                    {t('settings.subscriptionActive', {
+                      plan: dbUser?.subscription?.plan?.toUpperCase()
+                    })}
+                  </ThemedText>
+                  <ThemedText type='default' style={styles.subscriptionSubtext}>
+                    {t('settings.validTill', {
+                      date: dbUser?.subscription?.endDate
+                        ? formatDate(dbUser?.subscription?.endDate)
+                        : "N/A"
+                    })}
+                  </ThemedText>
+                </View>
+              ) : (
+                <ThemedText style={styles.settingText}>
+                  {t('settings.subscribeToPookiey')}
+                </ThemedText>
+              )}
 
-            )}
-          </TouchableOpacity>
+              {isSubscriptionActive ? (
+                <Ionicons name="checkmark-circle" size={18} color={Colors.primary.red} />
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+
+              )}
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.decorativeBorder} />
 
@@ -322,12 +379,31 @@ const styles = StyleSheet.create({
   settingsList: {
     paddingHorizontal: 16,
   },
+  settingItemWrapper: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   settingItem: {
     backgroundColor: Colors.primary.white,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  subscriptionItem: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.25)',
+  },
+  shimmerOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '40%',
+    opacity: 0.9,
+  },
+  shimmerGradient: {
+    flex: 1,
   },
   settingIconContainer: {
     width: 40,

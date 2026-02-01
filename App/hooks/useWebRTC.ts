@@ -36,8 +36,9 @@ const ICE_SERVERS = [
 
 export function useWebRTC() {
   const { socket, isConnected, waitForConnection } = useSocket();
-  
+
   const [status, setStatus] = useState<CallStatus>('idle');
+  const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -52,6 +53,8 @@ export function useWebRTC() {
   const isCallerRef = useRef<boolean>(false);
   const callTypeRef = useRef<'voice' | 'video'>('voice');
   const facingModeRef = useRef<'user' | 'environment'>('user');
+  const statusRef = useRef<CallStatus>('idle');
+  const incomingCallRef = useRef<IncomingCall | null>(null);
   // Track last ended call to avoid handling stale late-arriving incoming events
   const lastEndedMatchRef = useRef<{ matchId: string | null; endedAt: number | null }>({
     matchId: null,
@@ -64,7 +67,7 @@ export function useWebRTC() {
     if (!micPerm.granted) {
       throw new Error('Microphone permission is required for calls.');
     }
-    
+
     if (needsVideo) {
       const camPerm = await Camera.requestCameraPermissionsAsync();
       if (camPerm.status !== 'granted') {
@@ -113,10 +116,22 @@ export function useWebRTC() {
     isCallerRef.current = false;
   }, []);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    incomingCallRef.current = incomingCall;
+  }, [incomingCall]);
+
   // Create peer connection
   const createPeerConnection = useCallback(() => {
     const pc: any = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    
+
     // Handle remote track (replaces deprecated onaddstream)
     pc.ontrack = (event: any) => {
       if (event.streams && event.streams[0]) {
@@ -174,25 +189,25 @@ export function useWebRTC() {
   // Flip camera
   const flipCamera = useCallback(async () => {
     if (!localStreamRef.current || callTypeRef.current !== 'video') return;
-    
+
     // Stop current video tracks
     localStreamRef.current.getVideoTracks().forEach(track => track.stop());
-    
+
     // Switch facing mode
     facingModeRef.current = facingModeRef.current === 'user' ? 'environment' : 'user';
-    
+
     // Get new stream with flipped camera
     const newStream = await getUserMedia(true);
-    
+
     // Replace tracks in peer connection if it exists
     if (peerConnectionRef.current) {
       const oldTracks = peerConnectionRef.current.getSenders();
       const newVideoTrack = newStream.getVideoTracks()[0];
-      
-      const videoSender = oldTracks.find(sender => 
+
+      const videoSender = oldTracks.find(sender =>
         sender.track && sender.track.kind === 'video'
       );
-      
+
       if (videoSender && newVideoTrack) {
         await videoSender.replaceTrack(newVideoTrack as any);
       }
@@ -203,11 +218,12 @@ export function useWebRTC() {
   // Initialize call (caller side)
   const initiateCall = useCallback(async (config: WebRTCCallConfig) => {
     try {
+      setError(null);
       const s = socket?.connected ? socket : await waitForConnection(2500);
       if (!s?.connected) throw new Error('Socket not connected');
 
       await ensurePermissions(config.callType === 'video');
-      
+
       matchIdRef.current = config.matchId;
       receiverIdRef.current = config.receiverId;
       callTypeRef.current = config.callType;
@@ -216,10 +232,10 @@ export function useWebRTC() {
 
       // Get user media
       const stream = await getUserMedia(config.callType === 'video');
-      
+
       // Create peer connection
       const pc = createPeerConnection();
-      
+
       // Add local stream tracks to peer connection
       stream.getTracks().forEach(track => {
         pc.addTrack(track as any, stream);
@@ -242,6 +258,13 @@ export function useWebRTC() {
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
           cleanupListeners();
+          if (matchIdRef.current && receiverIdRef.current) {
+            s.emit('call_end', {
+              matchId: matchIdRef.current,
+              otherUserId: receiverIdRef.current,
+            });
+          }
+          setError("Recipient didn't pick up the call.");
           reject(new Error('Call timeout'));
         }, 30000);
 
@@ -251,10 +274,28 @@ export function useWebRTC() {
           reject(new Error('User unavailable'));
         };
 
+        const onEnded = () => {
+          clearTimeout(timer);
+          cleanupListeners();
+          setError('Call ended.');
+          reject(new Error('Call ended'));
+        };
+
+        const onRejected = () => {
+          clearTimeout(timer);
+          cleanupListeners();
+          setError('Call rejected.');
+          reject(new Error('Call rejected'));
+        };
+
         const onAnswer = async (data: { answer: any }) => {
           clearTimeout(timer);
           cleanupListeners();
           try {
+            if (peerConnectionRef.current !== pc || pc.connectionState === 'closed') {
+              reject(new Error('Call no longer active'));
+              return;
+            }
             await pc.setRemoteDescription(new RTCSessionDescription(data.answer as any));
             setStatus('connecting');
             resolve();
@@ -266,10 +307,14 @@ export function useWebRTC() {
         const cleanupListeners = () => {
           s.off('call_unavailable', onUnavailable);
           s.off('call_answer', onAnswer);
+          s.off('call_ended', onEnded);
+          s.off('call_rejected', onRejected);
         };
 
         s.on('call_unavailable', onUnavailable);
         s.on('call_answer', onAnswer);
+        s.on('call_ended', onEnded);
+        s.on('call_rejected', onRejected);
       });
     } catch (e: any) {
       console.error('Error initiating call:', e);
@@ -282,9 +327,15 @@ export function useWebRTC() {
   const answerCall = useCallback(async () => {
     try {
       if (!incomingCall || !socket || !isConnected) return;
+      setError(null);
 
       await ensurePermissions(incomingCall.callType === 'video');
-      
+
+      const latestIncoming = incomingCallRef.current;
+      if (!latestIncoming || latestIncoming.matchId !== incomingCall.matchId || statusRef.current !== 'ringing') {
+        return;
+      }
+
       matchIdRef.current = incomingCall.matchId;
       receiverIdRef.current = incomingCall.callerId;
       callTypeRef.current = incomingCall.callType;
@@ -293,10 +344,10 @@ export function useWebRTC() {
 
       // Get user media
       const stream = await getUserMedia(incomingCall.callType === 'video');
-      
+
       // Create peer connection
       const pc = createPeerConnection();
-      
+
       // Add local stream tracks
       stream.getTracks().forEach(track => {
         pc.addTrack(track as any, stream);
@@ -306,7 +357,7 @@ export function useWebRTC() {
       if (!incomingCall.offer) {
         throw new Error('No offer found in incoming call');
       }
-      
+
       await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer as any));
 
       // Create answer
@@ -395,7 +446,7 @@ export function useWebRTC() {
       }
 
       // Only handle if it matches our call type filter (handled by useWebRTCVoice/useWebRTCVideo)
-      setIncomingCall({ 
+      setIncomingCall({
         matchId: data.matchId,
         callerId: data.callerId,
         callerIdentity: data.callerIdentity,
@@ -444,6 +495,7 @@ export function useWebRTC() {
 
   return {
     status,
+    error,
     isMuted,
     isVideoEnabled,
     localStream,
@@ -457,5 +509,6 @@ export function useWebRTC() {
     toggleVideo,
     flipCamera,
     cleanup,
+    clearError,
   };
 }

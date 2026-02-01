@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { CallSwipeControl } from './CallSwipeControl';
+import { BlurView } from 'expo-blur';
 
 interface VoiceCallUIProps {
   visible: boolean;
@@ -40,6 +41,9 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
   onReject,
   onEnd,
 }) => {
+  const [callSeconds, setCallSeconds] = useState(0);
+  const callStartRef = useRef<number | null>(null);
+
   const statusText = isConnected
     ? 'Connected'
     : isConnecting
@@ -49,6 +53,29 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
           ? 'Incoming call...'
           : 'Ringing...'
         : 'Calling...';
+
+  useEffect(() => {
+    if (isConnected) {
+      if (!callStartRef.current) {
+        callStartRef.current = Date.now();
+      }
+      const timer = setInterval(() => {
+        const start = callStartRef.current ?? Date.now();
+        setCallSeconds(Math.floor((Date.now() - start) / 1000));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+    callStartRef.current = null;
+    setCallSeconds(0);
+  }, [isConnected]);
+
+  const callTimerText = useMemo(() => {
+    const minutes = Math.floor(callSeconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (callSeconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }, [callSeconds]);
 
   return (
     <Modal
@@ -73,11 +100,22 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
       >
         <View style={styles.content}>
           {/* Top: Name + status */}
-          <View style={styles.topBar}>
-            <ThemedText style={styles.userName} numberOfLines={1}>
-              {userName}
-            </ThemedText>
-            <ThemedText style={styles.statusText}>{statusText}</ThemedText>
+          <View style={styles.topOverlay}>
+            {isConnected ? (
+              <>
+                <BlurView intensity={80} tint="dark" style={styles.blurFill} />
+                <View style={styles.overlayTint} />
+              </>
+            ) : (
+              <View style={styles.overlayFallback} />
+            )}
+            <View style={styles.topBar}>
+              <ThemedText style={styles.userName} numberOfLines={1}>
+                {userName}
+              </ThemedText>
+              {isConnected && <ThemedText style={styles.timerText}>{callTimerText}</ThemedText>}
+              <ThemedText style={styles.statusText}>{statusText}</ThemedText>
+            </View>
           </View>
 
           {/* Middle: Avatar */}
@@ -94,7 +132,15 @@ export const VoiceCallUI: React.FC<VoiceCallUIProps> = ({
           </View>
 
           {/* Bottom: Controls */}
-          <View style={styles.bottomControls}>
+          <View style={styles.bottomOverlay}>
+            {isConnected ? (
+              <>
+                <BlurView intensity={80} tint="dark" style={styles.blurFill} />
+                <View style={styles.overlayTint} />
+              </>
+            ) : (
+              <View style={styles.overlayFallback} />
+            )}
             {isIncoming && !isConnected && !isConnecting ? (
               // Incoming: show swipeable control
               <CallSwipeControl
@@ -165,10 +211,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     justifyContent: 'space-between',
   },
+  topOverlay: {
+    marginTop: 22,
+    alignSelf: 'center',
+    width: '90%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   topBar: {
     alignItems: 'center',
     paddingHorizontal: 12,
-    marginTop: 30,
+    paddingVertical: 12,
   },
   middleSection: {
     flex: 1,
@@ -205,9 +258,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.78)',
   },
-  bottomControls: {
+  blurFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlayTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 16, 24, 0.35)',
+  },
+  overlayFallback: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 12, 18, 0.65)',
+  },
+  timerText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.92)',
+    marginBottom: 4,
+  },
+  bottomOverlay: {
     alignItems: 'center',
-    paddingBottom: 40,
+    paddingVertical: 22,
+    marginBottom: 26,
+    alignSelf: 'center',
+    width: '90%',
+    borderRadius: 22,
+    overflow: 'hidden',
   },
   centerRow: {
     flexDirection: 'row',

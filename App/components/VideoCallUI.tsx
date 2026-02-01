@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { RTCView, MediaStream } from 'react-native-webrtc';
 import { CallSwipeControl } from './CallSwipeControl';
+import { BlurView } from 'expo-blur';
 
 interface VideoCallUIProps {
   visible: boolean;
@@ -49,6 +50,10 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
   remoteStream,
   videoTracks = new Map(),
 }) => {
+  const [showControls, setShowControls] = useState(true);
+  const [callSeconds, setCallSeconds] = useState(0);
+  const callStartRef = useRef<number | null>(null);
+
   const statusText = isConnected
     ? 'Connected'
     : isConnecting
@@ -60,6 +65,35 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
         : 'Connecting...';
 
   const showVideoViews = isConnected || isRinging === false;
+
+  useEffect(() => {
+    if (isConnected) {
+      if (!callStartRef.current) {
+        callStartRef.current = Date.now();
+      }
+      const timer = setInterval(() => {
+        const start = callStartRef.current ?? Date.now();
+        setCallSeconds(Math.floor((Date.now() - start) / 1000));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+    callStartRef.current = null;
+    setCallSeconds(0);
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setShowControls(true);
+    }
+  }, [isConnected]);
+
+  const callTimerText = useMemo(() => {
+    const minutes = Math.floor(callSeconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (callSeconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }, [callSeconds]);
 
   return (
     <Modal
@@ -81,15 +115,15 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
         style={styles.container}
       >
         <View style={styles.content}>
-          <View style={styles.topBar}>
-            <ThemedText style={styles.userName} numberOfLines={1}>
-              {userName}
-            </ThemedText>
-            <ThemedText style={styles.statusText}>{statusText}</ThemedText>
-          </View>
-
           {/* Video area: remote (large) + local (pip) when connected */}
-          <View style={styles.videoArea}>
+          <Pressable
+            style={styles.videoArea}
+            onPress={() => {
+              if (isConnected) {
+                setShowControls(prev => !prev);
+              }
+            }}
+          >
             {showVideoViews ? (
               <>
                 <View style={styles.remoteVideoContainer}>
@@ -135,49 +169,79 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
                 )}
               </View>
             )}
-          </View>
+          </Pressable>
 
-          <View style={styles.bottomControls}>
-            {isIncoming && !isConnected && !isConnecting ? (
-              <CallSwipeControl
-                onAnswer={onAnswer || (() => {})}
-                onReject={onReject || (() => {})}
-                iconName="videocam"
-                showVideoIcons={true}
-              />
-            ) : isConnecting ? (
-              <View style={styles.centerRow}>
-                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
-                  <Ionicons name="call" size={26} color={Colors.primary.white} />
-                </TouchableOpacity>
+          {showControls && (
+            <View style={styles.topOverlay}>
+              {isConnected ? (
+                <>
+                  <BlurView intensity={80} tint="dark" style={styles.blurFill} />
+                  <View style={styles.overlayTint} />
+                </>
+              ) : (
+                <View style={styles.overlayFallback} />
+              )}
+              <View style={styles.topBar}>
+                <ThemedText style={styles.userName} numberOfLines={1}>
+                  {userName}
+                </ThemedText>
+                {isConnected && <ThemedText style={styles.timerText}>{callTimerText}</ThemedText>}
+                <ThemedText style={styles.statusText}>{statusText}</ThemedText>
               </View>
-            ) : (
-              <View style={styles.centerRow}>
-                {isConnected && (
-                  <>
-                    <TouchableOpacity
-                      style={[styles.controlButton, isMuted ? styles.muteOn : styles.muteOff]}
-                      onPress={onToggleMute}
-                    >
-                      <Ionicons name="mic-off" size={22} color={isMuted ? '#EF4444' : Colors.primary.white} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.controlButton, isVideoEnabled ? styles.videoOn : styles.videoOff]}
-                      onPress={onToggleVideo}
-                    >
-                      <Ionicons name="videocam" size={22} color={isVideoEnabled ? Colors.primary.white : '#EF4444'} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.controlButton} onPress={onFlipCamera}>
-                      <Ionicons name="camera-reverse" size={22} color={Colors.primary.white} />
-                    </TouchableOpacity>
-                  </>
-                )}
-                <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
-                  <Ionicons name="call" size={26} color={Colors.primary.white} />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+            </View>
+          )}
+
+          {showControls && (
+            <View style={styles.bottomOverlay}>
+              {isConnected ? (
+                <>
+                  <BlurView intensity={80} tint="dark" style={styles.blurFill} />
+                  <View style={styles.overlayTint} />
+                </>
+              ) : (
+                <View style={styles.overlayFallback} />
+              )}
+              {isIncoming && !isConnected && !isConnecting ? (
+                <CallSwipeControl
+                  onAnswer={onAnswer || (() => {})}
+                  onReject={onReject || (() => {})}
+                  iconName="videocam"
+                  showVideoIcons={true}
+                />
+              ) : isConnecting ? (
+                <View style={styles.centerRow}>
+                  <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                    <Ionicons name="call" size={26} color={Colors.primary.white} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.centerRow}>
+                  {isConnected && (
+                    <>
+                      <TouchableOpacity
+                        style={[styles.controlButton, isMuted ? styles.muteOn : styles.muteOff]}
+                        onPress={onToggleMute}
+                      >
+                        <Ionicons name="mic-off" size={22} color={isMuted ? '#EF4444' : Colors.primary.white} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.controlButton, isVideoEnabled ? styles.videoOn : styles.videoOff]}
+                        onPress={onToggleVideo}
+                      >
+                        <Ionicons name="videocam" size={22} color={isVideoEnabled ? Colors.primary.white : '#EF4444'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.controlButton} onPress={onFlipCamera}>
+                        <Ionicons name="camera-reverse" size={22} color={Colors.primary.white} />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  <TouchableOpacity style={[styles.fab, styles.fabEnd]} onPress={onEnd}>
+                    <Ionicons name="call" size={26} color={Colors.primary.white} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </LinearGradient>
     </Modal>
@@ -187,21 +251,25 @@ export const VideoCallUI: React.FC<VideoCallUIProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
     width: '100%',
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 40,
-    justifyContent: 'space-between',
+  },
+  topOverlay: {
+    position: 'absolute',
+    top: 36,
+    left: 16,
+    right: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    zIndex: 2,
   },
   topBar: {
     alignItems: 'center',
-    paddingHorizontal: 12,
-    marginTop: 30,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   userName: {
     fontSize: 30,
@@ -212,6 +280,22 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.78)',
+  },
+  timerText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.92)',
+    marginBottom: 4,
+  },
+  blurFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlayTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 16, 24, 0.35)',
+  },
+  overlayFallback: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 12, 18, 0.65)',
   },
   videoArea: {
     flex: 1,
@@ -276,9 +360,16 @@ const styles = StyleSheet.create({
     color: Colors.primary.white,
     fontWeight: 'bold',
   },
-  bottomControls: {
+  bottomOverlay: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 28,
+    borderRadius: 22,
+    overflow: 'hidden',
     alignItems: 'center',
-    paddingBottom: 40,
+    paddingVertical: 18,
+    zIndex: 2,
   },
   centerRow: {
     flexDirection: 'row',
