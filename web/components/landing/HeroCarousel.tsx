@@ -17,9 +17,10 @@ export type Slide = { src: string; alt: string }
 export default function HeroCarousel({ slides }: { slides: Slide[] }) {
   const autoplay = useRef(
     Autoplay({
-      delay: 3500,
-      stopOnInteraction: true,
-      stopOnMouseEnter: true,
+      delay: 3000,
+      stopOnInteraction: false, // Keep autoplay running even after manual navigation
+      stopOnMouseEnter: false,  // Never pause, even when hovering
+      stopOnLastSnap: false,    // Continue looping
     })
   )
   const [api, setApi] = useState<any>(null)
