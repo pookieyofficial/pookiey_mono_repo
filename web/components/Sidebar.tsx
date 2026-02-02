@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { X, Home, Info, MessageSquare, Users, HelpCircle, LogIn } from "lucide-react";
+import Image from "next/image";
+import { X, Home, Info, MessageSquare, Users, HelpCircle, LogIn, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -14,18 +16,24 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const session = useSession();
+  const supabase = useSupabaseClient();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onClose();
+    router.push("/");
+  };
+
   const navigation = [
-    { name: "About", href: "/about", icon: Info },
-    { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
     { name: "About Us", href: "/about-us", icon: Users },
     { name: "Support", href: "/support", icon: HelpCircle },
-    { name: "Login", href: "/auth", icon: LogIn },
   ];
 
   if (!mounted) return null;
@@ -53,7 +61,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="flex h-16 items-center justify-between border-b border-white px-6">
               <Link href="/" className="flex items-center gap-2" onClick={onClose}>
                 <div className="w-8 h-8 bg-linear-to-br from-[#E94057] to-[#FF7EB3] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">P</span>
+                  <Image
+                    src="/pookiey_logo.png"
+                    alt="Pookiey Logo"
+                    height={50}
+                    width={50}
+                  />
                 </div>
                 <span className="text-xl font-bold text-[#E94057]">Pookiey</span>
               </Link>
@@ -69,19 +82,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* Navigation */}
             <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-              <Link
-                href="/"
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
-                  pathname === "/"
-                    ? "bg-[#E94057]/10 text-[#E94057]"
-                    : "text-white hover:bg-white/10"
-                )}
-              >
-                <Home className="h-5 w-5 text-white" />
-                Home
-              </Link>
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -101,6 +101,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </Link>
                 );
               })}
+              
+              {/* Login/Logout */}
+              {session ? (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors text-white hover:bg-white/10 w-full"
+                >
+                  <LogOut className="h-5 w-5 text-white" />
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  href="/auth"
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+                    pathname === "/auth"
+                      ? "bg-[#E94057]/10 text-[#E94057]"
+                      : "text-white hover:bg-white/10"
+                  )}
+                >
+                  <LogIn className={cn("h-5 w-5", pathname === "/auth" ? "text-[#E94057]" : "text-white")} />
+                  Login
+                </Link>
+              )}
             </nav>
 
             {/* Footer */}

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image"
+import Image from "next/image";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -13,6 +14,9 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const session = useSession();
+  const supabase = useSupabaseClient();
   const [hidden, setHidden] = useState(true);
   const lastYRef = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -90,6 +94,11 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     };
   }, []);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 px-4 py-4 transition-transform duration-500 ease-in-out md:px-6 pointer-events-none ${
@@ -143,26 +152,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/about"
-              className={`text-sm  transition-colors font-bold ${
-                pathname === "/about"
-                  ? "text-[#E94057]"
-                  : "text-white hover:text-[#E94057]"
-              }`}
-            >
-              About
-            </Link>
-            <Link
-              href="/testimonials"
-              className={`text-sm  transition-colors font-bold ${
-                pathname === "/testimonials"
-                  ? "text-[#E94057]"
-                  : "text-white hover:text-[#E94057]"
-              }`}
-            >
-              Testimonials
-            </Link>
+            
+            
             <Link
               href="/about-us"
               className={`text-sm  transition-colors font-bold ${
@@ -183,21 +174,39 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             >
               Support
             </Link>
+            {session ? (
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium px-4 py-2 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/auth"
+                className="text-sm font-medium px-4 py-2 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
+              >
+                Login
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile Login/Logout Button */}
+          {session ? (
+            <button
+              onClick={handleLogout}
+              className="md:hidden text-sm font-medium px-3 py-1.5 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
+            >
+              Logout
+            </button>
+          ) : (
             <Link
               href="/auth"
-              className="text-sm font-medium px-4 py-2 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
+              className="md:hidden text-sm font-medium px-3 py-1.5 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
             >
               Login
             </Link>
-          </div>
-
-          {/* Mobile Login Button */}
-          <Link
-            href="/auth"
-            className="md:hidden text-sm font-medium px-3 py-1.5 bg-[#E94057] text-white rounded-lg hover:bg-[#C3344C] transition-colors"
-          >
-            Login
-          </Link>
+          )}
         </div>
       </div>
     </nav>
