@@ -20,6 +20,7 @@ import * as Device from 'expo-device'
 import Ionicons from '@expo/vector-icons/build/Ionicons'
 import CustomDialog, { DialogType } from '@/components/CustomDialog'
 import { getActiveAnnouncementAPI } from '@/APIs/announcementAPIs'
+import { useAuth } from '@/hooks/useAuth'
 
 // GPS Radar Scanning Animation Component
 const CircularLoader: React.FC<{ message?: string }> = ({ message }) => {
@@ -90,35 +91,32 @@ const CircularLoader: React.FC<{ message?: string }> = ({ message }) => {
 
   return (
     <Animated.View style={[loaderStyles.container, { opacity: fadeAnim }]}>
-      
+      {/* Scanning sweep triangle (radar beam) */}
+      <Animated.View
+        style={[
+          loaderStyles.scanSweepContainer,
+          {
+            transform: [{ rotate: rotation }],
+          },
+        ]}
+      >
+        {/* Gradient triangle using overlapping translucent layers */}
+        <View style={[loaderStyles.scanTriangle, loaderStyles.triangleOuter]} />
+        <View style={[loaderStyles.scanTriangle, loaderStyles.triangleMid]} />
+        <View style={[loaderStyles.scanTriangle, loaderStyles.triangleInner]} />
+      </Animated.View>
 
-        {/* Scanning sweep triangle (radar beam) */}
-        <Animated.View
-          style={[
-            loaderStyles.scanSweepContainer,
-            {
-              transform: [{ rotate: rotation }],
-            },
-          ]}
-        >
-          {/* Gradient triangle using overlapping translucent layers */}
-          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleOuter]} />
-          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleMid]} />
-          <View style={[loaderStyles.scanTriangle, loaderStyles.triangleInner]} />
-        </Animated.View>
-
-        {/* Center pulsing dot */}
-        <Animated.View
-          style={[
-            loaderStyles.centerDot,
-            {
-              transform: [{ scale: pulseAnim }],
-              opacity: opacity,
-              backgroundColor: Colors.primaryBackgroundColor,
-            },
-          ]}
-        />
-      </View>
+      {/* Center pulsing dot */}
+      <Animated.View
+        style={[
+          loaderStyles.centerDot,
+          {
+            transform: [{ scale: pulseAnim }],
+            opacity: opacity,
+            backgroundColor: Colors.primaryBackgroundColor,
+          },
+        ]}
+      />
       {message && (
         <ThemedText style={loaderStyles.message}>{message}</ThemedText>
       )}
