@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth'
+
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { View, Linking, Platform, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -90,23 +90,7 @@ const CircularLoader: React.FC<{ message?: string }> = ({ message }) => {
 
   return (
     <Animated.View style={[loaderStyles.container, { opacity: fadeAnim }]}>
-      <View style={loaderStyles.loaderWrapper}>
-        {/* Concentric circles (radar grid) */}
-        {circles.map((scale, index) => (
-          <View
-            key={`circle-${index}`}
-            style={[
-              loaderStyles.radarCircle,
-              {
-                width: size * scale,
-                height: size * scale,
-                borderRadius: (size * scale) / 2,
-                borderWidth: strokeWidth,
-                borderColor: `${Colors.primaryBackgroundColor}${Math.floor(25 - index * 5)}`,
-              },
-            ]}
-          />
-        ))}
+      
 
         {/* Scanning sweep triangle (radar beam) */}
         <Animated.View
