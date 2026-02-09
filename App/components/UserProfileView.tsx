@@ -300,7 +300,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({ user, onMessage }) =>
           <View style={styles.headerSection}>
             {photos.length > 0 && photos.length > 1 ? (
               <Image
-                source={{ uri: photos[1] || photos[0] }}
+                source={{ uri: photos[0] }}
                 style={styles.backgroundImage}
                 resizeMode="cover"
                 blurRadius={20}

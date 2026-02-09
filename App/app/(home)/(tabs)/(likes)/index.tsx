@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: Colors.primaryBackgroundColor,
-    fontWeight: '700',
+    fontFamily:"HellixBold"
   },
   badge: {
     backgroundColor: Colors.text.light,

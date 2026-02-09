@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import CustomBackButton from '@/components/CustomBackButton';
@@ -16,13 +23,17 @@ const OTP_LENGTH = 6;
 
 export default function LoginWithEmail() {
   const { t } = useTranslation();
+
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'EMAIL' | 'OTP'>('EMAIL');
   const [statusMessage, setStatusMessage] = useState('');
+
   const { signInWithLink, verifyEmailOtp, isLoading } = useAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
+
   const otpInputRef = useRef<TextInput | null>(null);
+
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     type: DialogType;
@@ -46,7 +57,9 @@ export default function LoginWithEmail() {
 
   useEffect(() => {
     if (isOtpStep) {
-      otpInputRef.current?.focus();
+      setTimeout(() => {
+        otpInputRef.current?.focus();
+      }, 200);
     }
   }, [isOtpStep]);
 
@@ -66,6 +79,7 @@ export default function LoginWithEmail() {
     setOtp('');
     setStep('OTP');
     setStatusMessage(`Enter the 6-digit code we sent to ${normalizedEmail}.`);
+
     showDialog(
       'info',
       t('auth.checkYourEmail'),
@@ -101,8 +115,8 @@ export default function LoginWithEmail() {
   };
 
   const handleOtpChange = (value: string) => {
-    const sanitized = value.replace(/[^0-9]/g, '').slice(0, OTP_LENGTH);
-    setOtp(sanitized);
+    const numbersOnly = value.replace(/\D/g, '');
+    setOtp(numbersOnly.slice(0, OTP_LENGTH));
   };
 
   const handlePrimaryAction = () => {
@@ -113,15 +127,10 @@ export default function LoginWithEmail() {
     }
   };
 
-  const otpSubtitle =
-    statusMessage || `Enter the 6-digit code we sent to ${normalizedEmail}.`;
-
-  const otpDigits = Array.from({ length: OTP_LENGTH }).map((_, index) => otp[index] || '');
+  const otpDigits = Array.from({ length: OTP_LENGTH }, (_, i) => otp[i] ?? '');
 
   if (isDeepLinkProcessing) {
-    return (
-      <CustomLoader messages={[t('auth.justAMoment')]} />
-    )
+    return <CustomLoader messages={[t('auth.justAMoment')]} />;
   }
 
   return (
@@ -137,20 +146,23 @@ export default function LoginWithEmail() {
           onPress: () => setDialogVisible(false),
         }}
       />
+
       <CustomBackButton />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          {/* Title */}
           <ThemedText type="title" style={styles.mainHeading}>
             {isOtpStep ? t('auth.checkYourEmail') : t('auth.signInWithEmail')}
           </ThemedText>
 
-          {/* Subtitle */}
           <ThemedText type="default" style={styles.subHeading}>
-            {isOtpStep ? otpSubtitle : t('auth.secureLinkMessage')}
+            {isOtpStep
+              ? statusMessage ||
+              `Enter the 6-digit code we sent to ${normalizedEmail}.`
+              : t('auth.secureLinkMessage')}
           </ThemedText>
 
           {/* Email Input */}
@@ -176,6 +188,7 @@ export default function LoginWithEmail() {
             </View>
           )}
 
+          {/* OTP Input */}
           {isOtpStep && (
             <View style={styles.otpContainer}>
               <TouchableOpacity
@@ -184,7 +197,8 @@ export default function LoginWithEmail() {
               >
                 <View style={styles.otpBoxes}>
                   {otpDigits.map((digit, index) => {
-                    const isActive = index === otp.length && otp.length !== OTP_LENGTH;
+                    const isActive = index === otp.length;
+
                     return (
                       <View
                         key={index}
@@ -194,20 +208,15 @@ export default function LoginWithEmail() {
                           isActive && styles.otpBoxActive,
                         ]}
                       >
-                        <ThemedText
-                          type="title"
-                          style={[
-                            styles.otpDigit,
-                            !digit && styles.otpDigitPlaceholder,
-                          ]}
-                        >
-                          {digit || ''}
+                        <ThemedText type="title" style={styles.otpDigit}>
+                          {digit || ' '}
                         </ThemedText>
                       </View>
                     );
                   })}
                 </View>
               </TouchableOpacity>
+
               <TextInput
                 ref={otpInputRef}
                 value={otp}
@@ -215,9 +224,10 @@ export default function LoginWithEmail() {
                 keyboardType="number-pad"
                 maxLength={OTP_LENGTH}
                 textContentType="oneTimeCode"
-                style={styles.hiddenOtpInput}
                 autoFocus
+                style={styles.hiddenOtpInput}
               />
+
               <View style={styles.helperStack}>
                 <View style={styles.helperRow}>
                   <TouchableOpacity onPress={handleUseDifferentEmail}>
@@ -226,7 +236,10 @@ export default function LoginWithEmail() {
                     </ThemedText>
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={handleResendOtp} disabled={isLoading}>
+                  <TouchableOpacity
+                    onPress={handleResendOtp}
+                    disabled={isLoading}
+                  >
                     <ThemedText
                       type="defaultSemiBold"
                       style={[
@@ -242,12 +255,11 @@ export default function LoginWithEmail() {
             </View>
           )}
 
-          {/* Continue Button */}
           <View style={styles.footer}>
             <MainButton
               title={isOtpStep ? 'Verify & Sign In' : t('auth.continue')}
               onPress={handlePrimaryAction}
-              disabled={isLoading }
+              disabled={isLoading}
             />
           </View>
         </View>
@@ -255,6 +267,7 @@ export default function LoginWithEmail() {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -372,8 +385,8 @@ const styles = StyleSheet.create({
   hiddenOtpInput: {
     position: 'absolute',
     opacity: 0,
-    height: 0,
-    width: 0,
+    width: '100%',
+    height: 60,
   },
   helperStack: {
     marginTop: 20,

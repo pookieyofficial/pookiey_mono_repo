@@ -61,7 +61,7 @@ export const Colors = {
   },
   // primaryBackgroundColor:"#4B164C",
   primaryBackgroundColor:"#E94057",
-  secondaryBackgroundColor:"#FCF3FA",
+  secondaryBackgroundColor:"#ffe1f8",
   primaryForegroundColor:"#",
   secondaryForegroundColor:"#",
   buttonBackgroundColor:"#",

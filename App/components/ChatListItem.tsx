@@ -63,7 +63,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
         {item.unreadCount > 0 && (
           <View style={styles.unreadBadge}>
             <ThemedText style={styles.unreadThemedText}>
-              {item.unreadCount > 99 ? '99+' : item.unreadCount}
+              {item.unreadCount > 10 ? '10+' : item.unreadCount}
             </ThemedText>
           </View>
         )}
@@ -100,18 +100,19 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({ item }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    padding: 13,
-    margin: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    flex: 1,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   avatarContainer: {
     position: 'relative',
     marginRight: 12,
   },
   avatar: {
-    width: 56,
-    height: 56,
+    width: 40,
+    height: 40,
     borderRadius: 28,
   },
   avatarPlaceholder: {
@@ -125,18 +126,16 @@ const styles = StyleSheet.create({
     right: -4,
     backgroundColor: '#FF3B30',
     borderRadius: 12,
-    minWidth: 24,
-    height: 24,
+    minWidth: 22,
+    height: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
     borderWidth: 2,
     borderColor: '#fff',
   },
   unreadThemedText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
   },
   contentContainer: {
     flex: 1,
@@ -146,10 +145,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
   },
   name: {
-    fontSize: 17,
+    fontSize: 14,
     color: Colors.titleColor,
     flex: 1,
     marginRight: 8,
@@ -163,13 +161,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lastMessage: {
-    fontSize: 15,
+    fontSize: 10,
     color: '#666',
     flex: 1,
   },
   unreadMessage: {
-    fontWeight: '600',
     color: '#000',
+    fontSize: 13,
+    fontFamily:"HellixBold"
   },
 });
 

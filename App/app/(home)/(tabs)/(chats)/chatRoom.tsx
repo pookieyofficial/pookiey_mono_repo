@@ -113,12 +113,17 @@ export default function ChatRoom() {
     setDialogVisible(true);
   };
 
+  const truncateName = (name: string, max = 17) =>
+    name.length > max ? name.slice(0, max) + '...' : name;
+
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
       headerTitle: '',
       headerLeft: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={{ padding: 8, marginRight: 4 }}
@@ -145,7 +150,7 @@ export default function ChatRoom() {
                 alignItems: 'center',
               }}
             >
-              <ThemedText style={{ fontSize: 16, fontWeight: '600', color: '#666' }}>
+              <ThemedText style={{ fontSize: 16, fontWeight: '600', color: '#666', position: 'relative' }}>
                 {userName.charAt(0).toUpperCase()}
               </ThemedText>
             </View>
@@ -157,11 +162,15 @@ export default function ChatRoom() {
                 userId: otherUserId,
               },
             } as any)}>
-              <ThemedText style={{ fontSize: 17, fontWeight: '600', color: '#000' }}>
-                {userName}
+
+              <ThemedText
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{ fontSize: 14, color: '#000' }}>
+                {truncateName(userName)}
               </ThemedText>
               {isTyping && (
-                <ThemedText style={{ fontSize: 13, color: '#FF3B30', fontStyle: 'italic' }}>
+                <ThemedText style={{ fontSize: 12, color: '#FF3B30', fontStyle: 'italic' }}>
                   typing...
                 </ThemedText>
               )}
@@ -172,7 +181,7 @@ export default function ChatRoom() {
       headerRight: () => {
         const canCall = dbUser?.user_id && otherUserId && isConnected && isOtherUserOnline;
         return (
-          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', marginRight: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
             <TouchableOpacity
               onPress={() => {
                 if (!dbUser?.user_id || !otherUserId) return;
@@ -192,7 +201,7 @@ export default function ChatRoom() {
               }}
               style={{ padding: 8 }}
             >
-              <Video size={28} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
+              <Video size={22} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -214,7 +223,7 @@ export default function ChatRoom() {
               }}
               style={{ padding: 8 }}
             >
-              <Phone size={24} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
+              <Phone size={18} color={canCall ? '#FF3B30' : '#B0B0B0'} strokeWidth={2} />
             </TouchableOpacity>
           </View>
         );
@@ -743,6 +752,7 @@ export default function ChatRoom() {
             { paddingVertical: 10, paddingHorizontal: 14 },
           ]}
         >
+
           <View style={styles.audioRow}>
             {/* Play / Pause */}
             <TouchableOpacity
@@ -836,7 +846,7 @@ export default function ChatRoom() {
                 backgroundColor: 'rgba(0,0,0,0.1)',
                 borderRadius: 4,
                 paddingHorizontal: 3,
-                fontSize: 15,
+                fontSize: 14,
               },
             },
             {
@@ -964,6 +974,7 @@ export default function ChatRoom() {
             },
           ]}
         >
+
           <TextInput
             style={styles.input}
             value={inputThemedText}
@@ -975,6 +986,22 @@ export default function ChatRoom() {
             editable={!isRecording && !uploadingAudio}
           />
           <View style={styles.actionsContainer}>
+
+            <TouchableOpacity
+              style={[
+                styles.micButton,
+                uploadingAudio && styles.micButtonDisabled,
+              ]}
+              onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
+              disabled={uploadingAudio}
+            >
+              {isRecording ? (
+                <Square size={18} color="#FF3B30" strokeWidth={2} fill={"#FF3B30"} />
+              ) : (
+                <Mic size={18} color="#FF3B30" strokeWidth={2} />
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.sendButton,
@@ -987,25 +1014,10 @@ export default function ChatRoom() {
                 <ActivityIndicator size="small" color="#FF3B30" />
               ) : (
                 <Send
-                  size={24}
+                  size={18}
                   color={inputThemedText.trim() ? '#FF3B30' : '#ccc'}
                   strokeWidth={2}
                 />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.micButton,
-                isRecording && styles.micButtonActive,
-                uploadingAudio && styles.micButtonDisabled,
-              ]}
-              onPress={isRecording ? handleStopRecording : startRecordingVoiceNote}
-              disabled={uploadingAudio}
-            >
-              {isRecording ? (
-                <Square size={22} color="#fff" strokeWidth={2} fill="#fff" />
-              ) : (
-                <Mic size={22} color="#FF3B30" strokeWidth={2} />
               )}
             </TouchableOpacity>
           </View>
@@ -1018,7 +1030,10 @@ export default function ChatRoom() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.parentBackgroundColor },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.parentBackgroundColor
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.parentBackgroundColor },
   messagesList: { padding: 16, flexGrow: 1 },
   dateContainer: {
@@ -1030,11 +1045,30 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   dateText: { fontSize: 13, color: '#444', fontFamily: 'HellixMedium' },
-  messageBubble: { maxWidth: '75%', padding: 12, borderRadius: 20, marginBottom: 8 },
-  myMessage: { alignSelf: 'flex-end', backgroundColor: Colors.primaryBackgroundColor },
-  theirMessage: { alignSelf: 'flex-start', backgroundColor: Colors.secondaryBackgroundColor },
-  messageThemedText: { fontSize: 16, lineHeight: 20 },
-  myMessageThemedText: { color: '#fff' },
+  messageBubble: {
+    maxWidth: '75%',
+    padding: 12,
+    borderRadius: 25,
+    marginBottom: 8
+  },
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.primaryBackgroundColor,
+    borderBottomRightRadius: 0
+  },
+  theirMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.secondaryBackgroundColor,
+    borderTopLeftRadius: 0
+  },
+  messageThemedText: {
+    fontSize: 13,
+    lineHeight: 20
+  },
+  myMessageThemedText: {
+    color: '#fff',
+    borderBottomLeftRadius: 0,
+  },
   theirMessageThemedText: { color: '#000' },
   messageTime: { fontSize: 11, marginTop: 4 },
   myMessageTime: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
@@ -1044,7 +1078,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
+    padding: 10,
     backgroundColor: '#fff',
   },
   recordingIndicator: {
@@ -1062,31 +1096,36 @@ const styles = StyleSheet.create({
   recordingTimer: { fontSize: 14, color: '#FF3B30', fontFamily: 'HellixSemiBold', marginRight: 16 },
   cancelRecordingButton: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, backgroundColor: '#fff' },
   cancelRecordingText: { fontSize: 13, color: '#555', fontFamily: 'HellixMedium' },
-  actionsContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   micButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#FF3B30',
   },
-  micButtonActive: { backgroundColor: '#FF3B30' },
   micButtonDisabled: { opacity: 0.5 },
   input: {
     flex: 1,
     maxHeight: 100,
     backgroundColor: '#F5F5F5',
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    paddingHorizontal: 13,
     paddingVertical: 10,
-    fontSize: 16,
+    fontSize: 13,
     marginRight: 8,
   },
-  sendButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
+  sendButton: {
+    width: 33,
+    height: 33,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sendButtonDisabled: { opacity: 0.5 },
 
   // --- WhatsApp-like voice bubble ---
