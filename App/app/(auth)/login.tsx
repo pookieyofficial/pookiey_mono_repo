@@ -1,24 +1,89 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'
-import AntDesign from '@expo/vector-icons/AntDesign';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  StatusBar,
+  Image,
+  ActivityIndicator
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { Foundation } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import CustomDialog, { DialogType } from '@/components/CustomDialog';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
-import CustomLoader from '@/components/CustomLoader';
-import { useRouter } from 'expo-router';
 import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
 import { useTranslation } from 'react-i18next';
+import AntDesign from '@expo/vector-icons/AntDesign';
+import { Foundation } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+/* Floating bubble */
+const FloatingBubble = ({
+  size,
+  color,
+  top,
+  left,
+  right,
+  bottom,
+  duration = 5000,
+}: any) => {
+  const anim = useRef(new Animated.Value(0)).current;
 
-export default function Page() {
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: 1,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 20],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+        top,
+        left,
+        right,
+        bottom,
+        transform: [{ translateY }],
+      }}
+    />
+  );
+};
+
+export default function LoginScreen() {
   const { t } = useTranslation();
-  const router = useRouter()
-  const { loading: googleLoading, signInWithGoogleMobile } = useGoogleAuth();
+  const router = useRouter();
+
+  const { loading: googleLoading, signInWithGoogleMobile } =
+    useGoogleAuth();
   const isDeepLinkProcessing = useDeepLinkProcessing();
+
+  const panelAnim = useRef(new Animated.Value(80)).current;
+  const textFade = useRef(new Animated.Value(0)).current;
+
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     type: DialogType;
@@ -35,6 +100,22 @@ export default function Page() {
     setDialogVisible(true);
   };
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(panelAnim, {
+        toValue: 0,
+        friction: 12,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(textFade, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithGoogleMobile();
@@ -46,19 +127,13 @@ export default function Page() {
     }
   };
 
-  if (googleLoading)
-    return (
-      <CustomLoader messages={[t('auth.loggingIn'), t('auth.almostThere'), t('auth.wrappingUp'), t('auth.hangInThere')]} />
-    )
-
-  if (isDeepLinkProcessing) {
-    return (
-      <CustomLoader messages={[t('auth.justAMoment')]} />
-    )
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Colors.primaryBackgroundColor}
+      />
+
       <CustomDialog
         visible={dialogVisible}
         type={dialogConfig.type}
@@ -70,209 +145,207 @@ export default function Page() {
           onPress: () => setDialogVisible(false),
         }}
       />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.images}>
-          <Image
-            source={require('../../assets/images/loginPageImage.png')}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        </View>
 
-        <View style={styles.headingContainer}>
-          <ThemedText type='title' style={styles.mainHeading}>
-            {t('auth.swipeMatchConnect')}
-          </ThemedText>
-          <ThemedText type='title' style={styles.mainHeading}>
-            {t('auth.discoverTrueBonds')}
-          </ThemedText>
-          <ThemedText style={styles.subHeading}>
-            {t('auth.signInToStart')}
-          </ThemedText>
-        </View>
+      {/* Floating background */}
+      <FloatingBubble size={260} color="rgba(255,255,255,0.06)" top={-80} left={-60} duration={7000} />
+      <FloatingBubble size={200} color="rgba(255,255,255,0.05)" bottom={140} right={-40} duration={5500} />
+      <FloatingBubble size={120} color="rgba(255,255,255,0.07)" top={120} right={40} duration={4800} />
 
-        <View style={styles.buttonsContainer}>
-          {/* Primary Button - Google Sign In */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={googleLoading}
-          >
-            <View style={styles.googleIconContainer}>
-              <AntDesign name="google" size={24} color={Colors.primaryBackgroundColor} />
-            </View>
-            <View style={styles.googleTextContainer}>
-              <ThemedText type='defaultSemiBold' style={styles.googleButtonText}>
+      {/* Top text section */}
+      <Animated.View style={[styles.topContent, { opacity: textFade }]}>
+        <Image
+          source={require('@/assets/images/landing_screen.png')}
+          style={[styles.logoImage]}
+          resizeMode="cover"
+        />
+        <ThemedText type="title" style={styles.mainHeading}>
+          Let's get started..
+        </ThemedText>
+        <ThemedText style={styles.subHeading}>
+          {t('auth.signInToStart')}
+        </ThemedText>
+      </Animated.View>
+
+      {/* Bottom sheet */}
+      <Animated.View
+        style={[
+          styles.bottomPanel,
+          { transform: [{ translateY: panelAnim }] },
+        ]}
+      >
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.googleButton}
+          onPress={handleGoogleSignIn}
+          disabled={googleLoading || isDeepLinkProcessing}
+        >
+          {(googleLoading)
+            ?
+            <ActivityIndicator size={"small"} color={'white'} />
+            :
+            <>
+              <AntDesign name="google" size={22} color="#fff" />
+              <ThemedText type='defaultSemiBold' style={styles.googleText}>
                 {t('auth.continueWithGoogle')}
               </ThemedText>
-            </View>
-          </TouchableOpacity>
+            </>
+          }
+        </TouchableOpacity>
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <ThemedText style={styles.dividerText}>{t('auth.or')}</ThemedText>
-            <View style={styles.divider} />
-          </View>
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <ThemedText style={styles.dividerText}>
+            {t('auth.or')}
+          </ThemedText>
+          <View style={styles.divider} />
+        </View>
 
-          {/* Secondary Button - Email Sign In */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.emailButton}
-            onPress={() => router.push('/(auth)/loginwithEmail')}
-            disabled={googleLoading}
-          >
-            <View style={styles.emailIconContainer}>
-              <Foundation name='mail'
-                size={24} color={Colors.primaryBackgroundColor}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.emailButton}
+          onPress={() => router.push('/(auth)/loginwithEmail')}
+          disabled={googleLoading || isDeepLinkProcessing}
+        >
+          {isDeepLinkProcessing ?
+            <ActivityIndicator size={"small"} color={'white'} />
+            :
+            <>
+              <Foundation
+                name="mail"
+                size={20}
+                color={Colors.primaryBackgroundColor}
               />
-            </View>
-            <View style={styles.emailTextContainer}>
-              <ThemedText type='defaultSemiBold' style={styles.emailButtonText}>
+              <ThemedText type='defaultSemiBold' style={styles.emailText}>
                 {t('auth.continueWithEmail')}
               </ThemedText>
-            </View>
-          </TouchableOpacity>
-        </View>
+            </>
+          }
+        </TouchableOpacity>
 
-        <View style={styles.footerContainer}>
-          <ThemedText style={styles.footerText}>
-            {t('auth.termsAndPrivacy')}
-          </ThemedText>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <ThemedText style={styles.footerText}>
+          {t('auth.termsAndPrivacy')}
+        </ThemedText>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.parentBackgroundColor,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-  },
-  images: {
-    marginBottom: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  image: {
-    width: width * 0.55,
-    height: width * 0.55,
-  },
-  headingContainer: {
-    marginBottom: 30,
-    paddingHorizontal: 20,
-  },
-  mainHeading: {
-    fontSize: 26,
-    textAlign: "center",
-    color: Colors.titleColor,
-  },
-  subHeading: {
-    fontSize: 15,
-    textAlign: "center",
-    color: Colors.text?.secondary,
-    marginVertical: 20,
-  },
-  buttonsContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  // Primary Google Button
-  googleButton: {
     backgroundColor: Colors.primaryBackgroundColor,
-    height: 56,
-    width: '100%',
-    maxWidth: 380,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
   },
-  googleIconContainer: {
-    backgroundColor: Colors.primary.white,
-    borderRadius: 8,
-    height: 40,
-    width: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleTextContainer: {
+
+  topContent: {
     flex: 1,
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
   },
-  googleButtonText: {
+
+  mainHeading: {
+    fontSize: 28,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+
+  subHeading: {
     fontSize: 16,
-    color: Colors.primary.white,
-    fontWeight: "600",
+    color: '#f2f2f2',
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  // Divider
+
+  bottomPanel: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 28,
+    paddingTop: 30,
+    paddingBottom: 40,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+
+  googleButton: {
+    width: '100%',
+    height: 52,
+    backgroundColor: Colors.primaryBackgroundColor,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+
+  googleText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
-    marginVertical: 20,
+    marginVertical: 12,
   },
+
   divider: {
     flex: 1,
     height: 1,
     backgroundColor: '#e0e0e0',
   },
+
   dividerText: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
+    fontSize: 13,
     color: '#999',
-    fontSize: 14,
-    fontWeight: '500',
   },
-  // Secondary Email Button
+
   emailButton: {
-    backgroundColor: Colors.primary.white,
-    height: 56,
     width: '100%',
-    maxWidth: 380,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Colors.primaryBackgroundColor,
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
-  emailIconContainer: {
-    backgroundColor: Colors.primary.white,
-    borderRadius: 8,
-    height: 40,
-    width: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emailTextContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  emailButtonText: {
-    fontSize: 16,
+
+  emailText: {
     color: Colors.primaryBackgroundColor,
-    fontWeight: "600",
+    fontSize: 16,
   },
-  // Footer
-  footerContainer: {
-    marginTop: 40,
-    paddingHorizontal: 40,
-  },
+
   footerText: {
-    color: Colors.text?.secondary,
+    marginTop: 18,
     fontSize: 12,
+    color: Colors.text?.secondary,
     textAlign: 'center',
     lineHeight: 18,
   },
-}); 
+
+  logoContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  logoGlow: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 50,
+  },
+});

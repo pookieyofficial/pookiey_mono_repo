@@ -17,10 +17,6 @@ export default function IndexScreen() {
     }
   }, [isInitialized, isAuthenticated]);
 
-  const handleShowLoginScreen = () => {
-    router.replace('/(auth)/login');
-  };
-
   if (isCheckingAuth) {
     return (
       <View style={{
@@ -34,5 +30,5 @@ export default function IndexScreen() {
     );
   }
 
-  return <LandingScreen onComplete={handleShowLoginScreen} />;
+  return <LandingScreen />;
 }

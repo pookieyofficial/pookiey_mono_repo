@@ -644,7 +644,7 @@ export default function index() {
         </View>
 
 
-        {!isLoading || profiles.length === 0
+        {isLoading && profiles.length === 0
           ?
           <CircularLoader message={"Scanning nearby users..."} />
           :

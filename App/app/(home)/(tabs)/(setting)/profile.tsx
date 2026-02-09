@@ -6,6 +6,7 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors } from '@/constants/Colors'
@@ -27,7 +28,8 @@ const Profile = () => {
   const navigationRouter = useRouter()
   const { signOut } = useAuth()
   const [signOutDialogVisible, setSignOutDialogVisible] = useState(false)
-  
+  const [signOutLoading, setSignOutLoading] = useState(false);
+
   // Get all photos as array of URLs
   const getAllPhotos = (): string[] => {
     const photos = dbUser?.profile?.photos || []
@@ -89,8 +91,12 @@ const Profile = () => {
         primaryButton={{
           text: t('settings.signOut'),
           onPress: () => {
-            setSignOutDialogVisible(false)
-            signOut()
+            setSignOutDialogVisible(false);
+            setSignOutLoading(true)
+            signOut();
+            setTimeout(() => {
+              setSignOutLoading(false)
+            }, 3500);
           },
         }}
         cancelButton={{
@@ -100,8 +106,8 @@ const Profile = () => {
       />
       <View style={styles.headerContainer}>
         <CustomBackButton />
-        <TouchableOpacity 
-          style={styles.editButtonHeader} 
+        <TouchableOpacity
+          style={styles.editButtonHeader}
           onPress={() => navigationRouter.push('/(home)/(tabs)/(setting)/editProfile')}
           activeOpacity={0.7}
         >
@@ -361,13 +367,27 @@ const Profile = () => {
         )}
 
         {/* Sign Out Button */}
-        <TouchableOpacity 
-          style={styles.signOutButtonBottom} 
+        <TouchableOpacity
+          style={styles.signOutButtonBottom}
           onPress={handleSignOut}
+          disabled={signOutLoading}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-out-outline" size={20} color={Colors.primaryBackgroundColor} />
-          <ThemedText style={styles.signOutButtonBottomText}>{t('profilePage.signOut')}</ThemedText>
+          {signOutLoading
+            ?
+            <ActivityIndicator size={"small"} color={Colors.primaryBackgroundColor} />
+            :
+            <>
+              <Ionicons
+                name="log-out-outline"
+                size={20}
+                color={Colors.primaryBackgroundColor}
+              />
+
+              <ThemedText style={styles.signOutButtonBottomText}>
+                {t('profilePage.signOut')}
+              </ThemedText >
+            </>}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
