@@ -182,7 +182,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                                 style={styles.cardDiamondIcon}
                             />
                         )}
-                        <ThemedText type="bold" style={styles.name}>
+                        <ThemedText type="default" style={styles.name}>
                             {item?.profile?.firstName} {item?.profile?.lastName}, {age}
                         </ThemedText>
                     </View>
@@ -508,7 +508,11 @@ const styles = StyleSheet.create({
         height: 85,
         justifyContent: "center",
     },
-    name: { color: Colors.textColor, fontSize: 22 },
+    name: {
+        color: Colors.textColor,
+        fontSize: 22,
+        fontFamily: "HellixBold"
+    },
     nameRowInCard: {
         flexDirection: "row",
         alignItems: "center",
