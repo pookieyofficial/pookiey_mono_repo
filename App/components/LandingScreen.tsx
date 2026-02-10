@@ -8,9 +8,12 @@ import {
     TouchableOpacity,
     View,
     Easing,
+    ActivityIndicator,
 } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Linking } from 'react-native';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { useDeepLinkProcessing } from '@/hooks/useDeepLinkProcessing';
 
 
 const slides = [
@@ -96,6 +99,10 @@ export default function LandingScreen() {
     const router = useRouter();
     const [index, setIndex] = useState(0);
 
+    const { loading: googleLoading } = useGoogleAuth();
+    const isDeepLinkProcessing = useDeepLinkProcessing();
+
+
     const fade = useRef(new Animated.Value(0)).current;
     const logoScale = useRef(new Animated.Value(0.9)).current;
 
@@ -174,10 +181,21 @@ export default function LandingScreen() {
                     style={styles.ctaButton}
                     onPress={handleContinue}
                     activeOpacity={0.85}
+                    disabled={googleLoading || isDeepLinkProcessing}
                 >
-                    <ThemedText type="defaultSemiBold" style={styles.ctaText}>
-                        Continue
-                    </ThemedText>
+                    {(googleLoading || isDeepLinkProcessing)
+                        ?
+                        <View style={styles.ctaRow}>
+                            <ThemedText type="default" style={styles.ctaText}>
+                                Signing in..
+                            </ThemedText>
+                            <ActivityIndicator size="small" color="#fff" />
+                        </View>
+                        :
+                        <ThemedText type="defaultSemiBold" style={styles.ctaText}>
+                            Continue
+                        </ThemedText>
+                    }
                 </TouchableOpacity>
 
                 <ThemedText style={styles.terms}>
@@ -274,8 +292,14 @@ const styles = StyleSheet.create({
     },
 
     ctaText: {
-        color: '#fff',
+        color: '#ededed',
         fontSize: 18,
+    },
+    ctaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
     },
 
     terms: {
