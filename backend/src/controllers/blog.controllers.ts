@@ -102,7 +102,8 @@ export const getBlogs = async (req: Request, res: Response) => {
 export const getBlogBySlug = async (req: Request, res: Response) => {
     const { slug } = req.params;
     try {
-        const blog = await Blog.findOne({ slug, isDeleted: false });
+    const blog = await Blog.findOne({ slug, isDeleted: false })
+    .select('-__v -isDeleted -createdAt -updatedAt -_id');
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
         }
