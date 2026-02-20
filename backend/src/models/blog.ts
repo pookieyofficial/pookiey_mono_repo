@@ -40,6 +40,8 @@ const blogSchema = new mongoose.Schema({
     }
 },{timestamps:true})
 
+ blogSchema.index({slug:1});
+
 const Blog = mongoose.model("Blog",blogSchema);
 export type BlogType = mongoose.InferSchemaType<typeof blogSchema>;
 

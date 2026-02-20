@@ -90,7 +90,8 @@ export const deleteBlog = async (req: Request, res: Response) => {
 //get all blog posts
 export const getBlogs = async (req: Request, res: Response) => {
     try {
-        const blogs = await Blog.find({ isDeleted: false }).sort({ publishedAt: -1 });
+        const blogs = await Blog.find({ isDeleted: false }).sort({ publishedAt: -1 })
+        .lean()
         res.status(200).json({ blogs });
     } catch (error) {
         console.error("Error fetching blogs:", error);
@@ -103,7 +104,8 @@ export const getBlogBySlug = async (req: Request, res: Response) => {
     const { slug } = req.params;
     try {
     const blog = await Blog.findOne({ slug, isDeleted: false })
-    .select('-__v -isDeleted -createdAt -updatedAt -_id');
+    .select('-__v -isDeleted -createdAt -updatedAt -_id')
+    .lean();
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
         }
